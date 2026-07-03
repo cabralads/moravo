@@ -1,0 +1,50 @@
+# ===== Dependências =====
+node_modules/
+
+# ===== Variáveis de ambiente (NÃO commitar) =====
+.env
+.env.local
+.env.*.local
+
+# ===== Uploads de usuários (não versionar) =====
+uploads/imoveis/*
+uploads/perfis/*
+!uploads/imoveis/.gitkeep
+!uploads/perfis/.gitkeep
+
+# ===== Logs =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== OS / editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===== Cache / temporários =====
+.cache/
+.tmp/
+.temp/
+
+# ===== Local da IDE / agente =====
+.claude/
+
+# ===== Pasta legacy bloqueada (deixar vazia) =====
+backend/
+backend_OLD_DELETE/
+
+# ===== Dados sensíveis / mocks locais =====
+data/usuarios.json
+data/imoveis.json
+data/interesses.json
+data/interesses_compradores.json
+
+# ===== Scripts e docs de deploy antigo =====
+db/apply.sh
+db/deploy-api.sh
+
+# ===== Screenshots / referências visuais =====
+screens/

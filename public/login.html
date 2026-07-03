@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo — Entrar na sua conta</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+
+<style>
+:root {
+  --night:    #222222;
+  --emerald:  #FF6A00;
+  --offwhite: #ffffff;
+  --beige:    #DDDDDD;
+  --coral:    #FF6A00;
+  --ink:      #222222;
+  --ink-soft: #717171;
+  --emerald-dk: #E05300;
+  --radius:   12px;
+  --radius-lg: 20px;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: #f7f7f7;
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nav (igual index.html) */
+.nav {
+  background: rgba(255,255,255,.98);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--beige);
+}
+.nav .wrap { max-width: 100%; padding-inline: clamp(16px, 4vw, 40px); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 24px; }
+.nav-inner > .logo { margin-right: auto; }
+.nav-inner > .nav-cta { margin-left: auto; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; width: 100%; }
+.logo { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--ink); letter-spacing: .02em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.logo .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--emerald); display: inline-block; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 12px 22px; border-radius: var(--radius); border: 2px solid transparent; cursor: pointer; text-decoration: none; }
+.btn-primary { background: var(--emerald); color: #fff; }
+.btn-primary:hover { background: var(--emerald-dk); }
+.btn-block { width: 100%; padding: 16px 26px; font-size: 1.02rem; }
+
+/* Login shell */
+.login-shell { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+.login-card {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.06);
+}
+.login-head { text-align: center; margin-bottom: 28px; }
+.login-head h1 { font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+.login-head p { color: var(--ink-soft); font-size: .98rem; }
+.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.field label { font-size: .88rem; font-weight: 600; }
+.field input {
+  font-family: var(--font-body); font-size: 1rem; color: var(--ink);
+  padding: 13px 15px; border: 1.5px solid var(--beige); border-radius: 10px; background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease; width: 100%;
+}
+.field input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 3px rgba(255,90,95,.15); }
+.field.error input { border-color: var(--emerald-dk); background: rgba(255,90,95,0.05); }
+.field .err-msg { font-size: .8rem; color: var(--emerald-dk); font-weight: 500; display: none; }
+.field.error .err-msg { display: block; }
+
+.login-foot { text-align: center; margin-top: 22px; font-size: .92rem; color: var(--ink-soft); }
+.login-foot a { color: var(--emerald); font-weight: 600; text-decoration: none; }
+.login-foot a:hover { text-decoration: underline; }
+
+.alert {
+  background: rgba(255,90,95,0.08);
+  border: 1px solid rgba(255,90,95,0.25);
+  color: var(--emerald-dk);
+  padding: 12px 14px; border-radius: 10px; font-size: .9rem; margin-bottom: 16px;
+  display: none;
+}
+.alert.show { display: block; }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" aria-label="moravo" style="width: 24px; height: 24px; display: block; transform: translateY(-1px);">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span style="font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 1.45rem; letter-spacing: 0.012em; line-height: 1; text-transform: lowercase;">moravo</span>
+    </a>
+    <a href="cadastro.html" class="btn btn-primary nav-cta">Criar conta</a>
+  </div>
+</nav>
+
+<main class="login-shell">
+  <div class="login-card">
+    <div class="login-head">
+      <h1>Entrar na Moravo</h1>
+      <p>Acesse sua conta pra gerenciar imóveis e corretores.</p>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <form id="loginForm" autocomplete="on" novalidate>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" autocomplete="email" placeholder="voce@email.com" required />
+        <span class="err-msg">Informe seu e-mail.</span>
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" autocomplete="current-password" placeholder="Sua senha" required />
+        <span class="err-msg">Informe sua senha.</span>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Entrar</button>
+    </form>
+
+    <p class="login-foot">
+      Ainda não tem conta? <a href="cadastro.html">Criar agora</a>
+    </p>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+
+  // Se já tiver token, vai direto pra dashboard
+  if (localStorage.getItem('moravo_token')) {
+    var redirectBack = sessionStorage.getItem('moravo_redirect_back');
+    if (redirectBack) {
+      window.location.href = redirectBack;
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  }
+
+  var form = document.getElementById('loginForm');
+  var alertEl = document.getElementById('alert');
+  var submitBtn = document.getElementById('submitBtn');
+
+  function showAlert(msg) {
+    alertEl.textContent = msg;
+    alertEl.classList.add('show');
+  }
+  function hideAlert() { alertEl.classList.remove('show'); }
+
+  function setError(field, msg) {
+    field.classList.add('error');
+    if (msg) field.querySelector('.err-msg').textContent = msg;
+  }
+  function clearError(field) { field.classList.remove('error'); }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideAlert();
+
+    var emailEl = document.getElementById('email');
+    var senhaEl = document.getElementById('senha');
+    var emailField = emailEl.closest('.field');
+    var senhaField = senhaEl.closest('.field');
+    clearError(emailField); clearError(senhaField);
+
+    var email = emailEl.value.trim();
+    var senha = senhaEl.value;
+
+    var hasErr = false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError(emailField, 'E-mail inválido.'); hasErr = true; }
+    if (!senha) { setError(senhaField, 'Informe sua senha.'); hasErr = true; }
+    if (hasErr) return;
+
+    var originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Entrando…';
+
+    fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, senha: senha }),
+    })
+    .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+    .then(function (r) {
+      if (r.ok) {
+        localStorage.setItem('moravo_token', r.body.token);
+        localStorage.setItem('moravo_user', JSON.stringify(r.body.user));
+        var redirectBack = sessionStorage.getItem('moravo_redirect_back');
+        if (redirectBack) {
+          window.location.href = redirectBack;
+        } else {
+          window.location.href = 'dashboard.html';
+        }
+        return;
+      }
+      showAlert(r.body.error || 'Erro ao fazer login.');
+    })
+    .catch(function () {
+      showAlert('Não foi possível conectar ao servidor.');
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    });
+  });
+})();
+</script>
+</body>
+</html>

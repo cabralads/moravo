@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo — Crie sua conta</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+
+<style>
+:root {
+  --night:    #222222;
+  --emerald:  #FF6A00;
+  --offwhite: #ffffff;
+  --beige:    #DDDDDD;
+  --coral:    #FF6A00;
+  --ink:      #222222;
+  --ink-soft: #717171;
+  --emerald-dk: #E05300;
+  --radius:   12px;
+  --radius-lg: 20px;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: #f7f7f7;
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nav */
+.nav {
+  background: rgba(255,255,255,.98);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--beige);
+}
+.nav .wrap { max-width: 100%; padding-inline: clamp(16px, 4vw, 40px); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 24px; }
+.nav-inner > .logo { margin-right: auto; }
+.nav-inner > .nav-cta { margin-left: auto; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; width: 100%; }
+.logo { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--ink); letter-spacing: .02em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.logo .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--emerald); display: inline-block; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 12px 22px; border-radius: var(--radius); border: 2px solid transparent; cursor: pointer; text-decoration: none; }
+.btn-primary { background: var(--emerald); color: #fff; }
+.btn-primary:hover { background: var(--emerald-dk); }
+.btn-block { width: 100%; padding: 16px 26px; font-size: 1.02rem; }
+
+/* Signup Shell */
+.signup-shell { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+.signup-card {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.06);
+}
+.signup-head { text-align: center; margin-bottom: 28px; }
+.signup-head h1 { font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+.signup-head p { color: var(--ink-soft); font-size: .98rem; }
+
+/* Role Toggle */
+.toggle-label { font-weight: 600; font-size: .95rem; margin-bottom: 12px; display: block; }
+.role-toggle { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px; }
+.role-opt { position: relative; cursor: pointer; height: 100%; }
+.role-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.role-opt .face {
+  border: 1.5px solid var(--beige); border-radius: var(--radius); padding: 18px 14px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+  height: 100%; background: #fff; transition: all .2s ease;
+}
+.role-opt:hover .face { border-color: #999; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+.role-opt .face .ico { width: 40px; height: 40px; border-radius: 10px; background: #f7f7f7; display: flex; align-items: center; justify-content: center; color: var(--ink-soft); transition: all .2s ease; }
+.role-opt .face .txt { display: flex; flex-direction: column; gap: 3px; }
+.role-opt .face .txt strong { display: block; font-size: 0.98rem; font-weight: 700; color: var(--ink); }
+.role-opt .face .txt span { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.role-opt input:checked + .face { border-color: var(--emerald); background: rgba(255, 106, 0, .04); box-shadow: 0 0 0 1px var(--emerald); }
+.role-opt input:checked + .face .ico { background: var(--emerald); color: #fff; }
+
+/* Fields */
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: .88rem; font-weight: 600; }
+.field label .opt { font-weight: 400; color: var(--ink-soft); }
+.field input, .field select {
+  font-family: var(--font-body); font-size: 1rem; color: var(--ink);
+  padding: 13px 15px; border: 1.5px solid var(--beige); border-radius: 10px; background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease; width: 100%;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 3px rgba(255,90,95,.15); }
+.field.error input, .field.error select { border-color: var(--emerald-dk); background: rgba(255,90,95,.05); }
+.field .err-msg { font-size: .8rem; color: var(--emerald-dk); font-weight: 500; display: none; }
+.field.error .err-msg { display: block; }
+
+.hidden { display: none !important; }
+.form-submit { margin-top: 26px; }
+
+.microcopy { font-size: .9rem; color: var(--ink-soft); text-align: center; margin-top: 16px; line-height: 1.5; }
+.microcopy svg { vertical-align: -2px; margin-right: 5px; }
+
+/* Sucesso */
+.success { text-align: center; padding: 24px 8px; display: none; }
+.success.show { display: block; animation: pop .5s cubic-bezier(.2,.8,.2,1); }
+@keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.success .check-big { width: 76px; height: 76px; border-radius: 50%; background: rgba(255,90,95,.1); color: var(--emerald-dk); display: flex; align-items: center; justify-content: center; margin: 0 auto 22px; }
+.success h3 { font-size: 1.7rem; font-weight: 800; margin-bottom: 12px; }
+.success p { color: var(--ink-soft); font-size: 1.06rem; max-width: 420px; margin: 0 auto; }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+  .fields { grid-template-columns: 1fr; }
+  .role-toggle { grid-template-columns: 1fr; }
+  .signup-card { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" aria-label="moravo" style="width: 24px; height: 24px; display: block; transform: translateY(-1px);">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span style="font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 1.45rem; letter-spacing: 0.012em; line-height: 1; text-transform: lowercase;">moravo</span>
+    </a>
+    <a href="login.html" class="btn btn-primary nav-cta">Entrar</a>
+  </div>
+</nav>
+
+<main class="signup-shell">
+  <div class="signup-card">
+    <div class="signup-head" id="signupHead">
+      <h1>Crie sua conta na Moravo</h1>
+      <p>Anuncie seu imóvel ou comece a vender hoje. Cadastro gratuito, em poucos minutos.</p>
+    </div>
+
+    <!-- Form -->
+    <div id="moravoForm">
+      <span class="toggle-label">Você é…</span>
+      <div class="role-toggle" role="radiogroup" aria-label="Você é proprietário ou corretor">
+        <label class="role-opt">
+          <input type="radio" name="role" value="proprietario" checked />
+          <span class="face">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+            <span class="txt"><strong>Usuário</strong><span>Quero anunciar e favoritar imóveis</span></span>
+          </span>
+        </label>
+        <label class="role-opt">
+          <input type="radio" name="role" value="corretor" />
+          <span class="face">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c0-3.3 3.1-5 7-5s7 1.7 7 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span class="txt"><strong>Corretor</strong><span>Quero 100% da comissão</span></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="fields">
+        <!-- Comuns -->
+        <div class="field full">
+          <label for="f-nome">Nome completo</label>
+          <input type="text" id="f-nome" name="nome" autocomplete="name" placeholder="Seu nome" />
+          <span class="err-msg">Preencha seu nome.</span>
+        </div>
+        <div class="field">
+          <label for="f-email">E-mail</label>
+          <input type="email" id="f-email" name="email" autocomplete="email" placeholder="voce@email.com" />
+          <span class="err-msg">Informe um e-mail válido.</span>
+        </div>
+        <div class="field">
+          <label for="f-whats">WhatsApp</label>
+          <input type="tel" id="f-whats" name="whatsapp" autocomplete="tel" placeholder="(47) 99999-9999" />
+          <span class="err-msg">Informe seu WhatsApp.</span>
+        </div>
+        <div class="field role-field role-corretor half hidden" data-role="corretor">
+          <label for="f-creci-num">CRECI (número)</label>
+          <input type="text" id="f-creci-num" placeholder="Ex.: 12345" />
+          <span class="err-msg">Informe o número do CRECI.</span>
+        </div>
+        <div class="field role-field role-corretor half hidden" data-role="corretor">
+          <label for="f-creci-tipo">Dígito/Letra</label>
+          <select id="f-creci-tipo">
+            <option value="">Selecione</option>
+            <option value="F">F (Autônomo)</option>
+            <option value="J">J (PJ)</option>
+          </select>
+          <span class="err-msg">Selecione o dígito.</span>
+        </div>
+        <div class="field" style="display:none;">
+          <input type="hidden" id="f-creci" name="creci" />
+        </div>
+        <div class="field role-field role-corretor half hidden" data-role="corretor">
+          <label for="f-regiao-uf">Estado</label>
+          <select id="f-regiao-uf">
+            <option value="">Selecione</option>
+            <option value="AC">Acre</option>
+            <option value="AL">Alagoas</option>
+            <option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option>
+            <option value="BA">Bahia</option>
+            <option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option>
+            <option value="ES">Espírito Santo</option>
+            <option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option>
+            <option value="MT">Mato Grosso</option>
+            <option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option>
+            <option value="PA">Pará</option>
+            <option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option>
+            <option value="PE">Pernambuco</option>
+            <option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option>
+            <option value="RN">Rio Grande do Norte</option>
+            <option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option>
+            <option value="RR">Roraima</option>
+            <option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option>
+            <option value="SE">Sergipe</option>
+            <option value="TO">Tocantins</option>
+          </select>
+          <span class="err-msg">Selecione o estado.</span>
+        </div>
+        <div class="field role-field role-corretor half hidden" data-role="corretor">
+          <label for="f-regiao-cidade">Cidade de atuação</label>
+          <select id="f-regiao-cidade" disabled>
+            <option value="">Selecione o estado primeiro</option>
+          </select>
+          <span class="err-msg">Selecione a cidade de atuação.</span>
+        </div>
+        <div class="field" style="display:none;">
+          <input type="hidden" id="f-regiao" name="regiao" />
+        </div>
+
+        <!-- Senha -->
+        <div class="field full">
+          <label for="f-senha">Senha <span class="opt">(mínimo 6 caracteres)</span></label>
+          <input type="password" id="f-senha" name="senha" autocomplete="new-password" placeholder="Crie uma senha" />
+          <span class="err-msg">Senha deve ter no mínimo 6 caracteres.</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-block form-submit" id="submitBtn">Criar minha conta grátis →</button>
+      <p class="microcopy">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="display:inline"><path d="M12 2l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V5l7-3z" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round" opacity=".5"/></svg>
+        Cadastro gratuito. Anuncie seu imóvel ou comece a vender em poucos minutos.
+      </p>
+      <p class="microcopy" style="margin-top: 10px">
+        Já tem conta? <a href="login.html" style="color: var(--emerald); font-weight: 600; text-decoration: none">Entrar</a>
+      </p>
+    </div>
+
+    <!-- Mensagem de sucesso -->
+    <div class="success" id="successMsg" role="status" aria-live="polite">
+      <div class="check-big"><svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4 10-10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3>Conta criada!</h3>
+      <p>Enviamos no seu e-mail o link para acessar a Moravo e começar agora mesmo.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+
+  // ---- Helper: toast no padrão do site (substitui alert())
+  var _toastEl = null;
+  var _toastTimer = null;
+  function toast(msg, type) {
+    if (!_toastEl) {
+      _toastEl = document.createElement('div');
+      Object.assign(_toastEl.style, {
+        position: 'fixed',
+        bottom: '30px',
+        left: '50%',
+        transform: 'translateX(-50%) translateY(100px)',
+        color: '#fff',
+        padding: '12px 22px',
+        borderRadius: '100px',
+        fontSize: '0.92rem',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontWeight: '600',
+        boxShadow: '0 8px 24px rgba(0,0,0,.2)',
+        zIndex: '9999',
+        opacity: '0',
+        transition: 'transform .3s ease, opacity .3s ease',
+        maxWidth: 'min(560px, 90vw)',
+        textAlign: 'center',
+        pointerEvents: 'none',
+        whiteSpace: 'pre-line',
+        lineHeight: '1.4'
+      });
+      document.body.appendChild(_toastEl);
+    }
+    _toastEl.textContent = msg;
+    _toastEl.style.background = type === 'error' ? '#d32f2f'
+                              : type === 'success' ? '#1a8a1a'
+                              : '#222';
+    _toastEl.style.transform = 'translateX(-50%) translateY(0)';
+    _toastEl.style.opacity = '1';
+    _toastEl.style.pointerEvents = 'auto';
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function () {
+      _toastEl.style.transform = 'translateX(-50%) translateY(100px)';
+      _toastEl.style.opacity = '0';
+      _toastEl.style.pointerEvents = 'none';
+    }, 4500);
+  }
+  window.toast = toast;
+
+  // Se já tiver token, vai direto pra dashboard
+  if (localStorage.getItem('moravo_token')) {
+    var redirectBack = sessionStorage.getItem('moravo_redirect_back');
+    if (redirectBack) {
+      window.location.href = redirectBack;
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  }
+
+  /* ---------- Alternância de papel (proprietário / corretor) ---------- */
+  var roleInputs = document.querySelectorAll('input[name="role"]');
+  function applyRole(role) {
+    document.querySelectorAll('.role-field').forEach(function (f) {
+      var show = f.getAttribute('data-role') === role;
+      f.classList.toggle('hidden', !show);
+      if (!show) clearError(f);
+    });
+  }
+  roleInputs.forEach(function (r) {
+    r.addEventListener('change', function () { applyRole(this.value); });
+  });
+
+  /* ---------- Pré-seleção via URL (?prefill=proprietario) ---------- */
+  var params = new URLSearchParams(window.location.search);
+  var prefill = params.get('prefill');
+  if (prefill) {
+    var input = document.querySelector('input[name="role"][value="' + prefill + '"]');
+    if (input) {
+      input.checked = true;
+      applyRole(prefill);
+    }
+  }
+
+  /* ---------- Validação + envio ---------- */
+  function setError(field) { field.classList.add('error'); }
+  function clearError(field) { field.classList.remove('error'); }
+
+  function isVisible(el) {
+    return !el.closest('.role-field') || !el.closest('.role-field').classList.contains('hidden');
+  }
+
+  // Limpa erro ao digitar
+  document.querySelectorAll('#moravoForm input, #moravoForm select').forEach(function (el) {
+    el.addEventListener('input', function () {
+      var f = el.closest('.field'); if (f) clearError(f);
+    });
+  });
+
+  document.getElementById('submitBtn').addEventListener('click', function () {
+    var role = document.querySelector('input[name="role"]:checked').value;
+    var data = { role: role };
+    var firstInvalid = null;
+
+    // Campos obrigatórios por papel
+    var required = ['nome', 'email', 'whatsapp', 'senha'];
+    if (role === 'corretor') required.push('regiao');
+
+    document.querySelectorAll('#moravoForm input, #moravoForm select').forEach(function (el) {
+      if (el.name === 'role') return;
+      var field = el.closest('.field');
+      if (!field) return;
+      var value = el.value.trim();
+      data[el.name] = value;
+
+      if (required.indexOf(el.name) !== -1 && isVisible(el)) {
+        var bad = !value
+          || (el.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+          || (el.name === 'senha' && value.length < 6);
+        if (bad) { setError(field); if (!firstInvalid) firstInvalid = el; }
+        else clearError(field);
+      }
+    });
+
+    // Validação específica dos novos campos de atuação do corretor e CRECI
+    if (role === 'corretor') {
+      var creciNum = document.getElementById('f-creci-num');
+      var creciVal = creciNum.value.trim();
+      var creciField = creciNum.closest('.field');
+
+      if (!creciVal) {
+        setError(creciField);
+        if (!firstInvalid) firstInvalid = creciNum;
+      } else {
+        clearError(creciField);
+      }
+
+      var creciTipo = document.getElementById('f-creci-tipo');
+      var tipoVal = creciTipo.value.trim();
+      var tipoField = creciTipo.closest('.field');
+
+      if (!tipoVal) {
+        setError(tipoField);
+        if (!firstInvalid) firstInvalid = creciTipo;
+      } else {
+        clearError(tipoField);
+      }
+
+      var rCidade = document.getElementById('f-regiao-cidade');
+      var rUf = document.getElementById('f-regiao-uf');
+      var cVal = rCidade.value.trim();
+      var uVal = rUf.value.trim();
+      
+      var cField = rCidade.closest('.field');
+      var uField = rUf.closest('.field');
+
+      if (!uVal) {
+        setError(uField);
+        if (!firstInvalid) firstInvalid = rUf;
+      } else {
+        clearError(uField);
+      }
+
+      if (!cVal) {
+        setError(cField);
+        if (!firstInvalid) firstInvalid = rCidade;
+      } else {
+        clearError(cField);
+      }
+    }
+
+    if (firstInvalid) { firstInvalid.focus(); return; }
+
+    submitCadastro(data);
+  });
+
+  // ---- Busca de cidades por UF via API do IBGE ----
+  (function () {
+    var selectUf = document.getElementById('f-regiao-uf');
+    var selectCidade = document.getElementById('f-regiao-cidade');
+    var hiddenRegiao = document.getElementById('f-regiao');
+
+    function updateRegiaoHidden() {
+      var cidade = selectCidade.value.trim();
+      var uf = selectUf.value.trim();
+      if (cidade && uf) {
+        hiddenRegiao.value = cidade + ' - ' + uf;
+      } else if (cidade) {
+        hiddenRegiao.value = cidade;
+      } else {
+        hiddenRegiao.value = '';
+      }
+    }
+
+    if (selectUf && selectCidade) {
+      selectUf.addEventListener('change', function () {
+        var uf = selectUf.value;
+        selectCidade.innerHTML = '';
+        
+        var ufField = selectUf.closest('.field');
+        if (ufField) clearError(ufField);
+
+        if (!uf) {
+          selectCidade.disabled = true;
+          selectCidade.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+          updateRegiaoHidden();
+          return;
+        }
+
+        selectCidade.disabled = true;
+        selectCidade.innerHTML = '<option value="">Carregando cidades...</option>';
+
+        fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/' + uf + '/municipios')
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            data.sort(function (a, b) {
+              return a.nome.localeCompare(b.nome);
+            });
+
+            var html = '<option value="">Selecione a cidade</option>';
+            data.forEach(function (c) {
+              html += '<option value="' + c.nome + '">' + c.nome + '</option>';
+            });
+            selectCidade.innerHTML = html;
+            selectCidade.disabled = false;
+            updateRegiaoHidden();
+          })
+          .catch(function () {
+            selectCidade.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+          });
+      });
+
+      selectCidade.addEventListener('change', function () {
+        var cidField = selectCidade.closest('.field');
+        if (cidField) clearError(cidField);
+        updateRegiaoHidden();
+      });
+    }
+  })();
+
+  // ---- Sincronização e formatação dos campos de CRECI ----
+  (function () {
+    var numInput = document.getElementById('f-creci-num');
+    var tipoInput = document.getElementById('f-creci-tipo');
+    var hiddenCreci = document.getElementById('f-creci');
+
+    function updateCreciHidden() {
+      var num = numInput.value.replace(/\D/g, ''); // apenas números
+      numInput.value = num;
+
+      var tipo = tipoInput.value;
+
+      if (num && tipo) {
+        hiddenCreci.value = num + '-' + tipo;
+      } else if (num) {
+        hiddenCreci.value = num;
+      } else {
+        hiddenCreci.value = '';
+      }
+    }
+
+    if (numInput && tipoInput) {
+      numInput.addEventListener('input', function () {
+        var field = numInput.closest('.field');
+        if (field) clearError(field);
+        updateCreciHidden();
+      });
+
+      tipoInput.addEventListener('change', function () {
+        var field = tipoInput.closest('.field');
+        if (field) clearError(field);
+        updateCreciHidden();
+      });
+    }
+  })();
+
+  function mapFieldBack(backendField) {
+    var map = { perfil: 'role', preco_estimado: 'preco', regiao_atuacao: 'regiao' };
+    return map[backendField] || backendField;
+  }
+
+  function submitCadastro(data) {
+    var submitBtn = document.getElementById('submitBtn');
+    
+    var cidadeFinal = 'Não especificada';
+    if (data.role === 'corretor') {
+      var selectCidade = document.getElementById('f-regiao-cidade');
+      cidadeFinal = selectCidade.value.trim() || 'Não especificada';
+    }
+
+    var payload = {
+      nome:           data.nome,
+      email:          data.email,
+      whatsapp:       data.whatsapp,
+      cidade:         cidadeFinal,
+      perfil:         data.role,
+      senha:          data.senha,
+      tipo_imovel:    data.tipo    || null,
+      preco_estimado: data.preco   || null,
+      creci:          data.creci   || null,
+      regiao_atuacao: data.regiao  || null,
+    };
+
+    var originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Criando conta…';
+
+    fetch(API_BASE + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    .then(function (resp) {
+      return resp.json().then(function (body) {
+        return { ok: resp.ok, status: resp.status, body: body };
+      });
+    })
+    .then(function (r) {
+      if (r.ok) {
+        localStorage.setItem('moravo_token', r.body.token);
+        localStorage.setItem('moravo_user', JSON.stringify(r.body.user));
+        document.getElementById('signupHead').style.display = 'none';
+        document.getElementById('moravoForm').style.display = 'none';
+        document.getElementById('successMsg').classList.add('show');
+        setTimeout(function () {
+          var redirectBack = sessionStorage.getItem('moravo_redirect_back');
+          if (redirectBack) {
+            window.location.href = redirectBack;
+          } else {
+            window.location.href = 'dashboard.html';
+          }
+        }, 800);
+        return;
+      }
+
+      var errors = (r.body && r.body.errors) || [];
+      var firstEl = null;
+      errors.forEach(function (e) {
+        var input = document.querySelector('#moravoForm [name="' + mapFieldBack(e.field) + '"]');
+        if (input) {
+          var field = input.closest('.field');
+          if (field) {
+            field.classList.add('error');
+            var msg = field.querySelector('.err-msg');
+            if (msg && e.message) msg.textContent = e.message;
+            if (!firstEl) firstEl = input;
+          }
+        }
+      });
+      if (firstEl) firstEl.focus();
+      toast('Não foi possível criar a conta:\n' + errors.map(function (e) { return '• ' + e.message; }).join('\n'), 'error');
+    })
+    .catch(function (err) {
+      console.error('[Moravo] erro de rede:', err);
+      toast('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.', 'error');
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    });
+  }
+
+  // Máscara WhatsApp
+  var whats = document.getElementById('f-whats');
+  whats.addEventListener('input', function () {
+    var v = this.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 2) v = '(' + v.slice(0, 2) + ') ' + v.slice(2);
+    if (v.length > 9) v = v.slice(0, 10) + '-' + v.slice(10);
+    this.value = v;
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo — Detalhes do Imóvel</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<!-- ===== Google Fonts: Plus Jakarta Sans (display) + Inter (corpo) ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+
+<!-- Leaflet (mapa interativo) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<style>
+  :root {
+    --emerald: #FF6A00;
+    --emerald-dk: #E05300;
+    --emerald-lt: #FFF0E6;
+    --beige: #E6E1DC;
+    --beige-lt: #FAF8F6;
+    --ink: #1C1917;
+    --ink-soft: #78716C;
+    --ink-light: #A8A29E;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --shadow: 0 4px 20px rgba(28, 25, 23, 0.05);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background-color: #ffffff;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, .logo {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---- Header / Nav ---- */
+  .nav {
+    position: sticky; top: 0; z-index: 1000;
+    background: rgba(255,255,255,.98); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--beige);
+    transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
+    height: 72px;
+    display: flex;
+    align-items: center;
+  }
+  .nav .wrap { max-width: 100%; width: 100%; padding-inline: clamp(16px, 4vw, 40px); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 100%; width: 100%; }
+  .logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--ink); letter-spacing: .02em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .logo .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--emerald); display: inline-block; }
+  .nav-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+  
+  /* Buttons in Nav */
+  .nav .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    font-family: var(--font-body); font-weight: 600; font-size: .94rem;
+    padding: 11px 20px; border-radius: var(--radius); border: 2px solid transparent;
+    cursor: pointer; transition: transform .18s ease, background .2s ease;
+    text-align: center; white-space: nowrap;
+    text-decoration: none;
+  }
+  .nav .btn-primary { background: var(--emerald); color: #fff; }
+  .nav .btn-primary:hover { background: var(--emerald-dk); color: #fff; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255,90,95,.28); }
+
+  .nav-user { position: relative; display: flex; align-items: center; gap: 10px; }
+  .notif-bell {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--beige);
+    background: #fff;
+    color: var(--night);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background .2s ease, transform .15s ease;
+  }
+  .notif-bell:hover {
+    background: #f7f7f7;
+    transform: scale(1.05);
+  }
+  .notif-bell-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #d32f2f;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 0 0 2px #fff;
+  }
+  .nav-user-trigger {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--beige);
+    padding: 6px 14px 6px 6px; border-radius: 999px;
+    cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+    font: inherit; color: var(--ink);
+  }
+  .nav-user-trigger:hover { border-color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .nav-user-name { font-size: .92rem; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--emerald); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .9rem;
+    text-transform: uppercase;
+  }
+  .nav-user-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 220px; background: #fff;
+    border: 1px solid var(--beige); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.10);
+    padding: 8px; z-index: 1000;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity .15s ease, transform .15s ease, visibility .15s;
+  }
+  .nav-user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-user-dropdown a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px;
+    color: var(--ink); text-decoration: none;
+    font-size: .92rem; font-weight: 500;
+    transition: background .12s ease;
+  }
+  .nav-user-dropdown a:hover { background: #f7f7f7; }
+  .nav-user-dropdown a svg { color: var(--ink); flex-shrink: 0; }
+  .nav-user-dropdown a:hover svg { color: var(--emerald); }
+  .nav-user-dropdown .logout { color: #d32f2f; }
+  .nav-user-dropdown .logout:hover { background: #fff0f0; }
+  .nav-user-dropdown .logout svg { color: #d32f2f; }
+  .nav-user-dropdown hr { border: none; border-top: 1px solid var(--beige); margin: 6px 0; }
+  @media (max-width: 560px) { .nav-user-name { display: none; } }
+
+  /* ---- Breadcrumb / Back Link ---- */
+  .back-nav {
+    margin-top: 24px;
+    margin-bottom: 16px;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  .back-link:hover {
+    color: var(--emerald);
+  }
+
+  /* ---- Page Title Section ---- */
+  .property-title-section {
+    margin-bottom: 24px;
+  }
+  .property-title-section h1 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+  .property-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.9rem;
+  }
+  .property-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--ink-soft);
+  }
+  .verify-pill {
+    background: var(--emerald-lt);
+    color: var(--emerald);
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .property-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .action-btn {
+    background: #fff;
+    border: 1.5px solid var(--beige);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  }
+  .action-btn:hover {
+    background: #fafafa;
+    border-color: #c9c3c9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+    color: var(--ink);
+  }
+  .action-btn:active {
+    transform: translateY(0);
+  }
+  .action-btn.is-fav {
+    background: #fff0f0;
+    border-color: #ffcdd2;
+    color: #d32f2f;
+  }
+  
+  /* ---- Estilos para Modais ---- */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-bg.show {
+    display: flex;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 540px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .modal h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .field label {
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .field textarea {
+    font-family: var(--font-body);
+    font-size: .95rem;
+    color: var(--ink);
+    padding: 10px 13px;
+    border: 1.5px solid var(--beige);
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    width: 100%;
+  }
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px rgba(255,90,95,.12);
+  }
+  .modal-actions {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+  .btn-primary {
+    background: var(--emerald);
+    color: #fff;
+    border: none;
+  }
+  .btn-primary:hover {
+    background: var(--emerald-dk);
+  }
+  .btn-ghost {
+    background: none;
+    border: 1.5px solid var(--beige);
+    color: var(--ink-soft);
+  }
+  .btn-ghost:hover {
+    background: #fafafa;
+    border-color: #c9c3c9;
+  }
+  .action-btn.is-fav:hover {
+    background: #ffe5e5;
+    border-color: #ef9a9a;
+    color: #d32f2f;
+  }
+
+  /* ---- Novo Design da Galeria de Fotos ---- */
+  .photo-gallery-container {
+    position: relative;
+    display: grid;
+    gap: 10px;
+    height: 380px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  
+  /* Grid de 5 ou mais fotos */
+  .grid-5-photos {
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .grid-5-photos .photo-item-0 {
+    grid-row: span 2;
+  }
+  
+  /* Grid de 4 fotos */
+  .grid-4-photos {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+  }
+  .grid-4-photos .photo-item-0 {
+    grid-row: span 3;
+  }
+  
+  /* Grid de 3 fotos */
+  .grid-3-photos {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .grid-3-photos .photo-item-0 {
+    grid-row: span 2;
+  }
+  
+  /* Grid de 2 fotos */
+  .grid-2-photos {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* Grid de 1 foto */
+  .grid-1-photos {
+    grid-template-columns: 1fr;
+  }
+  
+  .photo-gallery-item {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #f9fafb;
+  }
+  
+  .photo-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    transition: filter 0.25s ease, transform 0.3s ease;
+  }
+  
+  .photo-gallery-item img:hover {
+    filter: brightness(0.85);
+    transform: scale(1.015);
+  }
+
+  /* Overlay para ver mais fotos se houver mais de 5 fotos */
+  .more-photos-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+    cursor: pointer;
+    pointer-events: none;
+    transition: background 0.25s ease;
+  }
+
+  .show-all-btn {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    color: #222;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .show-all-btn:hover {
+    background: #f7f7f7;
+    transform: scale(1.02);
+  }
+
+  /* ---- Main Grid Layout ---- */
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr;
+    gap: 64px;
+    margin-bottom: 64px;
+  }
+
+  /* ---- Left Column Details ---- */
+  .details-left {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .details-summary {
+    border-bottom: 1px solid var(--beige);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
+  .details-summary h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .details-specs {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+
+  .details-highlights {
+    border-bottom: 1px solid var(--beige);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .highlight-item {
+    display: flex;
+    gap: 16px;
+  }
+  .highlight-item svg {
+    color: var(--ink);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .highlight-text h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .highlight-text p {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .details-description {
+    border-bottom: 1px solid var(--beige);
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+  }
+  .details-description h3 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+  .details-description p {
+    font-size: 0.98rem;
+    color: var(--ink-soft);
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+
+  /* Amenities */
+  .details-amenities {
+    border-bottom: 1px solid var(--beige);
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+  }
+  .details-amenities h3 {
+    font-size: 1.25rem;
+    margin-bottom: 20px;
+  }
+  .amenities-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .amenity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+  .amenity-item svg {
+    color: var(--ink-soft);
+  }
+
+  /* Map Container */
+  .details-map-section {
+    padding-bottom: 32px;
+  }
+  .details-map-section h3 {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+  }
+  .details-map-section p {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  #propertyMap {
+    height: 360px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--beige);
+    overflow: hidden;
+  }
+
+  /* ---- Right Column Sticky Sidebar ---- */
+  .details-right {
+    position: relative;
+  }
+  .sticky-card {
+    position: sticky;
+    top: 104px; /* header height + spacing */
+    background: #ffffff;
+    border: 1px solid var(--beige);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-price-row {
+    margin-bottom: 20px;
+  }
+  .card-price-row .price {
+    font-size: 1.8rem;
+    font-weight: 800;
+  }
+  
+  .contact-box {
+    border: 1px solid var(--beige);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: var(--beige-lt);
+  }
+  .contact-dono {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .contact-avatar {
+    width: 44px;
+    height: 44px;
+    background: var(--ink-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .contact-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .contact-creci {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+  .contact-info-text {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--beige);
+    padding-top: 10px;
+    margin-top: 6px;
+  }
+
+  .cta-button {
+    width: 100%;
+    background: var(--emerald);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.2s ease;
+    text-decoration: none;
+  }
+  .cta-button:hover {
+    background: var(--emerald-dk);
+  }
+
+  .trust-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* ---- Leaflet Custom Pin styling ---- */
+  .leaflet-pin {
+    background: var(--ink);
+    color: #ffffff;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    border: 1px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    position: relative;
+    cursor: pointer;
+    transform: translate(-50%, -100%) translateY(-5px);
+  }
+  .leaflet-pin::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: var(--ink) transparent transparent;
+    display: block;
+    width: 0;
+  }
+
+  /* ---- Responsive Design ---- */
+  @media (max-width: 900px) {
+    .details-grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .grid-5-photos {
+      grid-template-columns: 1fr;
+      grid-template-rows: 250px;
+      height: 250px;
+    }
+    .grid-5-photos img:not(.main-img) {
+      display: none;
+    }
+    .sticky-card {
+      position: static;
+      box-shadow: none;
+      border: 1px solid var(--beige);
+    }
+  }
+
+  /* ---- Novo Modal de Carrossel ---- */
+  .img-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.95);
+    z-index: 5000;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+  }
+  .img-modal-content {
+    max-width: 80%;
+    max-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .img-modal-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    color: #ccc;
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .img-modal-close:hover {
+    color: #fff;
+  }
+
+  .carousel-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #fff;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    z-index: 5010;
+  }
+  .carousel-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-50%) scale(1.06);
+  }
+  .prev-btn { left: 24px; }
+  .next-btn { right: 24px; }
+
+  .carousel-counter {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #999;
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" aria-label="moravo" style="width: 24px; height: 24px; display: block; transform: translateY(-1px);">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span style="font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 1.45rem; letter-spacing: 0.012em; line-height: 1; text-transform: lowercase;">moravo</span>
+    </a>
+    <div class="nav-right" id="navUserArea">
+      <!-- Conteúdo definido dinamicamente em JS conforme o estado de login -->
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="back-nav">
+    <a href="busca.html" class="back-link">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Voltar para as buscas
+    </a>
+  </div>
+
+  <section class="property-title-section">
+    <h1 id="propTitle">Carregando imóvel…</h1>
+    <div class="property-meta-row">
+      <div class="property-meta-left">
+        <span class="verify-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Anúncio Verificado
+        </span>
+        <span id="propAddressSummary">…</span>
+      </div>
+      <div class="property-meta-right" style="display: flex; gap: 10px; align-items: center;">
+        <button class="action-btn" id="btnFavoritar" onclick="toggleFavoriteDetails()">
+          <svg id="heartIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20s-7-4.4-7-9.3A4 4 0 0 1 12 7a4 4 0 0 1 7 3.7C19 15.6 12 20 12 20z" />
+          </svg>
+          <span id="favText">Favoritar</span>
+        </button>
+        <button class="action-btn" onclick="compartilhar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          Compartilhar
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Photo Grid -->
+  <section class="photo-gallery-container" id="photoGallery">
+    <!-- Will be dynamically populated -->
+  </section>
+
+  <!-- Details Grid -->
+  <div class="details-grid">
+    
+    <!-- Left Column: Details -->
+    <div class="details-left">
+      <div class="details-summary">
+        <h2 id="propTypeHeadline">Espaço Inteiro</h2>
+        <div class="details-specs" id="propSpecsStr">…</div>
+      </div>
+
+      <div class="details-highlights">
+
+        <div class="highlight-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <div class="highlight-text">
+            <h4>Processo Verificado</h4>
+            <p>Todos os documentos jurídicos do proprietário são checados de ponta a ponta.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-description">
+        <h3>Sobre este imóvel</h3>
+        <p id="propDescription">Sem descrição disponível.</p>
+      </div>
+
+      <div class="details-amenities">
+        <h3>O que este lugar oferece</h3>
+        <div class="amenities-grid" id="amenitiesGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="details-map-section">
+        <h3>Onde você vai morar</h3>
+        <p id="propFullAddress">Sorocaba, São Paulo</p>
+        <div id="propertyMap"></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sticky Contact Sidebar -->
+    <div class="details-right">
+      <div class="sticky-card">
+        <div class="card-price-row">
+          <div class="price" id="propPrice">R$ 0</div>
+        </div>
+        
+        <div class="contact-box">
+          <div class="contact-dono">
+            <div class="contact-avatar" id="donoInitials">M</div>
+            <div>
+              <div class="contact-name" id="donoNome">Proprietário</div>
+              <div class="contact-creci">Proprietário Verificado</div>
+            </div>
+          </div>
+          <div class="contact-info-text">
+            Canal Moravo de negociação direta.
+          </div>
+        </div>
+
+        <button class="cta-button" id="mainCTAButton" style="width: 100%; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+          <svg id="ctaIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span id="ctaText">Falar com um Corretor</span>
+        </button>
+
+        <!-- Modal de Interesse do Corretor (Intermediação) -->
+        <div class="modal-bg" id="interesseModal">
+          <div class="modal" style="max-width: 480px; position: relative;">
+            <h2>Intermediar Imóvel</h2>
+            <p style="color: var(--ink-soft); font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px; text-align: left;">
+              Envie uma mensagem de apresentação ao proprietário solicitando a intermediação de venda deste imóvel.
+            </p>
+            <form id="interesseForm">
+              <input type="hidden" id="interesseImovelId" />
+              <div class="field" style="text-align: left;">
+                <label for="int-mensagem">Mensagem de apresentação (opcional)</label>
+                <textarea id="int-mensagem" placeholder="Olá! Tenho interesse em ajudar a vender seu imóvel anunciado na Moravo..." style="min-height: 120px; font-family: inherit; font-size: 0.95rem; resize: vertical; border: 1.5px solid var(--beige); border-radius: 8px; padding: 10px; width: 100%; box-sizing: border-box;"></textarea>
+              </div>
+              <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-ghost" id="cancelInteresseBtn" style="padding: 10px 20px; border-radius: 8px; border: 1.5px solid var(--beige); background: none; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="sendInteresseBtn" style="padding: 10px 20px; border-radius: 8px; background: var(--emerald); color: #fff; border: none; font-weight: 600; cursor: pointer;">Solicitar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="trust-footer">
+          <span>🛡️ Garantia de segurança jurídica Moravo</span>
+          <span>📅 Agende visitas diretamente pelo chat</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="img-modal" id="imgModal" onclick="closeImgModal(event)">
+  <span class="img-modal-close" onclick="closeImgModal(event)">&times;</span>
+  <button class="carousel-nav-btn prev-btn" onclick="prevCarousel(event)" aria-label="Foto anterior">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="img-modal-content" onclick="event.stopPropagation()">
+    <img src="" id="imgModalSrc" alt="Imóvel ampliado" />
+  </div>
+  <button class="carousel-nav-btn next-btn" onclick="nextCarousel(event)" aria-label="Próxima foto">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <div class="carousel-counter" id="carouselCounter">1 / 1</div>
+</div>
+
+<script>
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  
+  // ---- Nav: logado vs deslogado ----
+  (function () {
+    var navArea = document.getElementById('navUserArea');
+    var token = localStorage.getItem('moravo_token');
+    var userNav = null;
+    try { userNav = JSON.parse(localStorage.getItem('moravo_user') || 'null'); } catch (e) { userNav = null; }
+
+    if (navArea) {
+      if (token && userNav && userNav.nome) {
+        var nome = userNav.nome || 'Perfil';
+        var inicial = (nome.trim().charAt(0) || 'P').toUpperCase();
+        var avatarHtml = '';
+        if (userNav.foto_perfil) {
+          var fullUrl = window.fotoUrl ? window.fotoUrl(userNav.foto_perfil) : userNav.foto_perfil;
+          avatarHtml = '<span class="nav-user-avatar" style="background-image: url(' + fullUrl + '); background-size: cover; background-position: center;"></span>';
+        } else {
+          avatarHtml = '<span class="nav-user-avatar">' + inicial + '</span>';
+        }
+        var buscaImoveisHtml = '';
+        if (userNav && userNav.perfil === 'corretor') {
+          buscaImoveisHtml = '<a href="busca.html">' +
+            '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            'Buscar imóveis' +
+            '</a>';
+        }
+
+        navArea.innerHTML =
+          '<div class="nav-user">' +
+            '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
+              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
+                '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
+              '</svg>' +
+              '<span class="notif-bell-badge" id="navNotifBellBadge" style="display:none;">0</span>' +
+            '</button>' +
+            '<button type="button" class="nav-user-trigger" id="navUserTrigger" aria-haspopup="true" aria-expanded="false">' +
+              avatarHtml +
+              '<span class="nav-user-name">' + nome + '</span>' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+            '</button>' +
+            '<div class="nav-user-dropdown" id="navUserDropdown" role="menu">' +
+              '<a href="dashboard.html">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+                'Minha Área' +
+              '</a>' +
+              buscaImoveisHtml +
+              '<a href="dashboard.html#mensagens">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+                'Mensagens' +
+              '</a>' +
+              '<a href="dashboard.html#favoritos">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
+                'Favoritos' +
+              '</a>' +
+              '<hr>' +
+              '<a href="dashboard.html#notificacoes">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
+                'Notificações' +
+              '</a>' +
+              '<a href="dashboard.html#configuracoes">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
+                'Configurações da conta' +
+              '</a>' +
+              '<a href="dashboard.html#ajuda">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+                'Central de Ajuda' +
+              '</a>' +
+              '<hr>' +
+              '<a href="#" class="logout" id="navLogoutBtn">' +
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+                'Sair da conta' +
+              '</a>' +
+            '</div>' +
+          '</div>';
+
+        // ---- Sync Notif Badge in Navbar
+        function refreshNavNotifBadge() {
+          var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+          fetch(apiBase + '/api/notificacoes/nao-lidas/count', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              var badge = document.getElementById('navNotifBellBadge');
+              if (!badge) return;
+              if (data.ok && data.total > 0) {
+                badge.textContent = data.total;
+                badge.style.display = 'inline-flex';
+              } else {
+                badge.style.display = 'none';
+              }
+            })
+            .catch(function () {});
+        }
+        refreshNavNotifBadge();
+        var navNotifInterval = setInterval(refreshNavNotifBadge, 15000);
+
+        var trigger = document.getElementById('navUserTrigger');
+        var dropdown = document.getElementById('navUserDropdown');
+        if (trigger && dropdown) {
+          trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var open = dropdown.classList.toggle('show');
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+          });
+          document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
+              dropdown.classList.remove('show');
+              trigger.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
+        var logoutBtn = document.getElementById('navLogoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            localStorage.removeItem('moravo_token');
+            localStorage.removeItem('moravo_user');
+            window.location.reload();
+          });
+        }
+      } else {
+        navArea.innerHTML =
+          '<a href="cadastro.html" class="btn btn-ghost" style="border:none;">Criar conta</a>' +
+          '<a href="login.html" class="btn btn-primary">Entrar</a>';
+      }
+    }
+  })();
+
+  // ---- Parâmetros do Imóvel na URL ----
+  var urlParams = new URLSearchParams(window.location.search);
+  var imovelId = urlParams.get('id');
+
+  if (!imovelId) {
+    toast('ID do imóvel não especificado.', 'error');
+    window.location.href = 'busca.html';
+  }
+
+  var favoriteIds = {};
+
+  function loadFavoriteIds() {
+    var token = localStorage.getItem('moravo_token');
+    if (!token) {
+      try {
+        var local = JSON.parse(localStorage.getItem('moravo_favoritos') || '[]');
+        local.forEach(function (id) { favoriteIds[id] = true; });
+      } catch(e) {}
+      return Promise.resolve();
+    }
+
+    return fetch(API_BASE + '/api/favoritos/ids', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+      .then(function (r) {
+        if (r.status === 401) {
+          localStorage.removeItem('moravo_token');
+          localStorage.removeItem('moravo_user');
+          window.location.reload();
+        }
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then(function (res) {
+        favoriteIds = {};
+        var arr = (res && res.ids) || [];
+        arr.forEach(function (id) { favoriteIds[id] = true; });
+        try {
+          localStorage.setItem('moravo_favoritos', JSON.stringify(arr));
+        } catch(e) {}
+      })
+      .catch(function () { /* ignora */ });
+  }
+
+  function updateFavoriteButton() {
+    var btn = document.getElementById('btnFavoritar');
+    var icon = document.getElementById('heartIcon');
+    var text = document.getElementById('favText');
+    if (!btn || !icon || !text) return;
+
+    var id = parseInt(imovelId, 10);
+    var active = !!favoriteIds[id];
+    
+    btn.classList.toggle('is-fav', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+    if (active) {
+      btn.style.color = '';
+      icon.style.fill = '#d32f2f';
+      icon.style.stroke = '#d32f2f';
+      text.textContent = 'Favoritado';
+    } else {
+      btn.style.color = '';
+      icon.style.fill = 'none';
+      icon.style.stroke = 'currentColor';
+      text.textContent = 'Favoritar';
+    }
+  }
+
+  function toggleFavoriteDetails() {
+    var id = parseInt(imovelId, 10);
+    if (!id) return;
+    
+    var token = localStorage.getItem('moravo_token');
+    var active = !favoriteIds[id];
+
+    favoriteIds[id] = active;
+    updateFavoriteButton();
+
+    if (!token) {
+      var local = [];
+      try { local = JSON.parse(localStorage.getItem('moravo_favoritos') || '[]'); } catch(e) {}
+      if (active) {
+        if (local.indexOf(id) === -1) local.push(id);
+      } else {
+        local = local.filter(function (x) { return x !== id; });
+      }
+      localStorage.setItem('moravo_favoritos', JSON.stringify(local));
+      toast('Favorito salvo localmente! Crie uma conta ou faça login para sincronizar.', 'success');
+      return;
+    }
+
+    var url = API_BASE + '/api/favoritos' + (active ? '' : '/' + id);
+    var method = active ? 'POST' : 'DELETE';
+    var body = active ? JSON.stringify({ imovel_id: id }) : null;
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: body
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error();
+        return loadFavoriteIds();
+      })
+      .then(updateFavoriteButton)
+      .catch(function () {
+        favoriteIds[id] = !active;
+        updateFavoriteButton();
+        toast('Não foi possível salvar o favorito.', 'error');
+      });
+  }
+
+  fetch(API_BASE + '/api/imoveis/' + imovelId)
+    .then(function (r) {
+      if (!r.ok) throw new Error('Não foi possível carregar o imóvel.');
+      return r.json();
+    })
+    .then(function (res) {
+      if (!res.imovel) throw new Error('Imóvel não encontrado.');
+      renderPropertyDetails(res.imovel);
+      loadFavoriteIds().then(updateFavoriteButton);
+    })
+    .catch(function (err) {
+      toast(err.message, 'error');
+      window.location.href = 'busca.html';
+    });
+
+  function formatMoney(value) {
+    if (value == null) return '';
+    return 'R$ ' + Number(value).toLocaleString('pt-BR');
+  }
+
+  function getInitials(name) {
+    if (!name) return 'M';
+    var parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  function renderPropertyDetails(im) {
+    document.title = 'Moravo — ' + im.titulo;
+    document.getElementById('propTitle').textContent = im.titulo;
+    document.getElementById('propAddressSummary').textContent = im.bairro + ', ' + im.cidade + ' - ' + (im.uf || 'SC');
+    document.getElementById('propTypeHeadline').textContent = String(im.tipo).charAt(0).toUpperCase() + String(im.tipo).slice(1) + ' em ' + im.cidade;
+    
+    // Specs String
+    var specs = [];
+    if (im.quartos != null) specs.push(im.quartos + (im.quartos === 1 ? ' quarto' : ' quartos'));
+    if (im.banheiros != null) specs.push(im.banheiros + (im.banheiros === 1 ? ' banheiro' : ' banheiros'));
+    if (im.area_m2 != null) specs.push(Math.round(im.area_m2) + ' m²');
+    if (im.vagas != null) specs.push(im.vagas + (im.vagas === 1 ? ' vaga' : ' vagas'));
+    document.getElementById('propSpecsStr').textContent = specs.join(' · ');
+
+    // Description
+    if (im.descricao && im.descricao.trim()) {
+      document.getElementById('propDescription').textContent = im.descricao;
+    }
+
+    // Price
+    document.getElementById('propPrice').textContent = formatMoney(im.preco);
+
+    // Dono Info
+    document.getElementById('donoNome').textContent = im.dono_nome || 'Proprietário';
+    document.getElementById('donoInitials').textContent = getInitials(im.dono_nome);
+
+    // Configuração dinâmica do botão principal lateral (mainCTAButton)
+    var loggedUser = null;
+    try {
+      loggedUser = JSON.parse(localStorage.getItem('moravo_user') || 'null');
+    } catch(e) {}
+
+    var ctaBtn = document.getElementById('mainCTAButton');
+    var ctaText = document.getElementById('ctaText');
+    var ctaIcon = document.getElementById('ctaIcon');
+
+    if (ctaBtn && ctaText && ctaIcon) {
+      if (loggedUser && loggedUser.id === im.dono_id) {
+        // Se for o dono do imóvel: desabilita contato
+        ctaText.textContent = 'Este imóvel é seu';
+        ctaIcon.innerHTML = '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+        ctaBtn.disabled = true;
+        ctaBtn.style.background = '#e0e0e0';
+        ctaBtn.style.color = '#757575';
+        ctaBtn.style.border = '1px solid #d5d5d5';
+        ctaBtn.style.cursor = 'not-allowed';
+        ctaBtn.style.transform = 'none';
+        ctaBtn.style.boxShadow = 'none';
+        ctaBtn.onclick = null;
+      } else if (!loggedUser) {
+        // Se NÃO estiver logado: obriga login/cadastro
+        ctaText.textContent = 'Falar com um Corretor';
+        ctaIcon.innerHTML = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+        
+        ctaBtn.onclick = function() {
+          // Salva o ID do imóvel de interesse pendente e a URL atual de retorno
+          sessionStorage.setItem('moravo_pending_interest_imovel_id', im.id);
+          sessionStorage.setItem('moravo_redirect_back', window.location.href);
+          window.location.href = 'login.html';
+        };
+      } else if (loggedUser.perfil === 'corretor') {
+        // Se estiver logado e for Corretor, mas o imóvel já possui corretor atribuído → bloqueia
+        if (im.tem_corretor_aceito) {
+          ctaText.textContent = 'Possui corretor';
+          ctaIcon.innerHTML = '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>';
+          ctaBtn.disabled = true;
+          ctaBtn.style.background = '#22c55e';
+          ctaBtn.style.color = '#fff';
+          ctaBtn.style.border = '2px solid #22c55e';
+          ctaBtn.style.cursor = 'not-allowed';
+          ctaBtn.style.opacity = '1';
+          ctaBtn.style.transform = 'none';
+          ctaBtn.style.boxShadow = 'none';
+          ctaBtn.onclick = null;
+          if (ctaTitle) ctaTitle.textContent = 'Este imóvel já possui um corretor atribuído.';
+        } else {
+          // Sem corretor atribuído: permite intermediar
+          ctaText.textContent = 'Intermediar este imóvel';
+          ctaIcon.innerHTML = '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h6"/>';
+          ctaBtn.onclick = function() {
+            abrirModalInteresseCorretor(im.id);
+          };
+        }
+      } else {
+        // Se estiver logado e for Comprador (perfil proprietario)
+        ctaText.textContent = 'Falar com um Corretor';
+        ctaIcon.innerHTML = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+        
+        ctaBtn.onclick = function() {
+          ctaBtn.disabled = true;
+          var originalHtml = ctaBtn.innerHTML;
+          ctaBtn.innerHTML = '<span class="spinner"></span> Enviando…';
+
+          var token = localStorage.getItem('moravo_token') || '';
+          fetch(API_BASE + '/api/imoveis/' + im.id + '/clique-interesse', {
+            method: 'POST',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          })
+          .then(function(r) {
+            ctaBtn.disabled = false;
+            ctaBtn.innerHTML = originalHtml;
+            if (r.ok) {
+              toast('Interesse enviado com sucesso! Abrindo suas conversas...', 'success');
+              window.location.href = 'dashboard.html#mensagens';
+            } else {
+              toast('Erro ao registrar interesse. Tente novamente mais tarde.', 'error');
+            }
+          })
+          .catch(function() {
+            ctaBtn.disabled = false;
+            ctaBtn.innerHTML = originalHtml;
+            toast('Erro de conexão ao enviar interesse.', 'error');
+          });
+        };
+      }
+
+      // Verifica se acabou de voltar do login/cadastro com interesse pendente para este imóvel
+      var pendingImovelId = sessionStorage.getItem('moravo_pending_interest_imovel_id');
+      if (pendingImovelId && parseInt(pendingImovelId, 10) === im.id && loggedUser) {
+        // Limpa para não re-executar nas próximas recargas
+        sessionStorage.removeItem('moravo_pending_interest_imovel_id');
+        sessionStorage.removeItem('moravo_redirect_back');
+
+        if (loggedUser.perfil === 'corretor') {
+          // Se for corretor, abre o modal de intermediação automaticamente!
+          abrirModalInteresseCorretor(im.id);
+        } else {
+          // Se for comprador, envia o clique de interesse automaticamente!
+          ctaBtn.disabled = true;
+          var originalHtml = ctaBtn.innerHTML;
+          ctaBtn.innerHTML = '<span class="spinner"></span> Enviando…';
+
+          var token = localStorage.getItem('moravo_token') || '';
+          fetch(API_BASE + '/api/imoveis/' + im.id + '/clique-interesse', {
+            method: 'POST',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          })
+          .then(function(r) {
+            ctaBtn.disabled = false;
+            ctaBtn.innerHTML = originalHtml;
+            if (r.ok) {
+              toast('Seu login foi concluído e seu interesse foi enviado com sucesso! Abrindo suas conversas...', 'success');
+              window.location.href = 'dashboard.html#mensagens';
+            }
+          })
+          .catch(function() {
+            ctaBtn.disabled = false;
+            ctaBtn.innerHTML = originalHtml;
+          });
+        }
+      }
+    }
+
+    // Render Photos
+    renderPhotoGallery(im.fotos);
+
+    // Amenities list
+    renderAmenities(im);
+
+    // Geocodificação + Mapa
+    document.getElementById('propFullAddress').textContent = im.rua + ', ' + im.numero + (im.complemento ? ' (' + im.complemento + ')' : '') + ' - ' + im.bairro + ', ' + im.cidade + ' - ' + (im.uf || 'SC') + ', CEP ' + im.cep;
+    setupPropertyMap(im);
+  }
+
+  var galleryPhotos = [];
+  var currentPhotoIndex = 0;
+
+  function renderPhotoGallery(fotos) {
+    var gal = document.getElementById('photoGallery');
+    var list = [];
+    if (fotos) {
+      try {
+        list = typeof fotos === 'string' ? JSON.parse(fotos) : fotos;
+      } catch(e) {}
+    }
+    
+    if (!Array.isArray(list)) list = [];
+    
+    // Normalizar URLs das fotos e armazenar na variável global
+    galleryPhotos = list.map(function(f) {
+      return window.fotoUrl(f) || 'img/l1.jpg';
+    });
+
+    if (galleryPhotos.length === 0) {
+      galleryPhotos.push('img/l1.jpg'); // Fallback
+    }
+
+    var numPhotos = galleryPhotos.length;
+    var displayCount = Math.min(numPhotos, 5); // exibe no máximo 5 fotos no grid
+    
+    // Define a classe do grid conforme o número de fotos a serem exibidas
+    gal.className = 'photo-gallery-container grid-' + displayCount + '-photos';
+    
+    var html = '';
+    for (var i = 0; i < displayCount; i++) {
+      var photoUrl = galleryPhotos[i];
+      var overlayHtml = '';
+      
+      // Se houver mais fotos e esta for a última foto visível no grid
+      if (i === displayCount - 1 && numPhotos > 5) {
+        var remainingCount = numPhotos - 5;
+        overlayHtml = '<div class="more-photos-overlay" style="pointer-events: none;"><span>+ ' + remainingCount + '</span><span style="font-size:0.8rem; font-weight:500;">fotos</span></div>';
+      }
+      
+      html += 
+        '<div class="photo-gallery-item photo-item-' + i + '" onclick="openImgModal(' + i + ')">' +
+          '<img src="' + photoUrl + '" alt="Foto ' + (i + 1) + '" />' +
+          overlayHtml +
+        '</div>';
+    }
+    
+    // Adiciona botão "Mostrar todas as fotos" no canto inferior direito se houver mais de 1 foto
+    if (numPhotos > 1) {
+      html += 
+        '<button class="show-all-btn" onclick="openImgModal(0)" style="position: absolute; bottom: 16px; right: 16px; display: flex; align-items: center; gap: 8px;">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+          'Mostrar todas as fotos' +
+        '</button>';
+    }
+    
+    gal.innerHTML = html;
+  }
+
+  function renderAmenities(im) {
+    var grid = document.getElementById('amenitiesGrid');
+    var list = [];
+
+    // Adiciona itens baseados nos atributos reais
+    if (im.quartos) list.push({ text: im.quartos + (im.quartos === 1 ? ' Quarto' : ' Quartos'), svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4v16M22 4v16M2 8h20M2 17h20"/></svg>' });
+    if (im.banheiros) list.push({ text: im.banheiros + (im.banheiros === 1 ? ' Banheiro' : ' Banheiros'), svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M7 19v-5h10v5M12 5v9"/></svg>' });
+    if (im.vagas) list.push({ text: im.vagas + (im.vagas === 1 ? ' Vaga de Garagem' : ' Vagas de Garagem'), svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>' });
+    if (im.area_m2) list.push({ text: Math.round(im.area_m2) + ' m² de Área útil', svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M21 9H3M21 15H3M12 3v18"/></svg>' });
+
+    if (list.length === 0) {
+      var section = document.querySelector('.details-amenities');
+      if (section) section.style.display = 'none';
+      return;
+    }
+
+    grid.innerHTML = list.map(function(item) {
+      return '<div class="amenity-item">' + item.svg + '<span>' + item.text + '</span></div>';
+    }).join('');
+  }
+
+  // ---- Geocodificação robusta idêntica à de busca.html ----
+  var cityCoords = {
+    'balneário camboriú': { lat: -26.9918, lng: -48.6343 },
+    'balneario camboriu': { lat: -26.9918, lng: -48.6343 },
+    'joinville': { lat: -26.3045, lng: -48.8487 },
+    'florianópolis': { lat: -27.5954, lng: -48.5480 },
+    'florianopolis': { lat: -27.5954, lng: -48.5480 },
+    'curitiba': { lat: -25.4290, lng: -49.2671 },
+    'são paulo': { lat: -23.5650, lng: -46.6850 },
+    'sao paulo': { lat: -23.5650, lng: -46.6850 },
+    'itajai': { lat: -26.9075, lng: -48.6610 },
+    'itajaí': { lat: -26.9075, lng: -48.6610 },
+    'sorocaba': { lat: -23.5015, lng: -47.4526 }
+  };
+
+  function getCoordsForProperty(im) {
+    if (im.lat != null && im.lng != null) {
+      return Promise.resolve({ lat: parseFloat(im.lat), lng: parseFloat(im.lng) });
+    }
+    
+    var cacheKey = 'geo_v2_' + im.cep + '_' + im.numero;
+    var cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        var parsed = JSON.parse(cached);
+        return Promise.resolve(parsed);
+      } catch (e) {}
+    }
+    
+    function performGeocode(q) {
+      var url = API_BASE + '/api/geocode?q=' + encodeURIComponent(q);
+      return fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var results = data.results || [];
+          if (results.length > 0) {
+            var first = results[0];
+            var lat = parseFloat(first.lat);
+            var lng = parseFloat(first.lon);
+            
+            if ((first.addresstype === 'road' || first.class === 'highway') && first.boundingbox && first.boundingbox.length === 4) {
+              var latMin = parseFloat(first.boundingbox[0]);
+              var latMax = parseFloat(first.boundingbox[1]);
+              var lonMin = parseFloat(first.boundingbox[2]);
+              var lonMax = parseFloat(first.boundingbox[3]);
+              
+              var numVal = parseInt(im.numero, 10);
+              if (numVal && numVal > 0) {
+                var approxLength = Math.sqrt(Math.pow(latMax - latMin, 2) + Math.pow(lonMax - lonMin, 2)) * 111000;
+                var maxNum = Math.max(approxLength * 1.2, 500);
+                var ratio = Math.min(Math.max(numVal / maxNum, 0.05), 0.95);
+                lat = latMin + ratio * (latMax - latMin);
+                lng = lonMin + ratio * (lonMax - lonMin);
+              }
+            }
+            return { lat: lat, lng: lng };
+          }
+          return null;
+        });
+    }
+
+    var query1 = im.rua + ', ' + im.numero + ', ' + im.cep + ', Brasil';
+
+    return performGeocode(query1)
+      .then(function (res) {
+        if (res) return res;
+        
+        var cleanedStreet = im.rua.replace(/\b(de|da|do|dos|das)\b/gi, '').replace(/\s+/g, ' ').trim();
+        if (cleanedStreet !== im.rua) {
+          var query2 = cleanedStreet + ', ' + im.numero + ', ' + im.cep + ', Brasil';
+          return performGeocode(query2);
+        }
+        return null;
+      })
+      .then(function (res) {
+        if (res) return res;
+
+        var query3 = im.rua + ', ' + im.numero + ', ' + im.cidade + ', ' + im.uf + ', Brasil';
+        return performGeocode(query3);
+      })
+      .then(function (res) {
+        if (res) {
+          localStorage.setItem(cacheKey, JSON.stringify(res));
+          return res;
+        }
+        
+        var cepQuery = im.cep + ', Brasil';
+        var cepUrl = API_BASE + '/api/geocode?q=' + encodeURIComponent(cepQuery);
+        return fetch(cepUrl)
+          .then(function (r) { return r.json(); })
+          .then(function (data2) {
+            var results2 = data2.results || [];
+            if (results2.length > 0) {
+              var res2 = { lat: parseFloat(results2[0].lat), lng: parseFloat(results2[0].lon) };
+              localStorage.setItem(cacheKey, JSON.stringify(res2));
+              return res2;
+            }
+            throw new Error('Not found');
+          });
+      })
+      .catch(function () {
+        var c = (im.cidade || '').toLowerCase().trim();
+        var base = cityCoords[c];
+        if (base) {
+          var seed = parseInt(im.id, 10) || 1;
+          var latOffset = Math.sin(seed) * 0.005;
+          var lngOffset = Math.cos(seed) * 0.005;
+          return { lat: base.lat + latOffset, lng: base.lng + lngOffset };
+        }
+        return { lat: -26.5 + (Math.random() - 0.5) * 0.1, lng: -48.6 + (Math.random() - 0.5) * 0.1 };
+      });
+  }
+
+  function setupPropertyMap(im) {
+    getCoordsForProperty(im).then(function (coords) {
+      var map = L.map('propertyMap', {
+        center: [coords.lat, coords.lng],
+        zoom: 16,
+        zoomControl: true,
+        scrollWheelZoom: false
+      });
+
+      var googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; Google'
+      }).addTo(map);
+
+      var googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; Google'
+      });
+
+      var baseMaps = {
+        "Google Maps": googleStreets,
+        "Google Satélite": googleHybrid
+      };
+
+      L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+      // Pin personalizado
+      var priceLabel = formatMoney(im.preco);
+      if (Number(im.preco) >= 1000000) {
+        priceLabel = 'R$ ' + (Number(im.preco) / 1000000).toFixed(2).replace(/\.00$/, '') + 'M';
+      } else if (Number(im.preco) >= 1000) {
+        priceLabel = 'R$ ' + Math.floor(Number(im.preco) / 1000) + 'k';
+      }
+
+      var icon = L.divIcon({
+        className: '',
+        html: '<div class="leaflet-pin">' + priceLabel + '</div>',
+        iconSize: null,
+        iconAnchor: [0, 0]
+      });
+
+      L.marker([coords.lat, coords.lng], { icon: icon }).addTo(map);
+    });
+  }
+
+  // ---- Image Modal & Carrossel ----
+  function openImgModal(index) {
+    if (galleryPhotos.length === 0) return;
+    currentPhotoIndex = index;
+    updateCarousel();
+    document.getElementById('imgModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // trava scroll da página
+  }
+
+  function closeImgModal(e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    document.getElementById('imgModal').style.display = 'none';
+    document.body.style.overflow = ''; // destrava scroll
+  }
+
+  function updateCarousel() {
+    if (galleryPhotos.length === 0) return;
+    
+    // Garante que o index está dentro dos limites
+    if (currentPhotoIndex < 0) currentPhotoIndex = galleryPhotos.length - 1;
+    if (currentPhotoIndex >= galleryPhotos.length) currentPhotoIndex = 0;
+
+    var url = galleryPhotos[currentPhotoIndex];
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('carouselCounter').textContent = (currentPhotoIndex + 1) + ' / ' + galleryPhotos.length;
+    
+    // Oculta botões de navegação se houver apenas 1 foto
+    var showNav = galleryPhotos.length > 1 ? 'flex' : 'none';
+    document.querySelector('.prev-btn').style.display = showNav;
+    document.querySelector('.next-btn').style.display = showNav;
+  }
+
+  function nextCarousel(e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    currentPhotoIndex++;
+    updateCarousel();
+  }
+
+  function prevCarousel(e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    currentPhotoIndex--;
+    updateCarousel();
+  }
+
+  // Suporte a navegação por teclado (Seta Direita / Esquerda / Esc)
+  document.addEventListener('keydown', function(e) {
+    var modal = document.getElementById('imgModal');
+    if (modal && modal.style.display === 'flex') {
+      if (e.key === 'ArrowRight') nextCarousel();
+      if (e.key === 'ArrowLeft') prevCarousel();
+      if (e.key === 'Escape') closeImgModal();
+    }
+  });
+
+  function compartilhar() {
+    if (navigator.share) {
+      navigator.share({
+        title: document.title,
+        url: window.location.href
+      }).catch(function() {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast('Link copiado para a área de transferência!', 'success');
+    }
+  }
+
+  // ---- Lógica do Modal de Intermediação de Corretor ----
+  function abrirModalInteresseCorretor(imovelId) {
+    var modal = document.getElementById('interesseModal');
+    var inputId = document.getElementById('interesseImovelId');
+    var textareaMsg = document.getElementById('int-mensagem');
+    
+    if (modal && inputId && textareaMsg) {
+      inputId.value = imovelId;
+      textareaMsg.value = '';
+      modal.classList.add('show');
+    }
+  }
+
+  // ---- Toast (notificação no padrão do site)
+  var toastEl = null;
+  var toastTimer = null;
+  function ensureToast() {
+    if (toastEl) return toastEl;
+    toastEl = document.createElement('div');
+    toastEl.className = 'moravo-toast';
+    Object.assign(toastEl.style, {
+      position: 'fixed',
+      bottom: '30px',
+      left: '50%',
+      transform: 'translateX(-50%) translateY(100px)',
+      background: '#222',
+      color: '#fff',
+      padding: '12px 22px',
+      borderRadius: '100px',
+      fontSize: '0.9rem',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontWeight: '600',
+      boxShadow: '0 8px 24px rgba(0,0,0,.2)',
+      zIndex: '9999',
+      opacity: '0',
+      transition: 'transform .3s ease, opacity .3s ease',
+      maxWidth: '90vw',
+      textAlign: 'center',
+      pointerEvents: 'none'
+    });
+    document.body.appendChild(toastEl);
+    return toastEl;
+  }
+  function toast(msg, type) {
+    var el = ensureToast();
+    el.textContent = msg;
+    el.style.background = type === 'error' ? '#d32f2f'
+                         : type === 'success' ? '#1a8a1a'
+                         : '#222';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'auto';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() {
+      el.style.transform = 'translateX(-50%) translateY(100px)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    }, 3500);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var cancelBtn = document.getElementById('cancelInteresseBtn');
+    var modal = document.getElementById('interesseModal');
+    var form = document.getElementById('interesseForm');
+
+    if (cancelBtn && modal) {
+      cancelBtn.onclick = function() { modal.classList.remove('show'); };
+      modal.onclick = function(e) { if (e.target === modal) modal.classList.remove('show'); };
+    }
+
+    if (form) {
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        var imId = document.getElementById('interesseImovelId').value;
+        var msg = document.getElementById('int-mensagem').value.trim();
+        var submitBtn = document.getElementById('sendInteresseBtn');
+
+        submitBtn.disabled = true;
+        var originalText = submitBtn.textContent;
+        submitBtn.innerHTML = '<span class="spinner"></span> Enviando…';
+
+        var token = localStorage.getItem('moravo_token');
+        if (!token) {
+          toast('Por favor, faça login como corretor para solicitar a intermediação.', 'error');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        fetch(API_BASE + '/api/interesses/imovel/' + imId, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ mensagem: msg })
+        })
+        .then(function(resp) { return resp.json().then(function(b) { return { ok: resp.ok, body: b }; }); })
+        .then(function(r) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          if (r.ok) {
+            modal.classList.remove('show');
+            toast('Sua solicitação de intermediação foi enviada ao proprietário! Acompanhe o status em Mensagens.', 'success');
+          } else {
+            toast(r.body.error || 'Erro ao solicitar intermediação.', 'error');
+          }
+        })
+        .catch(function() {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          toast('Erro de conexão ao enviar solicitação.', 'error');
+        });
+      };
+    }
+  });
+</script>
+
+</body>
+</html>
