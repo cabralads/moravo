@@ -104,7 +104,18 @@ section { position: relative; }
 .logo { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--ink); letter-spacing: .02em; display: flex; align-items: center; gap: 9px; }
 .logo .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--emerald); display: inline-block; }
 .nav .btn { padding: 11px 20px; font-size: .94rem; }
-@media (max-width: 560px) { .nav-cta-text { display: none; } .nav .nav-cta { padding: 11px 16px; } }
+@media (max-width: 560px) {
+  .nav-cta-text { display: none; }
+  .nav .nav-cta { padding: 11px 16px; }
+  .nav-register-btn { display: none !important; }
+
+  /* Ajustes do comparativo para mobile (evita overflow horizontal) */
+  .compare-labels { grid-template-columns: 1fr; gap: 8px; text-align: center; }
+  .compare-cards { grid-template-columns: 1fr; gap: 32px; justify-items: center; }
+  .vs { display: none !important; }
+  .bad-card { transform: rotate(-0.5deg); }
+  .good-card { transform: rotate(0.5deg); }
+}
 
 .nav-user { position: relative; display: flex; align-items: center; gap: 10px; }
 .notif-bell {
@@ -1617,7 +1628,7 @@ section { position: relative; }
     } else {
       // ---- Deslogado: botões Entrar / Criar conta
       navArea.innerHTML =
-        '<a href="cadastro.html" class="btn btn-ghost nav-cta" style="border-color: #ddd; color: var(--ink); font-weight: 600;"><span class="nav-cta-text">Criar conta</span></a>' +
+        '<a href="cadastro.html" class="btn btn-ghost nav-cta nav-register-btn" style="border-color: #ddd; color: var(--ink); font-weight: 600;"><span class="nav-cta-text">Criar conta</span></a>' +
         '<a href="login.html" class="btn btn-primary nav-cta">Entrar<span aria-hidden="true">→</span></a>';
     }
   }

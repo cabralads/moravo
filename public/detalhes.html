@@ -724,6 +724,10 @@
     }
   }
 
+  @media (max-width: 560px) {
+    .nav-register-btn { display: none !important; }
+  }
+
   /* ---- Novo Modal de Carrossel ---- */
   .img-modal {
     display: none;
@@ -1091,7 +1095,7 @@
         }
       } else {
         navArea.innerHTML =
-          '<a href="cadastro.html" class="btn btn-ghost" style="border:none;">Criar conta</a>' +
+          '<a href="cadastro.html" class="btn btn-ghost nav-register-btn" style="border:none;">Criar conta</a>' +
           '<a href="login.html" class="btn btn-primary">Entrar</a>';
       }
     }
