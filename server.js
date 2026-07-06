@@ -117,8 +117,8 @@ app.use('/api/imoveis/:id/fotos', fotosRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 
-// Servir o front-end estático (HTML, CSS, JS, img, etc.)
-app.use(express.static(path.join(__dirname, 'public')));
+// Servir o front-end estático (HTML, CSS, JS, img, etc.) com suporte a URLs Limpas
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Servir as fotos como arquivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
