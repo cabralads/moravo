@@ -43,7 +43,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   font-family: var(--font-body);
@@ -53,6 +53,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  max-width: 100%;
 }
 
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.05; letter-spacing: -0.02em; }
@@ -109,12 +110,19 @@ section { position: relative; }
   .nav .nav-cta { padding: 11px 16px; }
   .nav-register-btn { display: none !important; }
 
+  /* Permitir que botões quebrem linha para não estourar a tela */
+  .btn { white-space: normal !important; }
+
   /* Ajustes do comparativo para mobile (evita overflow horizontal) */
   .compare-labels { grid-template-columns: 1fr; gap: 8px; text-align: center; }
   .compare-cards { grid-template-columns: 1fr; gap: 32px; justify-items: center; }
   .vs { display: none !important; }
   .bad-card { transform: rotate(-0.5deg); }
   .good-card { transform: rotate(0.5deg); }
+
+  /* Ajustes do card de busca do hero para mobile */
+  .search-card { padding: 24px 16px !important; }
+  .search-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
 }
 
 .nav-user { position: relative; display: flex; align-items: center; gap: 10px; }
@@ -633,6 +641,7 @@ section { position: relative; }
   pointer-events: none;
   transition: opacity 0.3s ease;
   font-family: var(--font-body);
+  overflow: hidden;
 }
 .search-overlay.active {
   opacity: 1;
