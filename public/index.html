@@ -1692,7 +1692,7 @@ section { position: relative; }
     var donoNome = im.dono_nome || 'Proprietário';
     var priceStr = formatMoney(im.preco) || 'Consulte';
 
-    return '<article class="listing reveal" data-listing-id="' + im.id + '" ' +
+    return '<article class="listing" data-listing-id="' + im.id + '" ' +
       'onclick="if(!event.target.closest(\'.fav\'))window.verDetalhes(\'' + im.id + '\')" ' +
       'style="cursor:pointer;">' +
       '<div class="ph">' +
