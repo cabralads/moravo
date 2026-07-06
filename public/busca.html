@@ -640,6 +640,11 @@ body {
 (function () {
   'use strict';
 
+  function normalizeString(str) {
+    if (!str) return '';
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
   var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 
   // Parse URL query parameters
@@ -1127,7 +1132,7 @@ body {
         var im = allListings.find(function (item) { return String(item.id) === String(id); });
         if (!im) return;
 
-        var cityMatch = !city || im.cidade.toLowerCase().indexOf(city.toLowerCase()) !== -1;
+        var cityMatch = !city || normalizeString(im.cidade).indexOf(normalizeString(city)) !== -1;
 
         var typeMatch = true;
         if (type) {
