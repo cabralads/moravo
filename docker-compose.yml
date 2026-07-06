@@ -15,6 +15,9 @@ services:
     networks:
       - traefik_public
       - digital_network
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     deploy:
       mode: replicated
       replicas: 1
@@ -23,7 +26,7 @@ services:
           - node.role == manager
       labels:
         traefik.enable: "true"
-        traefik.http.routers.moravo.entrypoints: "websecure"
+        traefik.http.routers.moravo.entrypoints: "web,websecure"
         traefik.http.routers.moravo.rule: "Host(`moravo.com.br`) || Host(`www.moravo.com.br`)"
         traefik.http.routers.moravo.tls.certresolver: "le"
         traefik.http.services.moravo.loadbalancer.passHostHeader: "true"
