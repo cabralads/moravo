@@ -2,10 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: moravo-web
+    image: ghcr.io/cabralads/moravo:main
     restart: always
     environment:
       # O DATABASE_URL e o JWT_SECRET podem ser configurados nas variáveis de ambiente no Portainer
@@ -19,7 +16,6 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: moravo-proxy
     restart: always
     ports:
       - "80:80"
