@@ -559,7 +559,7 @@ body {
 <body>
 
 <header class="overlay-header">
-  <a href="index.html" class="logo" id="homeLink">
+  <a href="/" class="logo" id="homeLink">
     <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" aria-label="moravo" style="width: 24px; height: 24px; display: block; transform: translateY(-1px);">
       <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
     </svg>
@@ -604,7 +604,7 @@ body {
       <a href="cadastro.html" class="btn btn-secondary">Criar conta</a>
       <a href="login.html" class="btn btn-primary">Entrar</a>
     </span>
-    <a href="index.html" class="overlay-close" id="backLink" aria-label="Voltar para home">
+    <a href="/" class="overlay-close" id="backLink" aria-label="Voltar para home">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1001,7 +1001,7 @@ body {
 
   // Set document referrer links
   var fromParam = parser.get('from');
-  var homeFile = 'index.html';
+  var homeFile = '/';
   if (fromParam === 'index-2' || fromParam === 'index-2.html') {
     homeFile = 'index-2.html';
   } else {

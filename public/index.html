@@ -379,7 +379,11 @@ section { position: relative; }
 .g5 { background: linear-gradient(140deg, #c08a6f, #774b39); }
 .g6 { background: linear-gradient(140deg, #5fa39a, #2b564f); }
 @media (max-width: 900px) { .listings-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .listings-grid { grid-template-columns: 1fr; } .stats { gap: 26px; } }
+@media (max-width: 560px) {
+  .listings-grid { grid-template-columns: 1fr; }
+  .listings-grid .listing:nth-child(n+4) { display: none !important; }
+  .stats { gap: 26px; }
+}
 
 /* ==========================================================================
    SEÇÃO: FORMULÁRIO
