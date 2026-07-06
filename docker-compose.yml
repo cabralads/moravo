@@ -13,6 +13,7 @@ services:
     volumes:
       - uploads_data:/app/uploads
     networks:
+      - default
       - traefik_public
     deploy:
       mode: replicated
