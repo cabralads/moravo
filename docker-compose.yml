@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: moravo-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme_database_password_123   # Altere para uma senha segura em produção
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    ports:
+      - "5432:5432" # Opcional: expõe a porta do banco de dados (remover ou proteger se não for usar externamente)
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: moravo-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme_database_password_123@db:5432/postgres
+      PORT: 3000
+      NODE_ENV: production
+      # Altere o JWT_SECRET abaixo para uma chave segura e aleatória!
+      JWT_SECRET: mudar_para_um_segredo_super_seguro_e_longo_123456
+      JWT_EXPIRES_IN: 168
+    depends_on:
+      - db
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  pgdata:
+  uploads_data:
