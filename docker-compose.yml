@@ -3,9 +3,8 @@ version: '3.8'
 services:
   web:
     image: ghcr.io/cabralads/moravo:main
-    restart: always
     environment:
-      # O DATABASE_URL e o JWT_SECRET podem ser configurados nas variáveis de ambiente no Portainer
+      # O DATABASE_URL e o JWT_SECRET são configurados no Portainer
       DATABASE_URL: ${DATABASE_URL}
       PORT: 3000
       NODE_ENV: production
@@ -13,21 +12,25 @@ services:
       JWT_EXPIRES_IN: 168
     volumes:
       - uploads_data:/app/uploads
-
-  caddy:
-    image: caddy:2-alpine
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
+    networks:
+      - traefik_public
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.moravo.entrypoints: "websecure"
+        traefik.http.routers.moravo.rule: "Host(`moravo.com.br`) || Host(`www.moravo.com.br`)"
+        traefik.http.routers.moravo.tls.certresolver: "le"
+        traefik.http.services.moravo.loadbalancer.passHostHeader: "true"
+        traefik.http.services.moravo.loadbalancer.server.port: "3000"
 
 volumes:
   uploads_data:
-  caddy_data:
-  caddy_config:
+
+networks:
+  traefik_public:
+    external: true
