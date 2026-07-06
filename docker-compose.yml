@@ -13,8 +13,8 @@ services:
     volumes:
       - uploads_data:/app/uploads
     networks:
-      - default
       - traefik_public
+      - digital_network
     deploy:
       mode: replicated
       replicas: 1
@@ -34,4 +34,6 @@ volumes:
 
 networks:
   traefik_public:
+    external: true
+  digital_network:
     external: true
