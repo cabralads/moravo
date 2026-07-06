@@ -43,7 +43,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html { scroll-behavior: smooth; overflow-x: hidden !important; }
 
 body {
   font-family: var(--font-body);
@@ -52,8 +52,8 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
-  max-width: 100%;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
 }
 
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.05; letter-spacing: -0.02em; }
