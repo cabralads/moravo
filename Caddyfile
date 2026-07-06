@@ -1,0 +1,3 @@
+moravo.com.br, www.moravo.com.br {
+    reverse_proxy web:3000
+}

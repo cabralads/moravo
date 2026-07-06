@@ -7,10 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: moravo-web
     restart: always
-    ports:
-      - "3000:3000"
     environment:
-      # O DATABASE_URL e o JWT_SECRET podem ser passados como variáveis de ambiente no Portainer
+      # O DATABASE_URL e o JWT_SECRET podem ser configurados nas variáveis de ambiente no Portainer
       DATABASE_URL: ${DATABASE_URL}
       PORT: 3000
       NODE_ENV: production
@@ -19,5 +17,21 @@ services:
     volumes:
       - uploads_data:/app/uploads
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: moravo-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
 volumes:
   uploads_data:
+  caddy_data:
+  caddy_config:
