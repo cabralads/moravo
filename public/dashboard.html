@@ -2501,6 +2501,14 @@
       try { user = JSON.parse(localStorage.getItem('moravo_user') || 'null'); } catch (e) { user = null; }
       if (!user) { localStorage.removeItem('moravo_token'); window.location.href = 'login.html'; return; }
       document.body.setAttribute('data-perfil', user.perfil || '');
+
+      // Garante que apenas números sejam digitados no campo de WhatsApp do perfil
+      var pWhatsInput = document.getElementById('p-whats');
+      if (pWhatsInput) {
+        pWhatsInput.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '');
+        });
+      }
       if (user.perfil === 'corretor') {
         document.body.classList.add('is-corretor');
         var searchItem = document.getElementById('navBuscarImoveisItem');

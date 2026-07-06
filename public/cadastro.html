@@ -645,14 +645,13 @@ body {
     });
   }
 
-  // Máscara WhatsApp
+  // WhatsApp apenas números
   var whats = document.getElementById('f-whats');
-  whats.addEventListener('input', function () {
-    var v = this.value.replace(/\D/g, '').slice(0, 11);
-    if (v.length > 2) v = '(' + v.slice(0, 2) + ') ' + v.slice(2);
-    if (v.length > 9) v = v.slice(0, 10) + '-' + v.slice(10);
-    this.value = v;
-  });
+  if (whats) {
+    whats.addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '');
+    });
+  }
 })();
 </script>
 </body>
