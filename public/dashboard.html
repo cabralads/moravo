@@ -101,7 +101,7 @@
       margin-left: auto;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
     }
 
     .logo {
@@ -121,52 +121,24 @@
       background: var(--emerald);
     }
 
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #fff;
-      border: 1px solid var(--beige);
-      padding: 6px 14px 6px 6px;
-      border-radius: 999px;
-      font-size: .92rem;
-      color: var(--ink);
-      font-weight: 600;
-      cursor: pointer;
-      transition: border-color .15s ease, box-shadow .15s ease;
+    .nav-user { position: relative; display: flex; align-items: center; gap: 10px; }
+    .nav-user-trigger {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border: 1px solid var(--beige);
+      padding: 6px 14px 6px 6px; border-radius: 999px;
+      cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+      font: inherit; color: var(--ink);
     }
-
-    .user-chip:hover {
-      border-color: var(--ink);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-    }
-
-    .user-chip .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--emerald);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: .9rem;
+    .nav-user-trigger:hover { border-color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .nav-user-name { font-size: .92rem; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nav-user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--emerald); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .9rem;
       text-transform: uppercase;
     }
-
-    .user-chip #userName {
-      max-width: 140px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    @media (max-width: 560px) {
-      .user-chip #userName {
-        display: none;
-      }
-    }
+    @media (max-width: 560px) { .nav-user-name { display: none; } }
 
     /* Notif Bell (header) */
     .notif-bell {
@@ -210,31 +182,17 @@
       box-shadow: 0 0 0 2px #fff;
     }
 
-    /* Profile Dropdown Airbnb Style */
-    .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 8px;
-      background: #fff;
-      border: 1px solid var(--beige);
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-      width: 260px;
-      z-index: 150;
-      display: none;
-      flex-direction: column;
-      padding: 8px 0;
-      animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Profile Dropdown Unified Style */
+    .nav-user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      min-width: 220px; background: #fff;
+      border: 1px solid var(--beige); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.10);
+      padding: 8px; z-index: 1000;
+      opacity: 0; visibility: hidden; transform: translateY(-4px);
+      transition: opacity .15s ease, transform .15s ease, visibility .15s;
     }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .profile-dropdown.show {
-      display: flex;
-    }
+    .nav-user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
 
     @keyframes slideDown {
       from {
@@ -248,50 +206,20 @@
       }
     }
 
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 20px;
-      color: var(--ink);
-      text-decoration: none;
-      font-size: 0.94rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease;
+    .nav-user-dropdown a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 8px;
+      color: var(--ink); text-decoration: none;
+      font-size: .92rem; font-weight: 500;
+      transition: background .12s ease;
     }
-
-    .dropdown-item svg {
-      color: var(--ink);
-      transition: color 0.15s ease;
-    }
-
-    .dropdown-item:hover {
-      background: #f7f7f7;
-    }
-
-    .dropdown-item:hover svg {
-      color: var(--emerald);
-    }
-
-    .dropdown-item.logout {
-      color: #d32f2f;
-      margin-top: 4px;
-    }
-
-    .dropdown-item.logout:hover {
-      background: #fff0f0;
-    }
-
-    .dropdown-item.logout svg {
-      color: #d32f2f;
-    }
-
-    .dropdown-divider {
-      height: 1px;
-      background: var(--beige);
-      margin: 8px 0;
-    }
+    .nav-user-dropdown a:hover { background: #f7f7f7; }
+    .nav-user-dropdown a svg { color: var(--ink); flex-shrink: 0; }
+    .nav-user-dropdown a:hover svg { color: var(--emerald); }
+    .nav-user-dropdown .logout { color: #d32f2f; }
+    .nav-user-dropdown .logout:hover { background: #fff0f0; }
+    .nav-user-dropdown .logout svg { color: #d32f2f; }
+    .nav-user-dropdown hr { border: none; border-top: 1px solid var(--beige); margin: 6px 0; }
 
     .btn {
       display: inline-flex;
@@ -335,6 +263,8 @@
     .btn-sm {
       padding: 8px 14px;
       font-size: .85rem;
+      height: 36px;
+      border-radius: 8px;
     }
 
     .btn-danger {
@@ -1079,6 +1009,11 @@
       bottom: 14px;
     }
 
+    .notif-row__right .btn {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .notif-row__actions {
       display: flex;
       flex-direction: column;
@@ -1713,25 +1648,26 @@
         </svg>
         <span style="font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 1.45rem; letter-spacing: 0.012em; line-height: 1; text-transform: lowercase;">moravo</span>
       </a>
-      <div class="nav-right" style="position: relative;">
-        <button type="button" class="notif-bell" id="notifBellBtn" aria-label="Notificações do sistema"
-          title="Notificações">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-          <span class="notif-bell-badge" id="notifBellBadge" style="display:none;">0</span>
-        </button>
-        <div class="user-chip" id="userChip" style="cursor:pointer;">
-          <span class="avatar" id="userAvatar">?</span>
-          <span id="userName">Carregando…</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-        <div class="profile-dropdown" id="profileDropdown">
+      <div class="nav-right">
+        <div class="nav-user">
+          <button type="button" class="notif-bell" id="notifBellBtn" aria-label="Notificações do sistema"
+            title="Notificações">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="notif-bell-badge" id="notifBellBadge" style="display:none;">0</span>
+          </button>
+          <button type="button" class="nav-user-trigger" id="userChip" aria-haspopup="true" aria-expanded="false">
+            <span class="nav-user-avatar" id="userAvatar">?</span>
+            <span class="nav-user-name" id="userName">Carregando…</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          <div class="nav-user-dropdown" id="profileDropdown" role="menu">
           <a href="#" class="dropdown-item" data-section="meus">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -1803,6 +1739,7 @@
         </div>
       </div>
     </div>
+  </div>
   </nav>
 
   <div class="dashboard-shell">
@@ -1824,7 +1761,7 @@
         </svg>
         Meus imóveis
       </a>
-      <a class="dash-sidebar-item" id="sidebar-buscar-imoveis" href="busca.html" style="display:none;">
+      <a class="dash-sidebar-item" id="sidebar-buscar-imoveis" href="busca.html">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8" />
@@ -2022,7 +1959,7 @@
                     Ver Fotos
                   </button>
                   <button class="btn btn-ghost btn-sm" id="btnVerImovelChat"
-                    style="padding: 6px 12px; font-size: 0.78rem; font-weight: 600;">Página Completa</button>
+                    style="padding: 6px 12px; font-size: 0.78rem; font-weight: 600;">Ver anúncio</button>
                 </div>
               </div>
 
@@ -2513,8 +2450,6 @@
         document.body.classList.add('is-corretor');
         var searchItem = document.getElementById('navBuscarImoveisItem');
         if (searchItem) searchItem.style.display = 'flex';
-        var sidebarBuscar = document.getElementById('sidebar-buscar-imoveis');
-        if (sidebarBuscar) sidebarBuscar.style.display = 'flex';
       } else {
         document.body.classList.add('is-' + (user.perfil || 'guest'));
       }
@@ -2582,10 +2517,8 @@
 
 
       window.checkUnreadBadges = function (interesses) {
-        var lastViewMensagens = localStorage.getItem('moravo_last_view_mensagens') || '1970-01-01T00:00:00.000Z';
         var lastViewNotificacoes = localStorage.getItem('moravo_last_view_notificacoes') || '1970-01-01T00:00:00.000Z';
 
-        var unreadMensagens = 0;
         var unreadNotificacoes = 0;
 
         (interesses || []).forEach(function (it) {
@@ -2595,23 +2528,7 @@
           if (itemTime > lastViewNotificacoes) {
             unreadNotificacoes++;
           }
-
-          // Mensagens: se a conversa estiver ativa/aceita e teve atualizações desde a última visualização
-          if (it.status === 'aceito' && itemTime > lastViewMensagens) {
-            unreadMensagens++;
-          }
         });
-
-        // Atualiza badges no DOM
-        var badgeMsg = document.getElementById('badge-mensagens');
-        if (badgeMsg) {
-          if (unreadMensagens > 0) {
-            badgeMsg.textContent = unreadMensagens;
-            badgeMsg.style.display = 'inline-block';
-          } else {
-            badgeMsg.style.display = 'none';
-          }
-        }
 
         var badgeNotif = document.getElementById('badge-notificacoes');
         if (badgeNotif) {
@@ -2624,6 +2541,23 @@
         }
       };
 
+      // ---- Helpers para conversas vistas (JSON array único no localStorage) ----
+      function getSeenChats() {
+        try { return JSON.parse(localStorage.getItem('moravo_chats_seen') || '[]'); } catch (e) { return []; }
+      }
+      function markChatSeen(id) {
+        var seen = getSeenChats();
+        var key = String(id);
+        if (seen.indexOf(key) === -1) {
+          seen.push(key);
+          localStorage.setItem('moravo_chats_seen', JSON.stringify(seen));
+        }
+      }
+      function isChatSeen(id) {
+        return getSeenChats().indexOf(String(id)) !== -1;
+      }
+
+      // Conta mensagens não lidas (conversas aceitas sem flag 'seen') e atualiza badge
       window.refreshUnreadBadges = function () {
         if (!user) return;
         var interestsUrl = user.perfil === 'corretor' ? '/api/interesses?corretor_id=' + user.id : '/api/interesses';
@@ -2631,6 +2565,16 @@
           .then(function (res) {
             if (res.ok && res.body.interesses) {
               checkUnreadBadges(res.body.interesses);
+              // Conta mensagens não lidas
+              var unread = 0;
+              (res.body.interesses || []).forEach(function (it) {
+                if (it.status === 'aceito' && it.type !== 'broker_rep') {
+                  if (!isChatSeen(it.id)) {
+                    unread++;
+                  }
+                }
+              });
+              if (typeof updateMsgBadge === 'function') updateMsgBadge(unread);
             }
           })
           .catch(function (err) {
@@ -2661,6 +2605,10 @@
       if (window.refreshNotifBadge) {
         window.refreshNotifBadge();
         setInterval(window.refreshNotifBadge, 15000);
+      }
+      if (window.refreshUnreadBadges) {
+        window.refreshUnreadBadges();
+        setInterval(window.refreshUnreadBadges, 15000);
       }
 
       // Click no sininho: marca como lidas e rola até a seção
@@ -3895,6 +3843,18 @@
         }
       })();
 
+      // ---- Atualiza o badge de mensagens no sidebar ----
+      function updateMsgBadge(count) {
+        var badgeMsg = document.getElementById('badge-mensagens');
+        if (!badgeMsg) return;
+        if (count > 0) {
+          badgeMsg.textContent = count;
+          badgeMsg.style.display = 'inline-block';
+        } else {
+          badgeMsg.style.display = 'none';
+        }
+      }
+
       // ---- Lógica e Renderização do Chat Moderno (Aba de Mensagens) ----
       function loadMensagensSection() {
         var listContainer = document.getElementById('chatInboxList');
@@ -3911,15 +3871,16 @@
               listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #d32f2f;">Erro ao carregar conversas.</div>';
               return;
             }
-            if (window.checkUnreadBadges) checkUnreadBadges(r.body.interesses);
             var interesses = (r.body.interesses || []).filter(function (it) {
               return it.status === 'aceito' && it.type !== 'broker_rep';
             });
             if (interesses.length === 0) {
               listContainer.innerHTML = '<div style="padding: 30px 20px; text-align: center; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.4;">Nenhuma conversa ativa.<br><span style="font-size:0.75rem; color:#999;">Dica: Vá em "Imóveis disponíveis" para iniciar uma intermediação.</span></div>';
+              updateMsgBadge(0);
               return;
             }
 
+            var unreadCount = 0;
             listContainer.innerHTML = '';
             interesses.forEach(function (it) {
               var item = document.createElement('div');
@@ -3941,15 +3902,27 @@
                 '<div style="font-size: 0.8rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">' + (it.imovel_titulo || 'Imóvel #' + it.imovel_id) + '</div>' +
                 '</div>';
 
-              var badgeColor = it.status === 'aceito' ? '#2e7d32' : (it.status === 'recusado' ? '#c62828' : '#e65100');
-              var statusDotHtml = '<div style="width: 8px; height: 8px; border-radius: 50%; background: ' + badgeColor + '; flex-shrink: 0;" title="' + it.status + '"></div>';
+              var isUnread = !isChatSeen(it.id);
+              if (isUnread) unreadCount++;
+
+              var statusDotHtml = '<div class="chat-unread-dot" style="' + (isUnread ? 'background:#25d366;' : 'display:none;') + ' width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;"></div>';
 
               item.innerHTML = avatarHtml + detailsHtml + statusDotHtml;
 
               item.addEventListener('click', function () {
-                listContainer.querySelectorAll('div').forEach(function (el) {
-                  if (el.style.borderLeft) el.style.borderLeft = '';
-                  if (el.style.background) el.style.background = '';
+                markChatSeen(it.id);
+                var dot = item.querySelector('.chat-unread-dot');
+                if (dot) {
+                  dot.style.display = 'none';
+                  dot.style.background = 'transparent';
+                }
+                // Reconta as bolinhas verdes visíveis e atualiza o badge
+                var remaining = listContainer.querySelectorAll('.chat-unread-dot[style*="background:#25d366"]').length;
+                updateMsgBadge(remaining);
+
+                listContainer.querySelectorAll(':scope > div').forEach(function (el) {
+                  el.style.borderLeft = '';
+                  el.style.background = '';
                 });
                 item.style.borderLeft = '4px solid var(--emerald)';
                 item.style.background = '#eef1f6';
@@ -3959,6 +3932,9 @@
 
               listContainer.appendChild(item);
             });
+
+            // Atualiza badge com a contagem real de bolinhas verdes
+            updateMsgBadge(unreadCount);
           });
       }
 
@@ -4102,7 +4078,14 @@
               var rightActionsHtml = '';
               if (user.perfil === 'corretor') {
                 // Para corretor: "Ver anúncio" vai pro canto inferior direito (sem data)
-                rightActionsHtml = '<button class="btn btn-ghost btn-sm btn-ver-anuncio" data-imovel-id="' + (notif.imovel_id || '') + '">Ver anúncio</button>';
+                var contatoBtn = '';
+                if (status === 'aceito') {
+                  var link = formatarWhatsLink(notif.other_whatsapp || notif.remetente_whatsapp, 'Olá! Sou o corretor aprovado para intermediar o imóvel "' + (notif.imovel_titulo || '') + '" no Moravo. Podemos conversar?');
+                  contatoBtn = '<a href="' + link + '" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25d366; border-color:#25d366; color:#fff; text-decoration:none;">' +
+                    '💬 Contato' +
+                    '</a>';
+                }
+                rightActionsHtml = contatoBtn + '<button class="btn btn-ghost btn-sm btn-ver-anuncio" data-imovel-id="' + (notif.imovel_id || '') + '">Ver anúncio</button>';
               } else {
                 if (status === 'pendente') {
                   actionsHtml =
@@ -4238,7 +4221,7 @@
               '</strong> gostaria de intermediar a venda de seu <strong>Anúncio: ' +
               escapeHtml(titulo) + '</strong>';
           case 'corretor_escolhido':
-            return 'Você foi escolhido para intermediar o imóvel <strong>' +
+            return 'Você foi aprovado para intermediar o imóvel <strong>' +
               escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) + '</strong>. Entre em contato com o proprietário para iniciar a negociação.';
           case 'corretor_recusado':
             return 'Sua proposta de intermediação para o imóvel <strong>' +
@@ -4301,7 +4284,7 @@
                 (n.lida ? '' : 'border-left:4px solid var(--emerald);');
 
               var tipoLabel = {
-                'corretor_escolhido': 'Você foi escolhido',
+                'corretor_escolhido': 'Você foi aprovado',
                 'corretor_interessado': 'Novo corretor interessado',
                 'corretor_renunciou': 'Corretor renunciou',
                 'corretor_recusado': 'Proposta recusada',
@@ -4310,9 +4293,13 @@
               }[n.tipo] || n.tipo;
 
               var whatsBtn = '';
-              if (n.remetente_whatsapp) {
+              if (n.tipo === 'corretor_interessado' || n.tipo === 'corretor_escolhido' || n.tipo === 'corretor_recusado' || n.tipo === 'corretor_recusado_auto' || n.tipo === 'imovel_vendido') {
+                whatsBtn = '<button class="btn btn-primary btn-sm btn-acompanhar-solicitacao" style="text-decoration:none;">' +
+                  '📋 Acompanhar solicitação' +
+                  '</button>';
+              } else if (n.remetente_whatsapp && n.tipo !== 'corretor_escolhido') {
                 var link = formatarWhatsLink(n.remetente_whatsapp, buildWhatsMensagem(n));
-                whatsBtn = '<a href="' + link + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="background:#25d366; border-color:#25d366; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:0.85rem; font-weight:600;">' +
+                whatsBtn = '<a href="' + link + '" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25d366; border-color:#25d366; color:#fff; text-decoration:none;">' +
                   '💬 Entrar em contato' +
                   '</a>';
               }
@@ -4371,6 +4358,13 @@
                 verBtn.addEventListener('click', function () {
                   if (window.openImovelPreview) window.openImovelPreview(verBtn.dataset.id);
                   else window.open('detalhes.html?id=' + verBtn.dataset.id, '_blank');
+                });
+              }
+              var acompanharBtn = card.querySelector('.btn-acompanhar-solicitacao');
+              if (acompanharBtn) {
+                acompanharBtn.addEventListener('click', function () {
+                  showSection('notificacoes');
+                  if (window.switchNotifTab) window.switchNotifTab('solicitacoes');
                 });
               }
             });

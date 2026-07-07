@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
 
     // Opcionalmente extrai o usuário logado para ocultar seus próprios imóveis na busca pública
     let loggedUserId = null;
+    let loggedUserPerfil = null;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
@@ -35,6 +36,7 @@ router.get('/', async (req, res) => {
         const decoded = verifyJwt(token);
         if (decoded && decoded.id) {
           loggedUserId = decoded.id;
+          loggedUserPerfil = decoded.perfil;
         }
       } catch (e) {
         // Ignora erros de token na busca pública
@@ -54,6 +56,12 @@ router.get('/', async (req, res) => {
     }
     if (disponivel) {
       conditions.push(`im.status <> 'vendido'`);
+      if (loggedUserPerfil === 'corretor') {
+        conditions.push(`NOT EXISTS (
+          SELECT 1 FROM moravo.interesses i
+          WHERE i.imovel_id = im.id AND i.status = 'aceito'
+        )`);
+      }
     }
     if (TIPOS_IMOVEL.indexOf(tipo) !== -1) {
       conditions.push(`im.tipo = $${i++}`);

@@ -83,7 +83,8 @@ body {
   display: inline-block;
 }
 
-  /* Notif Bell (header) */
+  /* Unified Nav Styles */
+  .nav-user { position: relative; display: flex; align-items: center; gap: 10px; }
   .notif-bell {
     position: relative;
     width: 38px;
@@ -121,6 +122,47 @@ body {
     line-height: 1;
     box-shadow: 0 0 0 2px #fff;
   }
+  .nav-user-trigger {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--beige);
+    padding: 6px 14px 6px 6px; border-radius: 999px;
+    cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+    font: inherit; color: var(--ink);
+  }
+  .nav-user-trigger:hover { border-color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .nav-user-name { font-size: .92rem; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--emerald); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .9rem;
+    text-transform: uppercase;
+  }
+  .nav-user-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 220px; background: #fff;
+    border: 1px solid var(--beige); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.10);
+    padding: 8px; z-index: 1000;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity .15s ease, transform .15s ease, visibility .15s;
+  }
+  .nav-user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-user-dropdown a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px;
+    color: var(--ink); text-decoration: none;
+    font-size: .92rem; font-weight: 500;
+    transition: background .12s ease;
+  }
+  .nav-user-dropdown a:hover { background: #f7f7f7; }
+  .nav-user-dropdown a svg { color: var(--ink); flex-shrink: 0; }
+  .nav-user-dropdown a:hover svg { color: var(--emerald); }
+  .nav-user-dropdown .logout { color: #d32f2f; }
+  .nav-user-dropdown .logout:hover { background: #fff0f0; }
+  .nav-user-dropdown .logout svg { color: #d32f2f; }
+  .nav-user-dropdown hr { border: none; border-top: 1px solid var(--beige); margin: 6px 0; }
+  @media (max-width: 560px) { .nav-user-name { display: none; } }
 
 .overlay-search-capsule {
   display: none; /* legacy — substituída pela .search-bar */
@@ -1385,49 +1427,69 @@ body {
       // Logado: pill branco com avatar + nome + dropdown
       var nome = userNav.nome || 'Perfil';
       var inicial = (nome.trim().charAt(0) || 'P').toUpperCase();
-      var slotStyle = slot.getAttribute('style') || '';
-      slot.setAttribute('style', 'position: relative; display: flex; align-items: center; gap: 8px; ' + slotStyle);
+      var avatarHtml = '';
+      if (userNav.foto_perfil) {
+        var fullUrl = window.fotoUrl ? window.fotoUrl(userNav.foto_perfil) : userNav.foto_perfil;
+        avatarHtml = '<span class="nav-user-avatar" style="background-image: url(' + fullUrl + '); background-size: cover; background-position: center;"></span>';
+      } else {
+        avatarHtml = '<span class="nav-user-avatar">' + inicial + '</span>';
+      }
 
       var buscaImoveisHtml = '';
       if (userNav && userNav.perfil === 'corretor') {
-        buscaImoveisHtml = '<a href="busca.html" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:var(--ink); text-decoration:none; font-size:.88rem; font-weight:600;">' +
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+        buscaImoveisHtml = '<a href="busca.html">' +
+          '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
           'Buscar imóveis' +
           '</a>';
       }
 
       slot.innerHTML =
-        '<button type="button" class="notif-bell" id="buscaNavNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
-          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
-            '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
-          '</svg>' +
-          '<span class="notif-bell-badge" id="buscaNavNotifBellBadge" style="display:none;">0</span>' +
-        '</button>' +
-        '<button type="button" id="buscaNavUserTrigger" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--beige); padding:4px 12px 4px 4px; border-radius:999px; cursor:pointer; font:inherit; color:var(--ink);">' +
-          '<span style="width:28px; height:28px; border-radius:50%; background:var(--emerald); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; text-transform:uppercase;">' + inicial + '</span>' +
-          '<span style="font-size:.88rem; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + nome + '</span>' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-        '</button>' +
-        '<div id="buscaNavUserDropdown" role="menu" style="position:absolute; top:calc(100% + 8px); right:0; min-width:200px; background:#fff; border:1px solid var(--beige); border-radius:12px; box-shadow:0 12px 32px rgba(0,0,0,.10); padding:8px; z-index:100; opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .15s ease, transform .15s ease, visibility .15s;">' +
-          '<a href="dashboard.html#meus" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:var(--ink); text-decoration:none; font-size:.88rem; font-weight:600;">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
-            'Minha Área' +
-          '</a>' +
-          buscaImoveisHtml +
-          '<a href="dashboard.html#favoritos" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:var(--ink); text-decoration:none; font-size:.88rem;">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
-            'Favoritos' +
-          '</a>' +
-          '<a href="dashboard.html#configuracoes" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:var(--ink); text-decoration:none; font-size:.88rem;">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
-            'Configurações' +
-          '</a>' +
-          '<hr style="border:none; border-top:1px solid var(--beige); margin:6px 0;">' +
-          '<a href="#" id="buscaNavLogout" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; color:#d32f2f; text-decoration:none; font-size:.88rem;">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
-            'Sair da conta' +
-          '</a>' +
+        '<div class="nav-user">' +
+          '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
+              '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
+            '</svg>' +
+            '<span class="notif-bell-badge" id="navNotifBellBadge" style="display:none;">0</span>' +
+          '</button>' +
+          '<button type="button" class="nav-user-trigger" id="navUserTrigger" aria-haspopup="true" aria-expanded="false">' +
+            avatarHtml +
+            '<span class="nav-user-name">' + nome + '</span>' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '</button>' +
+          '<div class="nav-user-dropdown" id="navUserDropdown" role="menu">' +
+            '<a href="dashboard.html">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+              'Minha Área' +
+            '</a>' +
+            buscaImoveisHtml +
+            '<a href="dashboard.html#mensagens">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+              'Mensagens' +
+            '</a>' +
+            '<a href="dashboard.html#favoritos">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
+              'Favoritos' +
+            '</a>' +
+            '<hr>' +
+            '<a href="dashboard.html#notificacoes">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
+              'Notificações' +
+            '</a>' +
+            '<a href="dashboard.html#configuracoes">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
+              'Configurações da conta' +
+            '</a>' +
+            '<a href="dashboard.html#ajuda">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+              'Central de Ajuda' +
+            '</a>' +
+            '<hr>' +
+            '<a href="#" class="logout" id="navLogoutBtn">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+              'Sair da conta' +
+            '</a>' +
+          '</div>' +
         '</div>';
 
       // ---- Sync Notif Badge in Navbar
@@ -1438,7 +1500,7 @@ body {
         })
           .then(function (r) { return r.json(); })
           .then(function (data) {
-            var badge = document.getElementById('buscaNavNotifBellBadge');
+            var badge = document.getElementById('navNotifBellBadge');
             if (!badge) return;
             if (data.ok && data.total > 0) {
               badge.textContent = data.total;
@@ -1452,27 +1514,20 @@ body {
       refreshNavNotifBadge();
       var navNotifInterval = setInterval(refreshNavNotifBadge, 15000);
 
-      var trigger = document.getElementById('buscaNavUserTrigger');
-      var dropdown = document.getElementById('buscaNavUserDropdown');
+      var trigger = document.getElementById('navUserTrigger');
+      var dropdown = document.getElementById('navUserDropdown');
       if (trigger && dropdown) {
         trigger.addEventListener('click', function (e) {
           e.stopPropagation();
-          var open = dropdown.style.visibility === 'visible';
-          dropdown.style.opacity = open ? '0' : '1';
-          dropdown.style.visibility = open ? 'hidden' : 'visible';
-          dropdown.style.transform = open ? 'translateY(-4px)' : 'translateY(0)';
-          trigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+          dropdown.classList.toggle('show');
         });
         document.addEventListener('click', function (e) {
           if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
-            dropdown.style.opacity = '0';
-            dropdown.style.visibility = 'hidden';
-            dropdown.style.transform = 'translateY(-4px)';
-            trigger.setAttribute('aria-expanded', 'false');
+            dropdown.classList.remove('show');
           }
         });
       }
-      var logoutBtn = document.getElementById('buscaNavLogout');
+      var logoutBtn = document.getElementById('navLogoutBtn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', function (e) {
           e.preventDefault();

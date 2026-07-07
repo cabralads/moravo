@@ -1281,6 +1281,7 @@
     var ctaBtn = document.getElementById('mainCTAButton');
     var ctaText = document.getElementById('ctaText');
     var ctaIcon = document.getElementById('ctaIcon');
+    var ctaTitle = document.getElementById('ctaTitle');
 
     if (ctaBtn && ctaText && ctaIcon) {
       if (loggedUser && loggedUser.id === im.dono_id) {
@@ -1309,7 +1310,7 @@
       } else if (loggedUser.perfil === 'corretor') {
         // Se estiver logado e for Corretor, mas o imóvel já possui corretor atribuído → bloqueia
         if (im.tem_corretor_aceito) {
-          ctaText.textContent = 'Possui corretor';
+          ctaText.textContent = 'Esse imóvel já tem um responsável';
           ctaIcon.innerHTML = '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>';
           ctaBtn.disabled = true;
           ctaBtn.style.background = '#22c55e';
