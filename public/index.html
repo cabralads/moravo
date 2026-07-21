@@ -343,13 +343,49 @@ section { position: relative; }
 .stat .n { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; color: var(--ink); line-height: 1; }
 .stat .l { font-size: .84rem; color: var(--ink-soft); margin-top: 5px; }
 .listings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
-.listing { background: #fff; border: 1px solid var(--beige); border-radius: 16px; overflow: hidden; transition: transform .22s ease, box-shadow .22s ease; }
+.listing { background: #fff; border: 1px solid var(--beige); border-radius: 16px; overflow: hidden; transition: transform .22s ease, box-shadow .22s ease; position: relative; }
 .listing:hover { transform: translateY(-5px); box-shadow: 0 20px 44px rgba(0,0,0,.08); }
+.listing-approved-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+  text-transform: uppercase;
+}
+.listing-approved-badge svg { flex-shrink: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2)); }
 .listing .ph { aspect-ratio: 4/3; position: relative; display: flex; align-items: center; justify-content: center; }
 .pimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: block; }
 .badge-count, .noise, .verify, .single, .listing .vbadge, .listing .fav, .listing .ptag { z-index: 2; }
 .listing .ph .house { width: 46px; height: 46px; color: rgba(255,255,255,.82); }
-.listing .vbadge { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 5px; background: var(--emerald); color: #fff; font-weight: 600; font-size: .72rem; padding: 5px 10px; border-radius: 100px; }
+.listing .vbadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  text-transform: uppercase;
+}
+.listing .vbadge svg { flex-shrink: 0; }
 .listing .fav { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border: none; border-radius: 50%; background: rgba(255,255,255,.9); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); transition: background .2s ease, color .2s ease, transform .15s ease; }
 .listing .fav:hover { background: #fff; transform: scale(1.08); color: var(--emerald); }
 .listing .fav.saved { color: var(--emerald); }
@@ -1410,7 +1446,7 @@ section { position: relative; }
   }
 
   /* ---------- Autocomplete para Cidades ---------- */
-  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
   var cityInput = document.getElementById('h-cidade');
   var suggestionsContainer = document.getElementById('cidadeSuggestions');
   var debounceTimer = null;
@@ -1513,7 +1549,7 @@ section { position: relative; }
 (function () {
   'use strict';
 
-  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 
   // ---- Nav: logado vs deslogado
   var navArea = document.getElementById('navUserArea');
@@ -1593,7 +1629,7 @@ section { position: relative; }
 
       // ---- Sync Notif Badge in Navbar
       function refreshNavNotifBadge() {
-        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
         fetch(apiBase + '/api/notificacoes/nao-lidas/count', {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         })
@@ -1696,17 +1732,30 @@ section { position: relative; }
     var donoNome = im.dono_nome || 'Proprietário';
     var priceStr = formatMoney(im.preco) || 'Consulte';
 
+    var aprovadoBadge = im.status_aprovacao === 'aprovado'
+      ? '<span class="listing-approved-badge" title="Documentação aprovada pela Moravo">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none">' +
+            '<rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
+            '<path d="M8.5 9.5l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<path d="M8.5 14.5l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+          'Documentação Aprovada' +
+        '</span>'
+      : '';
     return '<article class="listing" data-listing-id="' + im.id + '" ' +
       'onclick="if(!event.target.closest(\'.fav\'))window.verDetalhes(\'' + im.id + '\')" ' +
       'style="cursor:pointer;">' +
+      aprovadoBadge +
       '<div class="ph">' +
         imgHtml +
-        '<span class="vbadge">' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none">' +
-            '<path d="M12 2l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V5l7-3z" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>' +
-            '<path d="M9 12l2 2 4-4" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
-          '</svg>Verificado' +
-        '</span>' +
+        (im.status_aprovacao === 'aprovado'
+          ? '<span class="vbadge" title="Imóvel aprovado pela Moravo">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none">' +
+                '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+                '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '</svg>Verificado' +
+            '</span>'
+          : '') +
         '<button class="fav" type="button" data-imovel-id="' + im.id + '" aria-label="Salvar imóvel nos favoritos">' +
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.3A4 4 0 0 1 12 7a4 4 0 0 1 7 3.7C19 15.6 12 20 12 20z"/></svg>' +
         '</button>' +

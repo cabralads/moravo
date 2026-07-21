@@ -54,13 +54,18 @@ router.get('/', async (req, res) => {
       conditions.push(`im.dono_id <> $${i++}`);
       params.push(loggedUserId);
     }
+    // Visitante anônimo vê todos os imóveis. Usuário logado também vê todos
+    // (a moderação fica como destaque, não como gate).
+    // Apenas admin pode ver tudo sempre (sem restrição alguma).
+    // (Linha removida: filtro status_aprovacao='aprovado' — antes restringia o feed para logados.)
     if (disponivel) {
       conditions.push(`im.status <> 'vendido'`);
       if (loggedUserPerfil === 'corretor') {
         conditions.push(`NOT EXISTS (
           SELECT 1 FROM moravo.interesses i
-          WHERE i.imovel_id = im.id AND i.status = 'aceito'
+          WHERE i.imovel_id = im.id AND i.corretor_id = $${i++}
         )`);
+        params.push(loggedUserId);
       }
     }
     if (TIPOS_IMOVEL.indexOf(tipo) !== -1) {
@@ -72,7 +77,15 @@ router.get('/', async (req, res) => {
       params.push(`%${cidade}%`);
     }
 
+    let meuInteresseSql = '';
+    if (loggedUserId) {
+      meuInteresseSql = `, (SELECT status FROM moravo.interesses i WHERE i.imovel_id = im.id AND i.corretor_id = $${i++} LIMIT 1) AS meu_interesse_status`;
+      params.push(loggedUserId);
+    }
+
     params.push(limit);
+    const limitIdx = i;
+
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
     const sql = `
       SELECT im.*,
@@ -81,11 +94,12 @@ router.get('/', async (req, res) => {
                SELECT 1 FROM moravo.interesses i
                WHERE i.imovel_id = im.id AND i.status = 'aceito'
              ) AS tem_corretor_aceito
+             ${meuInteresseSql}
       FROM moravo.imoveis im
       JOIN moravo.usuarios u ON u.id = im.dono_id
       ${where}
       ORDER BY im.created_at DESC
-      LIMIT $${i}
+      LIMIT $${limitIdx}
     `;
     const r = await query(sql, params);
     return res.json({ ok: true, total: r.rowCount, imoveis: r.rows });
@@ -100,18 +114,53 @@ router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
-    const sql = `
-      SELECT im.*,
-             u.nome AS dono_nome, u.whatsapp AS dono_whatsapp, u.email AS dono_email,
-             EXISTS (
-               SELECT 1 FROM moravo.interesses i
-               WHERE i.imovel_id = im.id AND i.status = 'aceito'
-             ) AS tem_corretor_aceito
-      FROM moravo.imoveis im
-      JOIN moravo.usuarios u ON u.id = im.dono_id
-      WHERE im.id = $1
-    `;
-    const r = await query(sql, [id]);
+
+    let loggedUserId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = verifyJwt(token);
+        if (decoded && decoded.id) {
+          loggedUserId = decoded.id;
+        }
+      } catch (e) {
+        // Ignora
+      }
+    }
+
+    const params = [id];
+    let sql = '';
+    if (loggedUserId) {
+      sql = `
+        SELECT im.*,
+               u.nome AS dono_nome, u.whatsapp AS dono_whatsapp, u.email AS dono_email,
+               EXISTS (
+                 SELECT 1 FROM moravo.interesses i
+                 WHERE i.imovel_id = im.id AND i.status = 'aceito'
+               ) AS tem_corretor_aceito,
+               (SELECT status FROM moravo.interesses i WHERE i.imovel_id = im.id AND i.corretor_id = $2 LIMIT 1) AS meu_interesse_status
+        FROM moravo.imoveis im
+        JOIN moravo.usuarios u ON u.id = im.dono_id
+        WHERE im.id = $1
+      `;
+      params.push(loggedUserId);
+    } else {
+      sql = `
+        SELECT im.*,
+               u.nome AS dono_nome, u.whatsapp AS dono_whatsapp, u.email AS dono_email,
+               EXISTS (
+                 SELECT 1 FROM moravo.interesses i
+                 WHERE i.imovel_id = im.id AND i.status = 'aceito'
+               ) AS tem_corretor_aceito,
+               NULL AS meu_interesse_status
+        FROM moravo.imoveis im
+        JOIN moravo.usuarios u ON u.id = im.dono_id
+        WHERE im.id = $1
+      `;
+    }
+
+    const r = await query(sql, params);
     if (r.rowCount === 0) return res.status(404).json({ ok: false, error: 'Imóvel não encontrado.' });
     return res.json({ ok: true, imovel: r.rows[0] });
   } catch (err) {
@@ -204,13 +253,31 @@ router.post('/', requireAuth, requireRole('proprietario', 'corretor'), async (re
     const cidade = (b.cidade || '').trim();
     if (cidade.length < 2) errors.push({ field: 'cidade', message: 'Cidade obrigatória.' });
 
+    // ---- Dados do passo 2 (matrícula, escritura, condomínio)
+    const matricula = (b.matricula || '').trim();
+    if (!matricula) errors.push({ field: 'matricula', message: 'Matrícula do imóvel é obrigatória.' });
+
+    const condominio = !!b.condominio;
+    let valor_condominio = null;
+    if (b.valor_condominio != null && b.valor_condominio !== '') {
+      const vc = Number(b.valor_condominio);
+      if (!Number.isFinite(vc) || vc < 0) {
+        errors.push({ field: 'valor_condominio', message: 'Valor do condomínio inválido.' });
+      } else {
+        valor_condominio = condominio ? vc : null;
+      }
+    }
+    const escritura_texto = (b.escritura_texto || '').trim() || null;
+    const escritura_arquivo_url = (b.escritura_arquivo_url || '').trim() || null;
+
     if (errors.length) return res.status(400).json({ ok: false, errors });
 
     const result = await query(
       `INSERT INTO moravo.imoveis
         (dono_id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
-         area_m2, quartos, banheiros, vagas, descricao, fotos, status, lat, lng)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+         area_m2, quartos, banheiros, vagas, descricao, fotos, status, lat, lng,
+         matricula, escritura_texto, escritura_arquivo_url, condominio, valor_condominio)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
        RETURNING id, created_at`,
       [
         req.user.id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
@@ -222,7 +289,12 @@ router.post('/', requireAuth, requireRole('proprietario', 'corretor'), async (re
         JSON.stringify(Array.isArray(b.fotos) ? b.fotos : []),
         'ativo',
         b.lat ? Number(b.lat) : null,
-        b.lng ? Number(b.lng) : null
+        b.lng ? Number(b.lng) : null,
+        matricula,                // $21
+        escritura_texto,          // $22
+        escritura_arquivo_url,    // $23
+        condominio,               // $24
+        valor_condominio,         // $25
       ]
     );
 
@@ -305,6 +377,28 @@ router.put('/:id', requireAuth, async (req, res) => {
       if (b[k] != null) updates[k] = Number(b[k]) || null;
     });
     if (Array.isArray(b.fotos)) updates.fotos = JSON.stringify(b.fotos);
+
+    // ---- Passo 2: matrícula, escritura, condomínio
+    if (b.matricula != null) {
+      const m = String(b.matricula).trim();
+      if (!m) return res.status(400).json({ ok: false, errors: [{ field: 'matricula', message: 'Matrícula é obrigatória.' }] });
+      updates.matricula = m;
+    }
+    if (b.escritura_texto != null) {
+      updates.escritura_texto = String(b.escritura_texto).trim() || null;
+    }
+    if (b.escritura_arquivo_url != null) {
+      updates.escritura_arquivo_url = String(b.escritura_arquivo_url).trim() || null;
+    }
+    if (b.condominio != null) {
+      updates.condominio = !!b.condominio;
+      // Se o usuário desmarcou condomínio, zera o valor junto
+      if (!b.condominio) updates.valor_condominio = null;
+    }
+    if (b.valor_condominio != null) {
+      const vc = Number(b.valor_condominio);
+      updates.valor_condominio = (Number.isFinite(vc) && vc >= 0) ? vc : null;
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ ok: false, error: 'Nenhum campo pra atualizar.' });

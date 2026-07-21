@@ -129,18 +129,42 @@ router.put('/me', requireAuth, async (req, res) => {
       await query('UPDATE moravo.usuarios SET senha_hash = $1 WHERE id = $2', [newHash, req.user.id]);
     }
 
+    // Busca os dados atuais do usuário para preencher campos não enviados
+    // (importante pra campos NOT NULL como cidade, que podem estar ausentes no PUT)
+    const currentUser = await query(
+      'SELECT nome, email, whatsapp, cidade, creci, regiao_atuacao FROM moravo.usuarios WHERE id = $1',
+      [req.user.id]
+    );
+    if (currentUser.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
+    }
+    const u = currentUser.rows[0];
+
+    // Para corretores, o "regiao_atuacao" guarda a cidade (formato: "Cidade - UF").
+    // Se a coluna cidade estiver NULL no banco, extrai da região de atuação
+    // pra satisfazer a constraint NOT NULL.
+    let cidadeFinal = (cidade != null && cidade !== '') ? cidade.trim() : u.cidade;
+    if (!cidadeFinal && req.user.perfil === 'corretor' && u.regiao_atuacao) {
+      // Extrai a cidade do formato "Cidade - UF"
+      const reg = u.regiao_atuacao;
+      cidadeFinal = reg.indexOf(' - ') !== -1 ? reg.split(' - ')[0].trim() : reg.trim();
+    }
+    if (!cidadeFinal) {
+      cidadeFinal = 'Não informada';
+    }
+
     const result = await query(
-      `UPDATE moravo.usuarios 
+      `UPDATE moravo.usuarios
        SET nome = $1, email = $2, whatsapp = $3, cidade = $4, creci = $5, regiao_atuacao = $6, updated_at = NOW()
        WHERE id = $7
        RETURNING id, nome, email, whatsapp, cidade, perfil, creci, regiao_atuacao AS regiao, foto_perfil`,
       [
-        nome.trim(),
-        email.trim().toLowerCase(),
-        whatsapp ? whatsapp.trim() : null,
-        cidade ? cidade.trim() : null,
-        creci ? creci.trim() : null,
-        regiao ? regiao.trim() : null,
+        (nome || u.nome).trim(),
+        (email || u.email).trim().toLowerCase(),
+        whatsapp != null ? whatsapp.trim() : u.whatsapp,
+        cidadeFinal,
+        creci != null ? creci.trim() : u.creci,
+        regiao != null ? regiao.trim() : u.regiao_atuacao,
         req.user.id
       ]
     );

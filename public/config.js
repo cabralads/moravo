@@ -1,11 +1,11 @@
 // =========================================================================
 // Moravo — Configuração global da API
 // Usa o mesmo domínio em produção (front e back servidos pelo mesmo Node).
-// Em dev local com arquivo aberto via file://, cai pro 127.0.0.1:3000.
+// Em dev local com arquivo aberto via file://, cai pro 127.0.0.1:3001.
 // =========================================================================
 
 window.MORAVO_API = (window.location.protocol === 'file:')
-  ? 'http://127.0.0.1:3000'
+  ? 'http://127.0.0.1:3001'
   : window.location.origin;
 
 // Função de navegação inteligente para evitar que redirecionamentos de Clean URLs

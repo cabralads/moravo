@@ -106,6 +106,9 @@ app.get('/api/geocode', async (req, res) => {
   }
 });
 
+const documentosRouter  = require('./routes/documentos');
+const adminRouter       = require('./routes/admin');
+
 // ---- Rotas
 app.use('/api/cadastro',   cadastroRouter);
 app.use('/api/usuarios',   usuariosRouter);
@@ -114,6 +117,8 @@ app.use('/api/imoveis',    imoveisRouter);
 app.use('/api/interesses', interessesRouter);
 app.use('/api/cidades',    cidadesRouter);
 app.use('/api/imoveis/:id/fotos', fotosRouter);
+app.use('/api/imoveis/:id/documentos', documentosRouter);
+app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 
@@ -141,6 +146,18 @@ app.listen(PORT, '0.0.0.0', async () => {
     try {
       await query('ALTER TABLE moravo.imoveis ADD COLUMN IF NOT EXISTS interesses_compradores INT DEFAULT 0;');
       await query('ALTER TABLE moravo.usuarios ADD COLUMN IF NOT EXISTS foto_perfil TEXT;');
+      // Migração: colunas do grupo de WhatsApp (Waha) na tabela interesses
+      await query(`
+        ALTER TABLE moravo.interesses
+          ADD COLUMN IF NOT EXISTS grupo_whatsapp_id         TEXT,
+          ADD COLUMN IF NOT EXISTS grupo_whatsapp_link       TEXT,
+          ADD COLUMN IF NOT EXISTS grupo_whatsapp_created_at TIMESTAMPTZ;
+      `);
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_interesses_grupo_whatsapp_id
+          ON moravo.interesses (grupo_whatsapp_id)
+          WHERE grupo_whatsapp_id IS NOT NULL;
+      `);
       await query(`
         CREATE TABLE IF NOT EXISTS moravo.interesses_compradores (
           id BIGSERIAL PRIMARY KEY,
@@ -167,7 +184,95 @@ app.listen(PORT, '0.0.0.0', async () => {
         CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida
           ON moravo.notificacoes (usuario_id, lida, created_at DESC);
       `);
-      console.log('[moravo] Banco: tabelas interesses_compradores e notificacoes verificadas/criadas.');
+      // Migração: dados legais/administrativos do imóvel (passo 2 do cadastro)
+      await query(`
+        ALTER TABLE moravo.imoveis
+          ADD COLUMN IF NOT EXISTS matricula             TEXT        NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS escritura_texto       TEXT,
+          ADD COLUMN IF NOT EXISTS escritura_arquivo_url TEXT,
+          ADD COLUMN IF NOT EXISTS condominio            BOOLEAN     NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS valor_condominio      NUMERIC(14, 2);
+      `);
+      await query(`UPDATE moravo.imoveis SET matricula = '' WHERE matricula IS NULL;`);
+
+      // Migração: ampliar CHECK constraint do perfil para incluir 'admin'.
+      // Antes, normalizar perfis legados (ex.: 'comprador') para 'proprietario'
+      // para não violar o novo CHECK.
+      await query(`
+        UPDATE moravo.usuarios
+        SET perfil = 'proprietario'
+        WHERE perfil IS NOT NULL
+          AND perfil NOT IN ('proprietario', 'corretor', 'admin');
+      `);
+      await query(`ALTER TABLE moravo.usuarios DROP CONSTRAINT IF EXISTS usuarios_perfil_check;`);
+      await query(`
+        ALTER TABLE moravo.usuarios
+          ADD CONSTRAINT usuarios_perfil_check
+          CHECK (perfil IN ('proprietario', 'corretor', 'admin'));
+      `);
+
+      // Migração: dados de aprovação de imóveis (status_aprovacao, aprovado_*, reprovado_*)
+      await query(`
+        ALTER TABLE moravo.imoveis
+          ADD COLUMN IF NOT EXISTS status_aprovacao  TEXT NOT NULL DEFAULT 'pendente'
+            CHECK (status_aprovacao IN ('pendente', 'aprovado', 'reprovado')),
+          ADD COLUMN IF NOT EXISTS aprovado_por       BIGINT REFERENCES moravo.usuarios(id),
+          ADD COLUMN IF NOT EXISTS aprovado_em        TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS reprovado_motivo  TEXT,
+          ADD COLUMN IF NOT EXISTS reprovado_em      TIMESTAMPTZ;
+      `);
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_imoveis_status_aprovacao
+          ON moravo.imoveis (status_aprovacao, created_at DESC);
+      `);
+
+      // Migração: tabela de auditoria de logins do admin
+      await query(`
+        CREATE TABLE IF NOT EXISTS moravo.admin_login_logs (
+          id          BIGSERIAL PRIMARY KEY,
+          usuario_id  BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+          email       TEXT NOT NULL,
+          sucesso     BOOLEAN NOT NULL,
+          ip          INET,
+          user_agent  TEXT,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_admin_login_logs_created
+          ON moravo.admin_login_logs (created_at DESC);
+      `);
+
+      // Seed: usuário mestre admin (idempotente — só cria se não existir)
+      const adminExists = await query(
+        `SELECT id FROM moravo.usuarios WHERE email = $1`,
+        ['admin@moravo.local']
+      );
+      if (adminExists.rowCount === 0) {
+        const bcrypt = require('bcrypt');
+        const adminHash = await bcrypt.hash('admin1234', 10);
+        await query(
+          `INSERT INTO moravo.usuarios
+             (nome, email, whatsapp, cidade, perfil, senha_hash)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          ['admin', 'admin@moravo.local', '00000000000', 'Moravo HQ', 'admin', adminHash]
+        );
+        console.log('[moravo] Usuário mestre admin/admin1234 criado.');
+      } else {
+        console.log('[moravo] Usuário mestre admin já existe.');
+      }
+
+      console.log('[moravo] Banco: tabelas/colunas verificadas/criadas (interesses_compradores, notificacoes, grupo_whatsapp_*, foto_perfil, matricula, escritura_*, condominio, admin_login_logs, status_aprovacao).');
+      console.log('[moravo] Limpando links wa.me antigos do banco...');
+      await query(`
+        UPDATE moravo.interesses
+        SET grupo_whatsapp_link = NULL
+        WHERE grupo_whatsapp_link LIKE 'https://wa.me/%'
+      `).then((r) => {
+        console.log('[moravo] ' + r.rowCount + ' link(s) wa.me antigo(s) limpo(s).');
+      }).catch((err) => {
+        console.warn('[moravo] falha ao limpar links wa.me:', err.message);
+      });
     } catch (err) {
       console.error('[moravo] Erro ao atualizar banco:', err.message);
     }

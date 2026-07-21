@@ -279,6 +279,25 @@ body {
   transform: translateY(-4px);
   box-shadow: 0 10px 24px rgba(0,0,0,0.06);
 }
+.listing-approved-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+  text-transform: uppercase;
+}
+.listing-approved-badge svg { flex-shrink: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2)); }
 .listing.highlighted {
   border-color: var(--emerald);
   box-shadow: 0 12px 28px rgba(255, 106, 0, 0.16);
@@ -318,14 +337,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--emerald);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: #fff;
-  font-weight: 600;
-  font-size: .72rem;
-  padding: 5px 10px;
-  border-radius: 100px;
-  z-index: 2;
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  text-transform: uppercase;
 }
+.vbadge svg { flex-shrink: 0; }
 .fav {
   position: absolute;
   top: 12px;
@@ -687,7 +709,7 @@ body {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
 
-  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 
   // Parse URL query parameters
   var parser = new URLSearchParams(window.location.search);
@@ -980,19 +1002,31 @@ body {
 
     var donoNome = im.dono_nome || 'Proprietário';
 
+    var aprovadoBadge = im.status_aprovacao === 'aprovado'
+      ? '<span class="listing-approved-badge" title="Documentação aprovada pela Moravo">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none">' +
+            '<rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
+            '<path d="M8.5 9.5l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<path d="M8.5 14.5l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+          'Documentação Aprovada' +
+        '</span>'
+      : '';
     return '<article class="listing" data-listing-id="' + im.id + '" ' +
       'onclick="if(!event.target.closest(\'.fav\'))window.verDetalhes(\'' + im.id + '\')" ' +
       'style="cursor:pointer;">' +
+      aprovadoBadge +
       '<div class="ph">' +
         imgHtml +
-        '<span class="vbadge">' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none">' +
-            '<path d="M12 2l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V5l7-3z" fill="var(--emerald)" opacity="0.15"/>' +
-            '<path d="M12 2l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V5l7-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>' +
-            '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
-          '</svg>' +
-          ' Verificado' +
-        '</span>' +
+        (im.status_aprovacao === 'aprovado'
+          ? '<span class="vbadge" title="Imóvel aprovado pela Moravo">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none">' +
+                '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+                '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '</svg>' +
+              'Verificado' +
+            '</span>'
+          : '') +
         '<button class="fav" type="button" data-imovel-id="' + im.id + '" aria-label="Salvar imóvel nos favoritos">' +
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none">' +
             '<path d="M12 20s-7-4.4-7-9.3A4 4 0 0 1 12 7a4 4 0 0 1 7 3.7C19 15.6 12 20 12 20z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
@@ -1494,7 +1528,7 @@ body {
 
       // ---- Sync Notif Badge in Navbar
       function refreshNavNotifBadge() {
-        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
         fetch(apiBase + '/api/notificacoes/nao-lidas/count', {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         })

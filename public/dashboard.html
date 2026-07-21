@@ -492,6 +492,14 @@
     html body #section-configuracoes {
       font-size: 0.82em !important;
     }
+
+    /* === Segurança: campos de CRECI só aparecem para corretor ===
+       Por padrão ficam escondidos. O JS faz .remove('hidden') quando o user.perfil === 'corretor'.
+       Esta regra CSS garante que mesmo se o JS falhar ou rodar antes do user carregar,
+       o campo nunca apareça para perfis de comprador/proprietário. */
+    html body:not(.is-corretor) #perfilCorretorFields {
+      display: none !important;
+    }
     html body #section-configuracoes .settings-sidebar {
       padding: 18px 16px;
     }
@@ -778,6 +786,20 @@
       color: #c0392b;
     }
 
+    .badge-verificado {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 5px 11px 5px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+    }
+    .badge-verificado svg { flex-shrink: 0; }
+
     /* Notifications: inbox-style row (avatar · info · status+actions) */
     .notif-list {
       background: #fff;
@@ -1032,6 +1054,39 @@
       bottom: 14px;
     }
 
+    /* Tabs do filtro de conversas (corretor) */
+    .chat-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 10px 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--beige);
+    }
+    .chat-tab {
+      flex: 1;
+      padding: 8px 10px;
+      background: #f7f7f7;
+      border: 1px solid var(--beige);
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chat-tab:hover {
+      border-color: var(--ink-soft);
+      color: var(--ink);
+    }
+    .chat-tab.is-active {
+      background: rgba(255,106,0,.08);
+      border-color: var(--emerald);
+      color: var(--emerald);
+    }
+    .chat-inbox-item { transition: background .15s, border-color .15s; }
+    .chat-inbox-item:hover { background: #fafafa; }
+
     /* Modal */
     .modal-bg {
       position: fixed;
@@ -1063,6 +1118,50 @@
       font-weight: 800;
       font-size: 1.4rem;
       margin-bottom: 20px;
+    }
+
+    /* Modal do passo 2 — fica empilhado sobre o passo 1 */
+    #imovelStep2Modal { z-index: 200; }
+    #imovelStep2Modal .modal { max-width: 500px; }
+    .step2-drop {
+      border: 1.5px dashed var(--beige);
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease;
+      background: #fafafa;
+    }
+    .step2-drop:hover,
+    .step2-drop.dragover {
+      border-color: var(--emerald);
+      background: #fff7f0;
+    }
+    .step2-cond-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .step2-cond-opt {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1.5px solid var(--beige);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .step2-cond-opt:hover {
+      border-color: #999;
+    }
+    .step2-cond-opt.is-active {
+      border-color: var(--emerald);
+      background: rgba(255, 106, 0, .08);
+      color: var(--emerald);
     }
 
     .field {
@@ -2091,7 +2190,7 @@
                 </div>
                 <div class="field" id="p-cidade-field" style="margin-top: 16px;">
                   <label for="p-cidade">Cidade residencial</label>
-                  <input type="text" id="p-cidade" placeholder="Ex.: Joinville" required />
+                  <input type="text" id="p-cidade" placeholder="Ex.: Joinville" />
                 </div>
                 <div id="perfilCorretorFields" class="hidden">
                   <div style="display: flex; gap: 16px; margin-top: 16px;">
@@ -2229,7 +2328,7 @@
   <div class="modal-bg" id="imovelModal">
     <div class="modal">
       <h2 id="imovelModalTitle">Adicionar imóvel</h2>
-      <form id="imovelForm">
+      <form id="imovelForm" autocomplete="off">
         <input type="hidden" id="imovelId" />
         <div class="field">
           <label for="i-titulo">Título do anúncio</label>
@@ -2256,11 +2355,11 @@
         <div class="fields-2">
           <div class="field">
             <label for="i-cep">CEP</label>
-            <input type="text" id="i-cep" placeholder="89200-000" maxlength="9" required />
+            <input type="text" id="i-cep" placeholder="89200-000" maxlength="9" required autocomplete="off" data-lpignore="true" />
           </div>
           <div class="field">
             <label for="i-uf">Estado (UF)</label>
-            <select id="i-uf" required>
+            <select id="i-uf" required autocomplete="off">
               <option value="">Selecione…</option>
             </select>
           </div>
@@ -2269,7 +2368,7 @@
         <div class="fields-2">
           <div class="field">
             <label for="i-cidade">Cidade</label>
-            <select id="i-cidade" required disabled>
+            <select id="i-cidade" required disabled autocomplete="off">
               <option value="">Selecione o estado primeiro…</option>
             </select>
           </div>
@@ -2280,16 +2379,16 @@
         </div>
         <div class="field">
           <label for="i-rua">Rua</label>
-          <input type="text" id="i-rua" placeholder="Rua das Flores" required />
+          <input type="text" id="i-rua" placeholder="Rua das Flores" required autocomplete="off" />
         </div>
         <div class="fields-2">
           <div class="field">
             <label for="i-numero">Número</label>
-            <input type="text" id="i-numero" placeholder="123" maxlength="20" required />
+            <input type="text" id="i-numero" placeholder="123" maxlength="20" required autocomplete="off" />
           </div>
           <div class="field">
             <label for="i-complemento">Complemento <span class="opt">(opcional)</span></label>
-            <input type="text" id="i-complemento" placeholder="Apto 42" maxlength="100" />
+            <input type="text" id="i-complemento" placeholder="Apto 42" maxlength="100" autocomplete="off" />
           </div>
         </div>
         <div class="fields-2">
@@ -2308,7 +2407,7 @@
             <input type="number" id="i-banheiros" min="0" step="1" placeholder="2" />
           </div>
           <div class="field">
-            <label for="i-vagas">Vagas</label>
+            <label for="i-vagas">Vagas na garagem</label>
             <input type="number" id="i-vagas" min="0" step="1" placeholder="2" />
           </div>
         </div>
@@ -2343,7 +2442,67 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" id="cancelImovelBtn">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="saveImovelBtn">Salvar</button>
+          <button type="submit" class="btn btn-primary" id="saveImovelBtn">Próximo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Step 2: Dados legais/administrativos do imóvel -->
+  <div class="modal-bg" id="imovelStep2Modal">
+    <div class="modal">
+      <h2 id="step2Title">Dados do imóvel</h2>
+      <p style="color: var(--ink-soft); font-size: 0.9rem; margin-top: -4px; margin-bottom: 20px;">
+        Informações legais e administrativas.
+      </p>
+      <form id="imovelStep2Form" novalidate>
+        <div class="field">
+          <label for="step2-matricula">Matrícula do imóvel</label>
+          <input type="text" id="step2-matricula" placeholder="Ex.: 12.345 / 01.234.567" required />
+          <span class="err-msg">Matrícula é obrigatória.</span>
+        </div>
+
+        <div class="field">
+          <label>Documento da matrícula <span class="opt">(PDF ou imagem, máx 5MB — opcional)</span></label>
+          <div id="step2EscrituraArea" class="step2-drop">
+            <input type="file" id="step2-escritura-arquivo" accept=".pdf,image/jpeg,image/png,image/webp" style="display:none" />
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ink-soft)">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div style="font-size: 0.85rem; color: var(--ink-soft); margin-top: 4px;">Clique ou arraste o arquivo aqui</div>
+          </div>
+          <div id="step2EscrituraPreview" style="display:none; margin-top: 8px; padding: 10px; background: #fafafa; border: 1px solid var(--beige); border-radius: 8px; font-size: 0.85rem;">
+            <span id="step2EscrituraNome" style="font-weight: 600"></span>
+            <span id="step2EscrituraTam" style="color: var(--ink-soft); margin-left: 8px"></span>
+            <button type="button" id="step2EscrituraRm" style="background: none; border: none; color: var(--emerald-dk); cursor: pointer; font-size: 1.1rem; margin-left: 8px" title="Remover">×</button>
+          </div>
+        </div>
+
+        <div class="field" style="padding: 14px 0 10px; border-top: 1px solid var(--beige); margin-top: 6px;">
+          <div>
+            <div style="font-weight: 600">Condomínio</div>
+            <div style="font-size: 0.82rem; color: var(--ink-soft)">O imóvel está em um condomínio?</div>
+          </div>
+          <div class="step2-cond-options" role="radiogroup" aria-label="Possui condomínio">
+            <button type="button" class="step2-cond-opt" data-cond-value="false" role="radio" aria-checked="false">Não</button>
+            <button type="button" class="step2-cond-opt" data-cond-value="true" role="radio" aria-checked="false">Sim</button>
+          </div>
+          <input type="hidden" id="step2-condominio" value="false" />
+        </div>
+
+        <div class="field" id="step2CondominioValorField" style="display: none">
+          <label for="step2-valor-condominio">Valor do condomínio (R$)</label>
+          <input type="text" id="step2-valor-condominio" placeholder="350,00" />
+        </div>
+
+        <div class="modal-actions" style="border-top: 1px solid var(--beige); padding-top: 16px; margin-top: 8px; justify-content: space-between;">
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-ghost" id="step2VoltarBtn">Voltar</button>
+            <button type="button" class="btn btn-ghost" id="step2CancelBtn">Cancelar</button>
+          </div>
+          <button type="submit" class="btn btn-primary" id="step2SalvarBtn">Próximo</button>
         </div>
       </form>
     </div>
@@ -2424,7 +2583,7 @@
     (function () {
       'use strict';
 
-      var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+      var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
       var token = localStorage.getItem('moravo_token');
       var user = null;
       var modalMapInstance = null;
@@ -2453,6 +2612,15 @@
       } else {
         document.body.classList.add('is-' + (user.perfil || 'guest'));
       }
+
+      // ---- Sincronização otimista do badge de Mensagens no carregamento
+      // Esconde o badge IMEDIATAMENTE no carregamento, antes da API responder.
+      // O refreshUnreadBadges vai recalcular logo depois (pode subir se houver
+      // conversa nova). Isso evita o flash de badge errado durante o F5.
+      try {
+        var _bMsgInit = document.getElementById('badge-mensagens');
+        if (_bMsgInit) _bMsgInit.style.display = 'none';
+      } catch (e) { /* silencioso */ }
 
       // ---- Header / Avatar Helpers
       document.getElementById('userName').textContent = user.nome;
@@ -2541,17 +2709,45 @@
         }
       };
 
-      // ---- Helpers para conversas vistas (JSON array único no localStorage) ----
+      // ---- Atualiza o badge de mensagens no sidebar ----
+      // IMPORTANTE: Esta função DEVE estar definida dentro do IIFE principal,
+      // porque refreshUnreadBadges e syncSeenChatsFromServer (também dentro do IIFE)
+      // a chamam. Se estiver fora do IIFE, a checagem `typeof updateMsgBadge === 'function'`
+      // retorna false no escopo do IIFE, e o badge nunca é atualizado.
+      function updateMsgBadge(count) {
+        var badgeMsg = document.getElementById('badge-mensagens');
+        if (!badgeMsg) return;
+        if (count > 0) {
+          badgeMsg.textContent = count;
+          badgeMsg.style.display = 'inline-block';
+        } else {
+          badgeMsg.style.display = 'none';
+        }
+      }
+
+      // ---- Helpers para conversas vistas (uma chave por usuário no localStorage) ----
+      // Usar uma chave por usuário evita conflito quando múltiplos usuários
+      // compartilham o mesmo navegador. Cada usuário tem sua própria lista.
+      function _seenKey() {
+        var uid = (user && (user.id || user._id)) ? String(user.id || user._id) : 'anon';
+        return 'moravo_chats_seen_' + uid;
+      }
       function getSeenChats() {
-        try { return JSON.parse(localStorage.getItem('moravo_chats_seen') || '[]'); } catch (e) { return []; }
+        try { return JSON.parse(localStorage.getItem(_seenKey()) || '[]'); } catch (e) { return []; }
       }
       function markChatSeen(id) {
         var seen = getSeenChats();
         var key = String(id);
         if (seen.indexOf(key) === -1) {
           seen.push(key);
-          localStorage.setItem('moravo_chats_seen', JSON.stringify(seen));
+          localStorage.setItem(_seenKey(), JSON.stringify(seen));
         }
+      }
+      // Substitui a lista de conversas vistas por um array novo (útil quando
+      // o servidor retorna IDs diferentes ou precisamos sincronizar em lote).
+      function setSeenChats(ids) {
+        var normalized = (ids || []).map(function (i) { return String(i); });
+        localStorage.setItem(_seenKey(), JSON.stringify(normalized));
       }
       function isChatSeen(id) {
         return getSeenChats().indexOf(String(id)) !== -1;
@@ -2560,15 +2756,26 @@
       // Conta mensagens não lidas (conversas aceitas sem flag 'seen') e atualiza badge
       window.refreshUnreadBadges = function () {
         if (!user) return;
-        var interestsUrl = user.perfil === 'corretor' ? '/api/interesses?corretor_id=' + user.id : '/api/interesses';
+        // Se a seção Mensagens está aberta, o badge é controlado pela renderização
+        // da lista (loadMensagensSection), que é a fonte da verdade. Evita
+        // dessincronização (ex.: badge "3" sem bolinhas visíveis).
+        if (window._mensagensSectionActive) return;
+        // USA A MESMA URL QUE loadMensagensSection usa — sem filtro corretor_id.
+        // O backend retorna conversas DIFERENTES dependendo do filtro: com
+        // corretor_id=X retorna só os interesses do corretor (1 conversa);
+        // sem filtro retorna também comprador_rep/comprador_received (4 conversas).
+        // Se o badge usar uma URL e a lista outra, as contagens divergem.
+        var interestsUrl = '/api/interesses';
         api(interestsUrl)
           .then(function (res) {
             if (res.ok && res.body.interesses) {
               checkUnreadBadges(res.body.interesses);
-              // Conta mensagens não lidas
+              // Conta mensagens não lidas — USA O MESMO FILTRO QUE A LISTA
+              // (loadMensagensSection) usa, senão o badge pode mostrar conversas
+              // que nem aparecem na seção Mensagens (ex.: type 'broker_rep').
               var unread = 0;
               (res.body.interesses || []).forEach(function (it) {
-                if (it.status === 'aceito' && it.type !== 'broker_rep') {
+                if (it.status === 'aceito') {
                   if (!isChatSeen(it.id)) {
                     unread++;
                   }
@@ -2580,6 +2787,31 @@
           .catch(function (err) {
             console.warn('[badges] erro ao atualizar badges:', err);
           });
+      };
+
+      // ---- Sincroniza o badge com o estado visto atual (chamado após login/F5) ----
+      // Garante que o badge reflita exatamente a contagem de conversas válidas
+      // que AINDA NÃO foram vistas (comparado com localStorage). NÃO sobrescreve
+      // o estado visto — apenas força a contagem correta.
+      window.syncSeenChatsFromServer = function () {
+        if (!user) return;
+        var interestsUrl = user.perfil === 'corretor' ? '/api/interesses?corretor_id=' + user.id : '/api/interesses';
+        api(interestsUrl)
+          .then(function (res) {
+            if (!res.ok || !res.body.interesses) return;
+            // Conta quantas conversas válidas AINDA não estão no localStorage
+            // (mesmo critério do loadMensagensSection).
+            var unread = 0;
+            (res.body.interesses || []).forEach(function (it) {
+              if (it.status === 'aceito') {
+                if (!isChatSeen(it.id)) {
+                  unread++;
+                }
+              }
+            });
+            if (typeof updateMsgBadge === 'function') updateMsgBadge(unread);
+          })
+          .catch(function () { /* silencioso */ });
       };
 
       // ---- Notificações do sistema (tabela moravo.notificacoes) ----
@@ -2609,6 +2841,11 @@
       if (window.refreshUnreadBadges) {
         window.refreshUnreadBadges();
         setInterval(window.refreshUnreadBadges, 15000);
+      }
+      // Sincroniza o estado visto com o servidor (uma vez no carregamento).
+      // Se o localStorage perdeu IDs ou o servidor mudou IDs, isto reconcilia.
+      if (window.syncSeenChatsFromServer) {
+        window.syncSeenChatsFromServer();
       }
 
       // Click no sininho: marca como lidas e rola até a seção
@@ -2691,7 +2928,7 @@
             fd.append('foto', file);
 
             var token = localStorage.getItem('moravo_token');
-            var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+            var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 
             fetch(apiBase + '/api/usuarios/me/foto', {
               method: 'POST',
@@ -2848,9 +3085,12 @@
           acoes.push('<button class="btn btn-danger btn-sm" data-del="' + im.id + '">Excluir</button>');
         }
         if (opts.canInterest) {
-          if (im.tem_corretor_aceito) {
-            // Imóvel já possui corretor responsável — não permite candidatura
-            acoes.push('<button class="btn btn-sm" disabled style="background:#22c55e; color:#fff; border:2px solid #22c55e; font-weight:700; cursor:not-allowed; opacity:1; width:100%;">✓ Possui corretor</button>');
+          if (im.meu_interesse_status === 'aceito') {
+            acoes.push('<button class="btn btn-sm" disabled style="background:#22c55e; color:#fff; border:2px solid #22c55e; font-weight:700; cursor:not-allowed; opacity:1; width:100%;">✓ Você representa</button>');
+          } else if (im.meu_interesse_status === 'pendente') {
+            acoes.push('<button class="btn btn-sm" disabled style="background:#ff9800; color:#fff; border:2px solid #ff9800; font-weight:700; cursor:not-allowed; opacity:1; width:100%;">⌛ Solicitação pendente</button>');
+          } else if (im.meu_interesse_status === 'recusado') {
+            acoes.push('<button class="btn btn-sm" disabled style="background:#f44336; color:#fff; border:2px solid #f44336; font-weight:700; cursor:not-allowed; opacity:1; width:100%;">❌ Recusado</button>');
           } else {
             acoes.push('<button class="btn btn-primary btn-sm" data-interesse="' + im.id + '">Tenho interesse</button>');
           }
@@ -2883,13 +3123,16 @@
           '<div class="photo">' +
           (imgHtml || '<svg class="house-icon" width="56" height="56" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>') +
           (im.status && im.status !== 'ativo' ? '<span class="status-tag">' + im.status + '</span>' : '') +
-          (im.tem_corretor_aceito && im.status === 'ativo'
-            ? '<span class="status-tag" style="right: 10px; top: 5px; left: auto; background: #81c784; color: #fff; border: 2px solid #000; font-weight: 700;">🔒 Com corretor</span>'
-            : '') +
           '<span class="price-tag">' + money(im.preco) + '</span>' +
           '</div>' +
           '<div class="body">' +
-          '<h3>' + (im.titulo || tipoLabel) + '</h3>' +
+          '<h3>' + (im.titulo || tipoLabel) + (im.status_aprovacao === 'aprovado' ? ' <span class="badge-verificado" title="Imóvel aprovado pela Moravo">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none">' +
+              '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+              '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>' +
+            'Verificado' +
+          '</span>' : '') + '</h3>' +
           '<p class="meta">' + tipoLabel + (im.bairro ? ' · ' + im.bairro : '') + ' · ' + im.cidade + '</p>' +
           (specs.length ? '<div class="specs">' + specs.map(function (s) { return '<span>' + s + '</span>'; }).join('') + '</div>' : '') +
           (opts.canEdit ? '<div style="margin: 8px 0; font-size: 0.82rem; color: #00796b; display: flex; align-items: center; gap: 6px; font-weight: 700; background: #e0f2f1; padding: 4px 10px; border-radius: 6px; width: fit-content;">👥 ' + (im.interesses_compradores || 0) + ' comprador' + ((im.interesses_compradores || 0) !== 1 ? 'es' : '') + ' interessado' + ((im.interesses_compradores || 0) !== 1 ? 's' : '') + '</div>' : '') +
@@ -2969,9 +3212,9 @@
         api('/api/imoveis?disponivel=1&limit=200')
           .then(function (r) {
             if (!r.ok) { grid.innerHTML = '<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
-            // Para corretor: esconde imóveis que JÁ possuem corretor atribuído
+            // Para corretor: esconde imóveis em que já demonstrou interesse
             var lista = (r.body.imoveis || []).filter(function (im) {
-              if (user.perfil === 'corretor' && im.tem_corretor_aceito) return false;
+              if (user.perfil === 'corretor' && im.meu_interesse_status) return false;
               return true;
             });
             if (lista.length === 0) {
@@ -3071,10 +3314,16 @@
               }
 
               var acaoVendido = '';
+              var acaoRepresentar = '';
               if (im.status !== 'vendido') {
                 acaoVendido = '<button class="btn btn-sm" data-vendido-id="' + im.id + '" style="background:#22c55e; color:#fff; border: 2px solid #22c55e; font-weight:700; cursor:pointer; flex:1; transition: background .15s, border-color .15s;" onmouseover="this.style.background=\'#1ea34d\'; this.style.borderColor=\'#1ea34d\';" onmouseout="this.style.background=\'#22c55e\'; this.style.borderColor=\'#22c55e\';">Vendido</button>';
               } else {
                 acaoVendido = '<span style="font-size:0.85rem; color:#22c55e; font-weight:700; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center; border: 2px solid transparent;">✓ Vendido</span>';
+              }
+              if (im.status === 'vendido') {
+                acaoRepresentar = '<button class="btn btn-sm btn-entrar-contato" data-chat-id="' + it.id + '" style="background:#22c55e; color:#fff; border: 2px solid #22c55e; font-weight:700; cursor:pointer; width:100%; margin-top:2px; transition: background .15s, border-color .15s;" onmouseover="this.style.background=\'#1ea34d\'; this.style.borderColor=\'#1ea34d\';" onmouseout="this.style.background=\'#22c55e\'; this.style.borderColor=\'#22c55e\';">💬 Entrar em contato</button>';
+              } else {
+                acaoRepresentar = '<button class="btn btn-sm" data-deixar-id="' + it.id + '" style="width:100%; color:#ef4444; background:transparent; border:2px solid transparent; font-weight:600; cursor:pointer; margin-top:2px; transition: background .15s;" onmouseover="this.style.background=\'rgba(239, 68, 68, 0.05)\';" onmouseout="this.style.background=\'transparent\';">Deixar de representar</button>';
               }
 
               return '<article class="card" data-imovel-id="' + im.id + '" onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + im.id + '\')" style="cursor:pointer; display:flex; flex-direction:column;">' +
@@ -3096,7 +3345,7 @@
                 '<button class="btn btn-ghost btn-sm" data-preview-id="' + im.id + '" style="flex:1;">Ver anúncio</button>' +
                 acaoVendido +
                 '</div>' +
-                '<button class="btn btn-sm" data-deixar-id="' + it.id + '" style="width:100%; color:#ef4444; background:transparent; border:2px solid transparent; font-weight:600; cursor:pointer; margin-top:2px; transition: background .15s;" onmouseover="this.style.background=\'rgba(239, 68, 68, 0.05)\';" onmouseout="this.style.background=\'transparent\';">Deixar de representar</button>' +
+                acaoRepresentar +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -3111,6 +3360,18 @@
                 var id = parseInt(btn.getAttribute('data-deixar-id'), 10);
                 console.log('[bind] click deixar:', id, 'função existe:', typeof window.deixarDeRepresentar);
                 if (window.deixarDeRepresentar) window.deixarDeRepresentar(id, ev);
+              });
+            });
+      // Bind dos botões "Entrar em contato" (quando imóvel está vendido)
+            grid.querySelectorAll('[data-chat-id]').forEach(function (btn) {
+              if (btn.__wiredChat) return; btn.__wiredChat = true;
+              btn.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                ev.preventDefault();
+                var id = btn.getAttribute('data-chat-id');
+                // Mesmo comportamento do botão do chat: chama criarGrupoWaha
+                // que faz POST /api/interesses/:id/criar-grupo-whatsapp e abre o link
+                criarGrupoWaha(id, btn);
               });
             });
             // Bind dos botões "Vendido"
@@ -3134,8 +3395,12 @@
 
       // ---- TAB: Corretores interessados (proprietário)
       function renderInteressados(c) {
-        c.innerHTML = '<div class="section-head"><h1>Corretores interessados</h1><p>Veja quem quer ajudar a vender seus imóveis.</p></div><div id="grid"></div>';
+        c.innerHTML = '<div class="section-head" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
+          '<div><h1>Corretores interessados</h1><p>Veja quem quer ajudar a vender seus imóveis.</p></div>' +
+          '<button class="btn btn-primary" id="btnAceitarTodos" style="display:none; padding:10px 20px; font-size:0.9rem;">Aceitar todos</button>' +
+          '</div><div id="grid"></div>';
         var grid = c.querySelector('#grid');
+        var btnAceitarTodos = c.querySelector('#btnAceitarTodos');
         api('/api/imoveis?dono_id=' + user.id)
           .then(function (r) {
             if (!r.ok || r.body.total === 0) {
@@ -3155,6 +3420,35 @@
                   grid.innerHTML = '<div class="empty"><h3>Nenhum corretor interessado ainda</h3><p>Quando um corretor demonstrar interesse, vai aparecer aqui.</p></div>';
                   return;
                 }
+                
+                // Se houver algum interesse pendente, exibe o botão "Aceitar todos"
+                var temPendente = all.some(function (it) { return it.status === 'pendente'; });
+                if (temPendente) {
+                  btnAceitarTodos.style.display = 'block';
+                  btnAceitarTodos.onclick = function() {
+                    window.customConfirm('Tem certeza que quer aceitar todas as solicitações de intermediação pendentes?', 'Aceitar todos', function () {
+                      btnAceitarTodos.disabled = true;
+                      btnAceitarTodos.textContent = 'Processando...';
+                      api('/api/interesses/aceitar-todos', { method: 'POST' })
+                        .then(function(res) {
+                          btnAceitarTodos.disabled = false;
+                          btnAceitarTodos.textContent = 'Aceitar todos';
+                          if (res.ok) {
+                            toast('Todas as solicitações pendentes foram aceitas!', 'success');
+                            renderInteressados(c);
+                          } else {
+                            toast(res.body.error || 'Erro ao aceitar todos.', 'error');
+                          }
+                        })
+                        .catch(function() {
+                          btnAceitarTodos.disabled = false;
+                          btnAceitarTodos.textContent = 'Aceitar todos';
+                          toast('Erro de conexão ao aceitar solicitações.', 'error');
+                        });
+                    });
+                  };
+                }
+
                 // Agrupa por status
                 grid.className = '';
                 grid.innerHTML = all.map(function (it) {
@@ -3272,7 +3566,7 @@
       function editarImovel(id) {
         var saveBtn = document.getElementById('saveImovelBtn');
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Salvar';
+        saveBtn.textContent = 'Próximo';
 
         var modalContainer = document.querySelector('.modal');
         if (modalContainer) modalContainer.scrollTop = 0;
@@ -3307,6 +3601,37 @@
             fotosState = (im.fotos || []).slice();
             renderFotos();
           }
+
+          // ---- Pré-popula o passo 2 com os dados já gravados (vendedor revisa/edita)
+          document.getElementById('step2-matricula').value       = im.matricula || '';
+          setStep2Condominio(!!im.condominio);
+          var vcField = document.getElementById('step2CondominioValorField');
+          if (im.condominio && im.valor_condominio != null) {
+            // O backend armazena em REAIS (ex: 150). Não multiplicar por 100.
+            var reais = Math.round(Number(im.valor_condominio));
+            document.getElementById('step2-valor-condominio').value =
+              reais > 0 ? reais.toLocaleString('pt-BR') : '';
+            vcField.style.display = '';
+          } else {
+            vcField.style.display = 'none';
+            document.getElementById('step2-valor-condominio').value = '';
+          }
+          // Preview da escritura: se já existe um arquivo gravado, mostra link pra abrir
+          document.getElementById('step2EscrituraPreview').style.display = 'none';
+          document.getElementById('step2-escritura-arquivo').value = '';
+          var prevArea = document.getElementById('step2EscrituraArea');
+          var existingLink = prevArea.parentNode.querySelector('.step2-existing-doc');
+          if (existingLink) existingLink.remove();
+          if (im.escritura_arquivo_url) {
+            var link = document.createElement('a');
+            link.href = im.escritura_arquivo_url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.className = 'step2-existing-doc';
+            link.style.cssText = 'display:block; margin-top:8px; font-size:0.85rem; color:var(--emerald); text-decoration:underline;';
+            link.textContent = '📎 Ver arquivo da escritura atual';
+            prevArea.parentNode.insertBefore(link, prevArea.nextSibling);
+          }
         });
       }
 
@@ -3317,7 +3642,7 @@
 
         var saveBtn = document.getElementById('saveImovelBtn');
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Salvar';
+        saveBtn.textContent = 'Próximo';
 
         var cidadeSelect = document.getElementById('i-cidade');
         cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro…</option>';
@@ -3349,6 +3674,16 @@
         });
       }
 
+      // Click-outside no modal 2 também trata como Cancelar (descarta tudo)
+      var step2ModalEl = document.getElementById('imovelStep2Modal');
+      if (step2ModalEl) {
+        step2ModalEl.addEventListener('click', function (e) {
+          if (e.target === step2ModalEl) {
+            document.getElementById('step2CancelBtn').click();
+          }
+        });
+      }
+
       document.getElementById('imovelForm').addEventListener('submit', function (e) {
         e.preventDefault();
         var id = document.getElementById('imovelId').value;
@@ -3369,44 +3704,343 @@
           vagas: document.getElementById('i-vagas').value || null,
           descricao: document.getElementById('i-descricao').value.trim(),
           lat: selectedLat,
-          lng: selectedLng
+          lng: selectedLng,
+          fotos: fotosState.slice() // cópia para evitar referência mutável
         };
-        var saveBtn = document.getElementById('saveImovelBtn');
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner"></span> Salvando…';
-        var p = id
-          ? api('/api/imoveis/' + id, { method: 'PUT', body: JSON.stringify(payload) })
-          : api('/api/imoveis', { method: 'POST', body: JSON.stringify(payload) });
-        p.then(function (r) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Salvar';
-          if (r.ok) {
-            var novoId = r.body.id || id;
-            // Se tem fotos em data URL (imóvel novo), faz upload depois de criar
-            if (!id && fotosState.length > 0) {
-              var dataUrls = fotosState.filter(function (u) { return u.indexOf('data:') === 0; });
-              if (dataUrls.length > 0) {
-                saveBtn.innerHTML = '<span class="spinner"></span> Enviando fotos…';
-                return uploadDataUrls(novoId, dataUrls).then(function () {
-                  document.getElementById('imovelModal').classList.remove('show');
-                  toast('Imóvel cadastrado com ' + fotosState.length + ' foto(s)!', 'success');
-                  activate('meus');
-                });
-              }
-            }
-            document.getElementById('imovelModal').classList.remove('show');
-            toast(id ? 'Imóvel atualizado.' : 'Imóvel cadastrado!', 'success');
-            activate('meus');
-          } else {
-            var msg = (r.body.errors || []).map(function (e) { return e.message; }).join('; ') || r.body.error || 'Erro';
-            toast(msg, 'error');
+
+        // Guarda o estado do passo 1 e abre o modal 2 empilhado por cima
+        window._imovelStep1 = { id: id, payload: payload, lat: selectedLat, lng: selectedLng };
+        document.getElementById('imovelStep2Modal').classList.add('show');
+        // Foco no campo obrigatório assim que abrir
+        setTimeout(function () {
+          var m = document.getElementById('step2-matricula');
+          if (m && !m.value) m.focus();
+        }, 50);
+        return;
+      });
+
+      // ============================================================
+      // PASSO 2 — Matrícula, Escritura, Condomínio
+      // ============================================================
+
+      // Estado transitório do passo 2 (não persistido até o submit final)
+      var step2State = {
+        matricula: '',
+        escritura_arquivo: null,
+        condominio: false,
+        valor_condominio: null
+      };
+
+      function resetStep2State() {
+        step2State.matricula = '';
+        step2State.escritura_arquivo = null;
+        step2State.condominio = false;
+        step2State.valor_condominio = null;
+      }
+
+      function resetStep2Form() {
+        document.getElementById('step2-matricula').value = '';
+        setStep2Condominio(false);
+        document.getElementById('step2CondominioValorField').style.display = 'none';
+        document.getElementById('step2-valor-condominio').value = '';
+        document.getElementById('step2EscrituraPreview').style.display = 'none';
+        document.getElementById('step2-escritura-arquivo').value = '';
+      }
+
+      // ---- Botões SIM/NÃO do Condomínio (substituem o antigo toggle)
+      var step2CondBtns = document.querySelectorAll('.step2-cond-opt');
+      step2CondBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var isSim = btn.getAttribute('data-cond-value') === 'true';
+          // marca visualmente o botão clicado e desmarca o outro
+          step2CondBtns.forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+            b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+          });
+          // atualiza o hidden que o resto do código lê
+          document.getElementById('step2-condominio').value = isSim ? 'true' : 'false';
+          step2State.condominio = isSim;
+          // mostra/oculta o campo de valor
+          var field = document.getElementById('step2CondominioValorField');
+          field.style.display = isSim ? '' : 'none';
+          if (!isSim) {
+            document.getElementById('step2-valor-condominio').value = '';
+            step2State.valor_condominio = null;
           }
-        }).catch(function (err) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Salvar';
-          toast('Erro de rede ou no servidor ao salvar imóvel.', 'error');
-          console.error(err);
         });
+      });
+
+      function setStep2Condominio(isSim) {
+        step2CondBtns.forEach(function (b) {
+          var match = (b.getAttribute('data-cond-value') === 'true') === isSim;
+          b.classList.toggle('is-active', match);
+          b.setAttribute('aria-checked', match ? 'true' : 'false');
+        });
+        document.getElementById('step2-condominio').value = isSim ? 'true' : 'false';
+      }
+
+      // ---- Formatação monetária do valor do condomínio (igual ao i-preco)
+      var step2ValorInput = document.getElementById('step2-valor-condominio');
+      step2ValorInput.addEventListener('input', function () {
+        var clean = this.value.replace(/\D/g, '');
+        if (clean) {
+          this.value = Number(clean).toLocaleString('pt-BR');
+          // O usuário digita em REAIS. Ex: "150" → R$ 150,00 (não dividir).
+          step2State.valor_condominio = Number(clean);
+        } else {
+          this.value = '';
+          step2State.valor_condominio = null;
+        }
+      });
+
+      // ---- Upload do arquivo da escritura (drop area)
+      var step2EscrituraArea  = document.getElementById('step2EscrituraArea');
+      var step2EscrituraInput = document.getElementById('step2-escritura-arquivo');
+      var step2EscrituraPreview = document.getElementById('step2EscrituraPreview');
+      var step2EscrituraNome = document.getElementById('step2EscrituraNome');
+      var step2EscrituraTam  = document.getElementById('step2EscrituraTam');
+
+      step2EscrituraArea.addEventListener('click', function () { step2EscrituraInput.click(); });
+      step2EscrituraInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) processStep2Escritura(this.files[0]);
+      });
+      step2EscrituraArea.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        step2EscrituraArea.classList.add('dragover');
+      });
+      step2EscrituraArea.addEventListener('dragleave', function () {
+        step2EscrituraArea.classList.remove('dragover');
+      });
+      step2EscrituraArea.addEventListener('drop', function (e) {
+        e.preventDefault();
+        step2EscrituraArea.classList.remove('dragover');
+        var file = (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0])
+          || (step2EscrituraInput.files && step2EscrituraInput.files[0]);
+        if (file) processStep2Escritura(file);
+      });
+      function processStep2Escritura(file) {
+        var MAX = 5 * 1024 * 1024;
+        if (file.size > MAX) {
+          toast('Arquivo muito grande. Limite: 5MB.', 'error');
+          return;
+        }
+        var allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        if (allowed.indexOf(file.type) === -1) {
+          toast('Tipo não permitido. Use PDF, JPEG, PNG ou WebP.', 'error');
+          return;
+        }
+        step2State.escritura_arquivo = file;
+        step2EscrituraNome.textContent = file.name;
+        step2EscrituraTam.textContent = '(' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+        step2EscrituraPreview.style.display = '';
+      }
+      document.getElementById('step2EscrituraRm').addEventListener('click', function (e) {
+        e.stopPropagation();
+        step2State.escritura_arquivo = null;
+        step2EscrituraInput.value = '';
+        step2EscrituraPreview.style.display = 'none';
+      });
+
+      // ---- Botão Cancelar do passo 2 — descarta TUDO
+      document.getElementById('step2CancelBtn').addEventListener('click', function () {
+        document.getElementById('imovelStep2Modal').classList.remove('show');
+        document.getElementById('imovelModal').classList.remove('show');
+        // Limpa o passo 1 também, já que nada foi salvo
+        document.getElementById('imovelForm').reset();
+        document.getElementById('imovelId').value = '';
+        document.getElementById('imovelModalTitle').textContent = 'Adicionar imóvel';
+        if (typeof fotosState !== 'undefined') { fotosState = []; if (typeof renderFotos === 'function') renderFotos(); }
+        selectedLat = null; selectedLng = null;
+        if (modalMapInstance && modalMarker) { modalMapInstance.removeLayer(modalMarker); modalMarker = null; }
+        resetStep2Form();
+        resetStep2State();
+        window._imovelStep1 = null;
+      });
+
+      // ---- Botão Voltar do passo 2 — preserva ambos os passos
+      document.getElementById('step2VoltarBtn').addEventListener('click', function () {
+        // Persiste o que foi digitado no passo 2 antes de fechar (caso o usuário reabra)
+        step2State.matricula = document.getElementById('step2-matricula').value.trim();
+        step2State.condominio = document.getElementById('step2-condominio').value === 'true';
+        // valor já está em step2State via input handler
+
+        document.getElementById('imovelStep2Modal').classList.remove('show');
+        // Mapa dentro do modal 1 precisa de resize após ficar visível novamente
+        if (modalMapInstance) setTimeout(function () { modalMapInstance.invalidateSize(); }, 50);
+      });
+
+      // ---- Submit final do passo 2 — esse é o que de fato grava o imóvel
+      // Monta o payload completo, decide entre POST e PUT, e (quando há arquivo de escritura)
+      // faz o POST/PUT sem URL → upload do doc → PUT final com a URL.
+      function uploadDocumento(imovelId, file) {
+        return new Promise(function (resolve, reject) {
+          var fd = new FormData();
+          fd.append('escritura', file);
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', API_BASE + '/api/imoveis/' + imovelId + '/documentos');
+          xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          xhr.onload = function () {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              if (xhr.status >= 400) {
+                return reject(new Error(data.error || data.message || ('Erro HTTP ' + xhr.status)));
+              }
+              resolve(data.url);
+            } catch (e) {
+              reject(e);
+            }
+          };
+          xhr.onerror = function () { reject(new Error('Erro de rede no upload do documento.')); };
+          xhr.send(fd);
+        });
+      }
+
+      function readValorCondominio() {
+        var raw = document.getElementById('step2-valor-condominio').value;
+        var clean = String(raw || '').replace(/\D/g, '');
+        if (!clean) return null;
+        return Number(clean); // usuário digita em reais
+      }
+
+      document.getElementById('imovelStep2Form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var step1 = window._imovelStep1;
+        if (!step1) {
+          toast('Sessão de cadastro expirou. Tente novamente.', 'error');
+          return;
+        }
+        var isEdit = !!step1.id;
+        var saveBtn = document.getElementById('step2SalvarBtn');
+        var originalText = saveBtn.textContent;
+
+        // ---- Validação obrigatória da matrícula
+        var matricula = document.getElementById('step2-matricula').value.trim();
+        if (!matricula) {
+          var matInput = document.getElementById('step2-matricula');
+          if (matInput.closest('.field')) matInput.closest('.field').classList.add('error');
+          toast('Matrícula do imóvel é obrigatória.', 'error');
+          matInput.focus();
+          return;
+        }
+
+        // ---- Monta o payload completo (passo 1 + passo 2)
+        var valor_condominio = readValorCondominio();
+        var condominioChecked = document.getElementById('step2-condominio').value === 'true';
+        if (!condominioChecked) valor_condominio = null;
+        var hasFile = !!step2State.escritura_arquivo;
+
+        var basePayload = Object.assign({}, step1.payload, {
+          matricula: matricula,
+          escritura_arquivo_url: hasFile ? null : null, // sempre null na primeira chamada; preenchido depois do upload
+          condominio: condominioChecked,
+          valor_condominio: valor_condominio
+        });
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner"></span> Processando…';
+
+        // Decide método e URL
+        var method = isEdit ? 'PUT' : 'POST';
+        var url = isEdit ? '/api/imoveis/' + step1.id : '/api/imoveis';
+
+        function finalize(imovelId) {
+          // Upload das fotos em data URL (só faz sentido em novo imóvel)
+          if (!isEdit && fotosState.length > 0) {
+            var dataUrls = fotosState.filter(function (u) { return u.indexOf('data:') === 0; });
+            if (dataUrls.length > 0) {
+              saveBtn.innerHTML = '<span class="spinner"></span> Enviando fotos…';
+              return uploadDataUrls(imovelId, dataUrls).then(function () { return imovelId; });
+            }
+          }
+          // Sempre devolver uma Promise (resolve com o ID) — evita TypeError no .then() acima
+          return Promise.resolve(imovelId);
+        }
+
+        function cleanupSuccess(imovelId) {
+          // Fecha os dois modais, reseta tudo
+          document.getElementById('imovelStep2Modal').classList.remove('show');
+          document.getElementById('imovelModal').classList.remove('show');
+          document.getElementById('imovelForm').reset();
+          document.getElementById('imovelId').value = '';
+          document.getElementById('imovelModalTitle').textContent = 'Adicionar imóvel';
+          if (typeof fotosState !== 'undefined') { fotosState = []; if (typeof renderFotos === 'function') renderFotos(); }
+          selectedLat = null; selectedLng = null;
+          if (modalMapInstance && modalMarker) { modalMapInstance.removeLayer(modalMarker); modalMarker = null; }
+          resetStep2Form();
+          resetStep2State();
+          window._imovelStep1 = null;
+
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Próximo';
+          toast(isEdit ? 'Imóvel atualizado.' : 'Imóvel cadastrado!', 'success');
+          activate('meus');
+        }
+
+        function restoreBtn() {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalText;
+        }
+
+        // --- Fluxo:
+        // 1) sem arquivo  → POST/PUT direto
+        // 2) com arquivo  → POST/PUT primeiro (cria/atualiza com URL=null),
+        //    sobe o arquivo, depois PUT com a URL preenchida
+        if (!hasFile) {
+          api(url, { method: method, body: JSON.stringify(basePayload) }).then(function (r) {
+            if (!r.ok) {
+              restoreBtn();
+              var errors = (r.body && r.body.errors) || [];
+              errors.forEach(function (e) {
+                var input = document.querySelector('#imovelStep2Form [id^="step2-"]');
+                var field = input && input.closest('.field');
+                if (field && e.field === 'matricula') field.classList.add('error');
+              });
+              var msg = (errors || []).map(function (e) { return e.message; }).join('; ') || r.body.error || 'Erro';
+              toast(msg, 'error');
+              return;
+            }
+            var imovelId = isEdit ? step1.id : r.body.id;
+            return finalize(imovelId).then(cleanupSuccess);
+          }).catch(function (err) {
+            restoreBtn();
+            toast('Erro de rede ou no servidor ao salvar imóvel.', 'error');
+            console.error(err);
+          });
+        } else {
+          // POST/PUT inicial (sem URL ainda)
+          api(url, { method: method, body: JSON.stringify(basePayload) }).then(function (r) {
+            if (!r.ok) {
+              restoreBtn();
+              var errors = (r.body && r.body.errors) || [];
+              var msg = errors.map(function (e) { return e.message; }).join('; ') || r.body.error || 'Erro';
+              toast(msg, 'error');
+              return;
+            }
+            var imovelId = isEdit ? step1.id : r.body.id;
+            // Upload do documento
+            saveBtn.innerHTML = '<span class="spinner"></span> Enviando documento…';
+            return uploadDocumento(imovelId, step2State.escritura_arquivo)
+              .then(function (fileUrl) {
+                // PUT com a URL do documento (PUT funciona tanto pra cadastro novo quanto edição)
+                saveBtn.innerHTML = '<span class="spinner"></span> Finalizando…';
+                return api('/api/imoveis/' + imovelId, {
+                  method: 'PUT',
+                  body: JSON.stringify({ escritura_arquivo_url: fileUrl })
+                }).then(function (r2) {
+                  if (!r2.ok) {
+                    // Imóvel foi salvo, mas a URL não. Avisar mas não bloquear.
+                    console.warn('[step2] PUT escritura_arquivo_url falhou:', r2);
+                  }
+                  return finalize(imovelId);
+                });
+              })
+              .then(cleanupSuccess);
+          }).catch(function (err) {
+            restoreBtn();
+            toast('Erro de rede ou no servidor ao salvar imóvel.', 'error');
+            console.error(err);
+          });
+        }
       });
 
       // ---- Favoritos: card individual (reusado por loadFavoritosSection)
@@ -3551,6 +4185,9 @@
           dashMain.classList.toggle('chat-active', sectionId === 'mensagens');
         }
 
+        // Marca qual seção está ativa para o polling respeitar
+        window._mensagensSectionActive = (sectionId === 'mensagens');
+
         // Atualiza visibilidade do botão "Cadastrar Imóvel" conforme a seção ativa
         if (typeof updateFabVisibility === 'function') updateFabVisibility();
 
@@ -3561,8 +4198,7 @@
         // Sempre recarrega mensagens ao abrir a seção
         if (sectionId === 'mensagens') {
           localStorage.setItem('moravo_last_view_mensagens', new Date().toISOString());
-          var bMsg = document.getElementById('badge-mensagens');
-          if (bMsg) bMsg.style.display = 'none';
+          window._mensagensSectionActive = true;
           loadMensagensSection();
         }
         // Sempre recarrega notificações ao abrir a seção
@@ -3843,19 +4479,30 @@
         }
       })();
 
-      // ---- Atualiza o badge de mensagens no sidebar ----
-      function updateMsgBadge(count) {
-        var badgeMsg = document.getElementById('badge-mensagens');
-        if (!badgeMsg) return;
-        if (count > 0) {
-          badgeMsg.textContent = count;
-          badgeMsg.style.display = 'inline-block';
-        } else {
-          badgeMsg.style.display = 'none';
-        }
+      // ---- Lógica e Renderização do Chat Moderno (Aba de Mensagens) ----
+      // Filtro da inbox (segmento): "todas" | "vendedor" | "comprador"
+      // Para corretor, aparecem separadamente conversas com vendedor (proprietário) e com comprador.
+      // Para outros perfis, fica fixo em 'todas'.
+      var chatFilter = 'todas';
+
+      function setChatFilter(f) {
+        chatFilter = f;
+        // Re-renderiza a inbox com a seleção nova
+        var listContainer = document.getElementById('chatInboxList');
+        if (!listContainer) return;
+        renderChatInbox(currentInboxState);
       }
 
-      // ---- Lógica e Renderização do Chat Moderno (Aba de Mensagens) ----
+      function renderChatTabs() {
+        if (user.perfil !== 'corretor') return '';
+        var t = chatFilter;
+        return '<div class="chat-tabs">' +
+          '<button type="button" class="chat-tab ' + (t === 'todas' ? 'is-active' : '') + '" data-tab="todas">Todas</button>' +
+          '<button type="button" class="chat-tab ' + (t === 'vendedor' ? 'is-active' : '') + '" data-tab="vendedor">Com Vendedor</button>' +
+          '<button type="button" class="chat-tab ' + (t === 'comprador' ? 'is-active' : '') + '" data-tab="comprador">Com Comprador</button>' +
+        '</div>';
+      }
+
       function loadMensagensSection() {
         var listContainer = document.getElementById('chatInboxList');
         if (!listContainer) return;
@@ -3871,71 +4518,129 @@
               listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #d32f2f;">Erro ao carregar conversas.</div>';
               return;
             }
-            var interesses = (r.body.interesses || []).filter(function (it) {
-              return it.status === 'aceito' && it.type !== 'broker_rep';
+            var all = (r.body.interesses || []).filter(function (it) {
+              return it.status === 'aceito';
             });
-            if (interesses.length === 0) {
-              listContainer.innerHTML = '<div style="padding: 30px 20px; text-align: center; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.4;">Nenhuma conversa ativa.<br><span style="font-size:0.75rem; color:#999;">Dica: Vá em "Imóveis disponíveis" para iniciar uma intermediação.</span></div>';
-              updateMsgBadge(0);
-              return;
-            }
-
-            var unreadCount = 0;
-            listContainer.innerHTML = '';
-            interesses.forEach(function (it) {
-              var item = document.createElement('div');
-              item.style.padding = '14px 16px';
-              item.style.cursor = 'pointer';
-              item.style.borderBottom = '1px solid var(--beige)';
-              item.style.transition = 'all 0.2s';
-              item.style.display = 'flex';
-              item.style.alignItems = 'center';
-              item.style.gap = '12px';
-
-              var name = it.other_name || (user.perfil === 'corretor' ? 'Comprador' : 'Corretor');
-              var initials = name.split(' ').map(function (s) { return s.charAt(0); }).slice(0, 2).join('').toUpperCase();
-
-              var avatarHtml = '<div style="width: 38px; height: 38px; border-radius: 50%; background: #e0f2f1; color: #00796b; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">' + initials + '</div>';
-
-              var detailsHtml = '<div style="flex: 1; min-width: 0;">' +
-                '<div style="font-weight: 600; font-size: 0.9rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + name + '</div>' +
-                '<div style="font-size: 0.8rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">' + (it.imovel_titulo || 'Imóvel #' + it.imovel_id) + '</div>' +
-                '</div>';
-
-              var isUnread = !isChatSeen(it.id);
-              if (isUnread) unreadCount++;
-
-              var statusDotHtml = '<div class="chat-unread-dot" style="' + (isUnread ? 'background:#25d366;' : 'display:none;') + ' width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;"></div>';
-
-              item.innerHTML = avatarHtml + detailsHtml + statusDotHtml;
-
-              item.addEventListener('click', function () {
-                markChatSeen(it.id);
-                var dot = item.querySelector('.chat-unread-dot');
-                if (dot) {
-                  dot.style.display = 'none';
-                  dot.style.background = 'transparent';
-                }
-                // Reconta as bolinhas verdes visíveis e atualiza o badge
-                var remaining = listContainer.querySelectorAll('.chat-unread-dot[style*="background:#25d366"]').length;
-                updateMsgBadge(remaining);
-
-                listContainer.querySelectorAll(':scope > div').forEach(function (el) {
-                  el.style.borderLeft = '';
-                  el.style.background = '';
-                });
-                item.style.borderLeft = '4px solid var(--emerald)';
-                item.style.background = '#eef1f6';
-
-                abrirConversaChat(it);
-              });
-
-              listContainer.appendChild(item);
-            });
-
-            // Atualiza badge com a contagem real de bolinhas verdes
-            updateMsgBadge(unreadCount);
+            // Guarda o estado e renderiza (com tabs + filtro)
+            currentInboxState = { all: all };
+            renderChatInbox(currentInboxState);
           });
+      }
+
+      var currentInboxState = { all: [] };
+
+      function renderChatInbox(state) {
+        var listContainer = document.getElementById('chatInboxList');
+        if (!listContainer) return;
+        var all = state.all || [];
+
+        // Aplica o filtro do corretor
+        var interesses = all.slice();
+        if (user.perfil === 'corretor' && chatFilter !== 'todas') {
+          interesses = all.filter(function (it) {
+            if (chatFilter === 'vendedor') return it.type === 'broker_rep';
+            if (chatFilter === 'comprador') return it.type === 'comprador_rep';
+            return true;
+          });
+        }
+
+        // Cabeçalho com tabs (só para corretor)
+        var tabsHtml = renderChatTabs();
+
+        if (interesses.length === 0) {
+          var emptyMsg = (user.perfil === 'corretor' && all.length > 0 && chatFilter !== 'todas')
+            ? 'Nenhuma conversa nesta categoria.'
+            : 'Nenhuma conversa ativa.<br><span style="font-size:0.75rem; color:#999;">Dica: Vá em "Imóveis disponíveis" para iniciar uma intermediação.</span>';
+          listContainer.innerHTML = tabsHtml +
+            '<div style="padding: 30px 20px; text-align: center; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.4;">' + emptyMsg + '</div>';
+          // Wire dos tabs
+          wireChatTabs(listContainer);
+          updateMsgBadge(0);
+          return;
+        }
+
+        var unreadIds = [];
+        var allIds = [];
+        interesses.forEach(function (it) {
+          allIds.push(it.id);
+          if (!isChatSeen(it.id)) {
+            unreadIds.push(it.id);
+          }
+        });
+
+        updateMsgBadge(unreadIds.length);
+
+        var unreadCount = 0;
+        var itemsHtml = '';
+        interesses.forEach(function (it) {
+          var isUnread = unreadIds.indexOf(it.id) !== -1;
+          if (isUnread) unreadCount++;
+
+          var name = it.other_name || (user.perfil === 'corretor' ? 'Comprador' : 'Corretor');
+          var initials = name.split(' ').map(function (s) { return s.charAt(0); }).slice(0, 2).join('').toUpperCase();
+
+          var avatarHtml = '<div style="width: 38px; height: 38px; border-radius: 50%; background: #e0f2f1; color: #00796b; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">' + initials + '</div>';
+
+          // Sub-título da conversa varia para o corretor (mostra o tipo)
+          var subtitle = it.imovel_titulo || ('Imóvel #' + it.imovel_id);
+          if (user.perfil === 'corretor') {
+            var tagMini = it.type === 'comprador_rep' ? ' 👤 Comprador' : ' 🏠 Vendedor';
+            subtitle += tagMini;
+          }
+
+          var detailsHtml = '<div style="flex: 1; min-width: 0;">' +
+            '<div style="font-weight: 600; font-size: 0.9rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + name + '</div>' +
+            '<div style="font-size: 0.8rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">' + subtitle + '</div>' +
+            '</div>';
+
+          var statusDotHtml = '<div class="chat-unread-dot" data-dot-id="' + it.id + '" style="' + (isUnread ? 'display:block; background:#25d366;' : 'display:none;') + ' width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;"></div>';
+
+          itemsHtml += '<div class="chat-inbox-item" data-chat-id="' + it.id + '" style="padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--beige); transition: all 0.2s; display: flex; align-items: center; gap: 12px;">' +
+            avatarHtml + detailsHtml + statusDotHtml +
+          '</div>';
+        });
+
+        listContainer.innerHTML = tabsHtml + itemsHtml;
+        wireChatTabs(listContainer);
+
+        // Click handlers
+        listContainer.querySelectorAll('.chat-inbox-item').forEach(function (item) {
+          // it.id vem como string do pg (BIGSERIAL). Normaliza para string na comparação também.
+          var rawId = item.getAttribute('data-chat-id');
+          var interesseRef = interesses.find(function (it) { return String(it.id) === String(rawId); });
+          if (!interesseRef) return;
+          var wasUnread = unreadIds.indexOf(interesseRef.id) !== -1;
+
+          item.addEventListener('click', function () {
+            markChatSeen(interesseRef.id);
+            var dot = item.querySelector('.chat-unread-dot');
+            if (dot) { dot.style.display = 'none'; dot.style.background = 'transparent'; }
+            if (wasUnread && unreadCount > 0) unreadCount--;
+            updateMsgBadge(unreadCount);
+
+            listContainer.querySelectorAll('.chat-inbox-item').forEach(function (el) {
+              el.style.borderLeft = '';
+              el.style.background = '';
+            });
+            item.style.borderLeft = '4px solid var(--emerald)';
+            item.style.background = '#eef1f6';
+            abrirConversaChat(interesseRef);
+          });
+        });
+
+        // Atualiza badge com a contagem real de bolinhas verdes
+        updateMsgBadge(unreadCount);
+      }
+
+      function wireChatTabs(container) {
+        if (!container) return;
+        container.querySelectorAll('.chat-tab').forEach(function (btn) {
+          if (btn.__wired) return;
+          btn.__wired = true;
+          btn.addEventListener('click', function () {
+            setChatFilter(btn.getAttribute('data-tab'));
+          });
+        });
       }
 
       function loadNotificacoesSection() {
@@ -4256,6 +4961,66 @@
         return 'Olá! Gostaria de falar sobre o imóvel "' + titulo + '".';
       }
 
+      // ---- Criar/recuperar grupo de WhatsApp via Waha ----
+      // Chamado quando o corretor clica em "Entrar em contato" no card de aceitação.
+      // Cria um grupo com Vendedor + Corretor + Atendente principal.
+      function criarGrupoWaha(interesseId, btnEl) {
+        var token = localStorage.getItem('moravo_token');
+        if (!token) {
+          toast('Sua sessão expirou. Faça login novamente.', 'error');
+          return;
+        }
+
+        var originalHtml = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.7';
+        btnEl.style.cursor = 'wait';
+        btnEl.innerHTML = '<span class="spinner"></span> Criando grupo…';
+
+        var url = (window.MORAVO_API || '') + '/api/interesses/' + interesseId + '/criar-grupo-whatsapp';
+
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+        .then(function (resp) {
+          if (resp.ok && resp.body && resp.body.grupo_link) {
+            var link = resp.body.grupo_link;
+            btnEl.innerHTML = '✅ Grupo criado';
+            btnEl.style.background = '#2e7d32';
+            btnEl.style.borderColor = '#2e7d32';
+
+            if (resp.body.ja_existia) {
+              toast('Grupo já existia. Abrindo conversa…', 'success');
+            } else {
+              toast('Grupo criado no WhatsApp! Abrindo conversa…', 'success');
+            }
+
+            // Abre o link em nova aba
+            window.open(link, '_blank', 'noopener');
+          } else {
+            btnEl.disabled = false;
+            btnEl.style.opacity = '1';
+            btnEl.style.cursor = 'pointer';
+            btnEl.innerHTML = originalHtml;
+            var msgErro = (resp.body && resp.body.error) || 'Não foi possível criar o grupo de WhatsApp.';
+            toast(msgErro, 'error');
+          }
+        })
+        .catch(function (err) {
+          console.error('[criar-grupo-waha] erro:', err);
+          btnEl.disabled = false;
+          btnEl.style.opacity = '1';
+          btnEl.style.cursor = 'pointer';
+          btnEl.innerHTML = originalHtml;
+          toast('Erro de conexão ao criar o grupo. Tente novamente.', 'error');
+        });
+      }
+
       window.loadNotificacoesApp = function () {
         var container = document.getElementById('notificacoesAppList');
         if (!container) return;
@@ -4528,56 +5293,101 @@
           var otherEmail = it.other_email || '—';
           var whatsButtonHtml = '';
 
-          if (loggedInUserIsCorretor && otherWhats && otherWhats !== '—') {
-            var wNum = otherWhats.replace(/\D/g, '');
-            whatsButtonHtml = '<a href="https://wa.me/55' + wNum + '" target="_blank" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 0.88rem; background: #25d366; border-color: #25d366; text-decoration: none; border-radius: 8px; font-weight: 600; color: #fff; margin-top: 10px;">' +
-              '💬 Chamar no WhatsApp' +
-              '</a>';
-          }
+          if (it.type === 'broker_rep') {
+            // Parceria/Intermediação aceita entre proprietário e corretor
+            var msgText = loggedInUserIsCorretor
+              ? 'Olá! Sou o corretor aprovado para intermediar o imóvel "' + (it.imovel_titulo || '') + '" no Moravo. Podemos conversar?'
+              : 'Olá! Sou o proprietário do imóvel "' + (it.imovel_titulo || '') + '" no Moravo. Podemos conversar?';
 
-          var roleLabel = 'Contato';
-          var descLabel = 'Vocês já podem iniciar a negociação. Os contatos estão liberados abaixo:';
-          if (isOutgoing) {
-            if (it.other_role === 'corretor') {
-              roleLabel = 'Corretor Parceiro';
-              descLabel = 'O corretor está autorizado a intermediar este imóvel e atender você.';
+            // Tanto o CORRETOR quanto o PROPRIETÁRIO podem clicar em "Entrar em contato"
+            // para criar (ou recuperar) o grupo de WhatsApp com Vendedor + Corretor + Atendente principal.
+            var linkJaCriado = it.grupo_whatsapp_link && !it.grupo_whatsapp_link.startsWith('https://wa.me/');
+            if (linkJaCriado) {
+              // Grupo já existe → mostra botão verde "Abrir grupo" que abre o link direto
+              whatsButtonHtml = '<a href="' + escapeHtml(it.grupo_whatsapp_link) + '" target="_blank" rel="noopener" data-interesse-id="' + it.id + '" class="btn btn-primary btn-sm btn-criar-grupo-waha" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 0.88rem; background: #25d366; border-color: #25d366; text-decoration: none; border-radius: 8px; font-weight: 600; color: #fff; margin-top: 10px; cursor: pointer; border-style: solid;">' +
+                '✅ Abrir grupo no WhatsApp' +
+                '</a>';
             } else {
-              roleLabel = 'Proprietário';
-              descLabel = 'Você está em contato direto com o proprietário do imóvel.';
+              whatsButtonHtml = '<button type="button" data-interesse-id="' + it.id + '" class="btn btn-primary btn-sm btn-criar-grupo-waha" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 0.88rem; background: #25d366; border-color: #25d366; text-decoration: none; border-radius: 8px; font-weight: 600; color: #fff; margin-top: 10px; cursor: pointer; border-style: solid;">' +
+                '💬 Entrar em contato' +
+                '</button>';
             }
-          } else if (it.other_role === 'comprador') {
-            roleLabel = 'Comprador Interessado';
-            descLabel = 'O cliente demonstrou interesse no imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
-          } else if (it.other_role === 'corretor') {
-            roleLabel = 'Corretor Parceiro';
-            descLabel = 'O corretor está autorizado a intermediar seu imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
-          } else if (it.other_role === 'proprietario') {
-            roleLabel = 'Proprietário';
-            descLabel = 'Você autorizou a intermediação do imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
-          }
 
-          var infoBoxHtml = '';
-          if (loggedInUserIsCorretor) {
-            infoBoxHtml = '<div style="margin-top: 10px; font-size: 0.88rem; background: #f9f9f9; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--beige); text-align: left; display: inline-block; min-width: 220px; line-height: 1.4;">' +
+            var roleLabel = loggedInUserIsCorretor ? 'Proprietário' : 'Corretor Parceiro';
+            var descLabel = loggedInUserIsCorretor
+              ? 'Você foi aceito para intermediar a venda do imóvel.'
+              : 'Você aceitou a parceria com este corretor para intermediar seu imóvel.';
+
+            var infoBoxHtml = '<div style="margin-top: 10px; font-size: 0.88rem; background: #f9f9f9; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--beige); text-align: left; display: inline-block; min-width: 220px; line-height: 1.4;">' +
               '<div><strong>Nome:</strong> ' + escapeHtml(it.other_name || '') + '</div>' +
-              '<div><strong>WhatsApp:</strong> ' + otherWhats + '</div>' +
-              '<div><strong>E-mail:</strong> ' + otherEmail + '</div>' +
               '</div>' +
               '<div style="margin-top: 4px;">' + whatsButtonHtml + '</div>';
-          } else {
-            infoBoxHtml = '<div style="margin-top: 10px; font-size: 0.88rem; background: #f9f9f9; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--beige); text-align: left; display: inline-block; min-width: 220px; line-height: 1.4;">' +
-              '<div><strong>Nome do Corretor:</strong> ' + escapeHtml(it.other_name || '') + '</div>' +
-              '<div style="color:var(--emerald); font-weight:700; margin-top:6px; display:flex; align-items:center; gap:4px;">' +
-              '<span style="display:inline-block; width:6px; height:6px; background:var(--emerald); border-radius:50%; animation: pulse 1.5s infinite;"></span>' +
-              'Aguarde o contato do corretor via WhatsApp' +
-              '</div>' +
-              '</div>';
-          }
 
-          balaoStatus.innerHTML = '<div style="font-weight: 700; color: #2e7d32; margin-bottom: 4px;">✔ ' + roleLabel + '</div>' +
-            '<div style="font-size: 0.82rem; color: var(--ink-soft); line-height: 1.3;">' + descLabel + '</div>' +
-            infoBoxHtml;
-          messagesBox.appendChild(balaoStatus);
+            balaoStatus.innerHTML = '<div style="font-weight: 700; color: #2e7d32; margin-bottom: 4px;">✔ ' + roleLabel + '</div>' +
+              '<div style="font-size: 0.82rem; color: var(--ink-soft); line-height: 1.3;">' + descLabel + '</div>' +
+              infoBoxHtml;
+            messagesBox.appendChild(balaoStatus);
+
+            // Liga o handler do botão "Entrar em contato" (corretor OU proprietário podem clicar)
+            var btnGrupo = balaoStatus.querySelector('.btn-criar-grupo-waha');
+            if (btnGrupo) {
+              btnGrupo.addEventListener('click', function () {
+                criarGrupoWaha(it.id, btnGrupo);
+              });
+            }
+          } else {
+            // Conversas normais (comprador e corretor/proprietário)
+            if (loggedInUserIsCorretor && otherWhats && otherWhats !== '—') {
+              var wNum = otherWhats.replace(/\D/g, '');
+              whatsButtonHtml = '<a href="https://wa.me/55' + wNum + '" target="_blank" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 0.88rem; background: #25d366; border-color: #25d366; text-decoration: none; border-radius: 8px; font-weight: 600; color: #fff; margin-top: 10px;">' +
+                '💬 Chamar no WhatsApp' +
+                '</a>';
+            }
+
+            var roleLabel = 'Contato';
+            var descLabel = 'Vocês já podem iniciar a negociação. Os contatos estão liberados abaixo:';
+            if (isOutgoing) {
+              if (it.other_role === 'corretor') {
+                roleLabel = 'Corretor Parceiro';
+                descLabel = 'O corretor está autorizado a intermediar este imóvel e atender você.';
+              } else {
+                roleLabel = 'Proprietário';
+                descLabel = 'Você está em contato direto com o proprietário do imóvel.';
+              }
+            } else if (it.other_role === 'comprador') {
+              roleLabel = 'Comprador Interessado';
+              descLabel = 'O cliente demonstrou interesse no imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
+            } else if (it.other_role === 'corretor') {
+              roleLabel = 'Corretor Parceiro';
+              descLabel = 'O corretor está autorizado a intermediar seu imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
+            } else if (it.other_role === 'proprietario') {
+              roleLabel = 'Proprietário';
+              descLabel = 'Você autorizou a intermediação do imóvel <strong>' + escapeHtml(it.imovel_titulo || '') + '</strong>.';
+            }
+
+            var infoBoxHtml = '';
+            if (loggedInUserIsCorretor) {
+              infoBoxHtml = '<div style="margin-top: 10px; font-size: 0.88rem; background: #f9f9f9; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--beige); text-align: left; display: inline-block; min-width: 220px; line-height: 1.4;">' +
+                '<div><strong>Nome:</strong> ' + escapeHtml(it.other_name || '') + '</div>' +
+                '<div><strong>WhatsApp:</strong> ' + otherWhats + '</div>' +
+                '<div><strong>E-mail:</strong> ' + otherEmail + '</div>' +
+                '</div>' +
+                '<div style="margin-top: 4px;">' + whatsButtonHtml + '</div>';
+            } else {
+              infoBoxHtml = '<div style="margin-top: 10px; font-size: 0.88rem; background: #f9f9f9; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--beige); text-align: left; display: inline-block; min-width: 220px; line-height: 1.4;">' +
+                '<div><strong>Nome do Corretor:</strong> ' + escapeHtml(it.other_name || '') + '</div>' +
+                '<div style="color:var(--emerald); font-weight:700; margin-top:6px; display:flex; align-items:center; gap:4px;">' +
+                '<span style="display:inline-block; width:6px; height:6px; background:var(--emerald); border-radius:50%; animation: pulse 1.5s infinite;"></span>' +
+                'Aguarde o contato do corretor via WhatsApp' +
+                '</div>' +
+                '</div>';
+            }
+
+            balaoStatus.innerHTML = '<div style="font-weight: 700; color: #2e7d32; margin-bottom: 4px;">✔ ' + roleLabel + '</div>' +
+              '<div style="font-size: 0.82rem; color: var(--ink-soft); line-height: 1.3;">' + descLabel + '</div>' +
+              infoBoxHtml;
+            messagesBox.appendChild(balaoStatus);
+          }
         } else if (it.status === 'recusado') {
           balaoStatus.innerHTML = '<div style="font-weight: 600; color: #c62828;">❌ Intermediação recusada</div>' +
             '<div style="font-size: 0.8rem; color: var(--ink-soft); margin-top: 4px;">Esta solicitação de intermediação foi arquivada pelo proprietário.</div>';
@@ -4684,12 +5494,12 @@
 
         var saveBtn = document.getElementById('savePerfilBtn');
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner"></span> Salvando…';
+        saveBtn.innerHTML = '<span class="spinner"></span> Processando…';
 
         api('/api/usuarios/me', { method: 'PUT', body: JSON.stringify(payload) })
           .then(function (r) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Salvar';
+            saveBtn.textContent = 'Próximo';
             if (r.ok) {
               var updatedUser = r.body.user;
               updatedUser.perfil = user.perfil; // preserva perfil local
@@ -4707,7 +5517,7 @@
           })
           .catch(function (err) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Salvar';
+            saveBtn.textContent = 'Próximo';
             toast('Erro de rede ao salvar perfil.', 'error');
             console.error(err);
           });
@@ -5491,7 +6301,7 @@
         _mpFotos = [];
 
         var token = localStorage.getItem('moravo_token');
-        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
         fetch(apiBase + '/api/imoveis/' + imovelId, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         })
@@ -5600,7 +6410,7 @@
 
       window.openDashboardPhotoCarousel = function (imovelId) {
         var token = localStorage.getItem('moravo_token');
-        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+        var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 
         fetch(apiBase + '/api/imoveis/' + imovelId, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}

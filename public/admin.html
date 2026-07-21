@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Moravo — Painel Administrativo</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+
+<style>
+:root {
+  --emerald:     #FF6A00;
+  --emerald-dk:  #E05300;
+  --ink:         #222222;
+  --ink-soft:    #717171;
+  --beige:       #DDDDDD;
+  --bg:          #f7f7f7;
+  --radius:      12px;
+  --radius-lg:   20px;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.admin-login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.admin-login-card {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.06);
+}
+.admin-login-card h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.admin-login-card .muted {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  margin-bottom: 24px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 22px;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn-primary  { background: var(--emerald); color: #fff; }
+.btn-primary:hover { background: var(--emerald-dk); }
+.btn-ghost    { background: transparent; color: var(--ink); border-color: var(--beige); }
+.btn-ghost:hover { background: #fff; border-color: var(--ink); }
+.btn-danger   { background: transparent; color: #d32f2f; border-color: #d32f2f; }
+.btn-danger:hover { background: #fdecea; }
+.btn-success  { background: transparent; color: #1a8a1a; border-color: #1a8a1a; }
+.btn-success:hover { background: #e6f9e6; }
+.btn-block    { width: 100%; padding: 14px 22px; font-size: 1rem; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 0.85rem; font-weight: 600; }
+.field input,
+.field textarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  padding: 10px 13px;
+  border: 1.5px solid var(--beige);
+  border-radius: 8px;
+  background: #fff;
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--emerald);
+  box-shadow: 0 0 0 3px rgba(255,106,0,.12);
+}
+
+/* ===== Layout do painel ===== */
+.admin-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid var(--beige);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-sidebar .logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.admin-sidebar .logo small {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--emerald);
+  background: rgba(255,106,0,.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.admin-sidebar nav { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.admin-nav-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: background .15s ease;
+}
+.admin-nav-item:hover { background: #f7f7f7; }
+.admin-nav-item.active {
+  background: rgba(255,106,0,.08);
+  color: var(--emerald);
+  font-weight: 600;
+}
+.admin-nav-badge {
+  background: var(--emerald);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+.admin-nav-item.active .admin-nav-badge {
+  background: var(--emerald-dk);
+}
+
+.admin-main {
+  flex: 1;
+  padding: 32px 40px;
+  overflow-x: auto;
+}
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.admin-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.admin-user-badge {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.admin-user-badge strong { color: var(--ink); }
+
+/* ===== Cards de imóveis ===== */
+.admin-list { display: flex; flex-direction: column; gap: 14px; }
+.admin-filter {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+}
+.admin-filter input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--emerald);
+  cursor: pointer;
+}
+.admin-empty {
+  background: #fff;
+  border: 1px dashed var(--beige);
+  border-radius: var(--radius);
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+.admin-card {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  /* Col 1: foto (capa) | Col 2: conteúdo (header + footer) */
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.admin-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,.08);
+}
+
+/* --- Capa à esquerda --- */
+.admin-card .card-cover {
+  grid-row: 1 / 3;
+  position: relative;
+  background: linear-gradient(135deg,#e8ddd0,#c9b49a);
+  background-size: cover;
+  background-position: center;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b8a07a;
+}
+.admin-card .card-cover svg { width: 64px; height: 64px; opacity: 0.5; }
+.admin-card .card-cover .cover-status {
+  position: absolute;
+  top: 10px; left: 10px;
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(4px);
+}
+
+/* --- Conteúdo à direita --- */
+.admin-card .card-head {
+  padding: 18px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.admin-card .card-head .head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.admin-card .card-head .head-titles { min-width: 0; flex: 1; }
+.admin-card .card-head h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.admin-card .card-head .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+.admin-card .card-head .tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: #f3f3f3;
+  color: var(--ink-soft);
+}
+.admin-card .card-head .tag.tipo {
+  background: rgba(255, 106, 0, .1);
+  color: var(--emerald);
+  text-transform: capitalize;
+}
+.admin-card .card-head .preco {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.7rem;
+  color: var(--emerald);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  line-height: 1;
+  margin-top: 4px;
+}
+.admin-card .card-head .preco-cond {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Ações (Aprovar/Reprovar) no canto superior direito */
+.admin-card .card-head .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.admin-card .card-head .actions .btn { padding: 8px 16px; font-size: 0.85rem; min-width: 110px; justify-content: center; }
+
+/* --- Rodapé com contato e documento --- */
+.admin-card .card-foot {
+  padding: 12px 20px;
+  background: #fafafa;
+  border-top: 1px solid var(--beige);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  font-size: 0.82rem;
+}
+.admin-card .card-foot .foot-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+.admin-card .card-foot .foot-item .foot-label {
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.admin-card .card-foot .foot-item svg {
+  flex-shrink: 0;
+  color: var(--ink-soft);
+}
+.admin-card .card-foot .foot-item.foot-link a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--beige);
+  padding-bottom: 1px;
+  transition: color .15s ease, border-color .15s ease;
+  font-weight: 500;
+}
+.admin-card .card-foot .foot-item.foot-link a:hover {
+  color: var(--emerald);
+  border-bottom-color: var(--emerald);
+}
+.admin-card .card-foot .foot-item.foot-link.foot-wpp a:hover {
+  color: #25D366;
+  border-bottom-color: #25D366;
+}
+.admin-card .card-foot .foot-spacer { flex: 1; }
+.admin-card .card-foot .foot-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1.5px solid var(--beige);
+  color: var(--ink-soft);
+  background: #fff;
+  transition: all .15s ease;
+}
+.admin-card .card-foot .foot-doc:hover {
+  border-color: var(--emerald);
+  color: var(--emerald);
+}
+.admin-card .card-foot .foot-doc.has-doc {
+  border-color: var(--emerald);
+  background: rgba(255, 106, 0, .08);
+  color: var(--emerald);
+}
+.admin-card .card-foot .foot-doc.has-doc:hover {
+  background: var(--emerald);
+  color: #fff;
+}
+.admin-card .card-foot .foot-doc.empty {
+  border-style: dashed;
+  color: var(--ink-soft);
+  cursor: default;
+}
+.admin-card .card-foot .foot-doc.empty:hover {
+  border-color: var(--beige);
+  color: var(--ink-soft);
+}
+
+/* Reprovar: motivo em barra horizontal embaixo do foot */
+.admin-card .motivo-bar {
+  grid-column: 1 / -1;
+  padding: 10px 20px;
+  background: #fdecea;
+  border-top: 1px solid #f5c6c6;
+  font-size: 0.85rem;
+  color: #c0392b;
+}
+
+@media (max-width: 720px) {
+  .admin-card { grid-template-columns: 1fr; }
+  .admin-card .card-cover { grid-row: auto; min-height: 160px; }
+  .admin-card .card-head { padding: 14px 16px 10px; }
+  .admin-card .card-head .head-row { flex-direction: column; align-items: flex-start; }
+  .admin-card .card-head .actions { flex-direction: row; width: 100%; }
+  .admin-card .card-head .actions .btn { flex: 1; }
+  .admin-card .card-foot { padding: 12px 16px; gap: 6px 14px; }
+}
+.admin-card .body h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.admin-card .body .meta {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.admin-card .body .meta-pill {
+  background: rgba(255, 106, 0, .08);
+  color: var(--emerald);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.admin-card .body .preco {
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: var(--emerald);
+  margin: 4px 0 14px;
+  letter-spacing: -0.01em;
+}
+.admin-card .body .info-block {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fafafa;
+  border: 1px solid var(--beige);
+  border-radius: 8px;
+}
+.admin-card .body .info-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.admin-card .body .info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.admin-card .body .info-empty {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.admin-card .body .kv-list {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.admin-card .body .kv-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+.admin-card .body .kv-list li span {
+  color: var(--ink-soft);
+}
+.admin-card .body .kv-list li strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.admin-card .body .info-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+.admin-card .body .dono-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 2px 0;
+  border-bottom: 1px dashed transparent;
+  transition: border-color .15s ease, color .15s ease;
+}
+.admin-card .body .dono-link:hover {
+  color: var(--emerald);
+  border-bottom-color: var(--emerald);
+}
+.admin-card .body .dono-link-whatsapp:hover {
+  color: #25D366;
+  border-bottom-color: #25D366;
+}
+.admin-card .body .dono-link svg { color: var(--emerald); flex-shrink: 0; }
+.admin-card .body .dono-link-whatsapp svg { color: #25D366; }
+.admin-card .body .doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--emerald);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border: 1px solid var(--emerald);
+  border-radius: 6px;
+  transition: background .15s ease, color .15s ease;
+}
+.admin-card .body .doc-link:hover {
+  background: var(--emerald);
+  color: #fff;
+}
+.admin-card .body .motivo {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #fdecea;
+  border: 1px solid #f5c6c6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #c0392b;
+}
+.admin-card .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+  min-width: 140px;
+}
+.admin-card .actions .btn { padding: 8px 14px; font-size: 0.85rem; }
+
+@media (max-width: 700px) {
+  /* usa o @media de 720px acima; bloco legado removido */
+}
+
+/* ===== Modal ===== */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 520px;
+  width: 100%;
+}
+.modal h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+.modal .muted {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ===== Tabela de logs ===== */
+.admin-logs {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.admin-logs table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.admin-logs th, .admin-logs td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--beige);
+}
+.admin-logs th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--ink-soft);
+}
+.admin-logs tr:last-child td { border-bottom: none; }
+.admin-logs .chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.admin-logs .chip-ok { background: #e6f9e6; color: #1a8a1a; }
+.admin-logs .chip-fail { background: #fdecea; color: #c0392b; }
+
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast simples */
+.admin-toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #222;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  opacity: 0;
+  transition: transform .3s ease, opacity .3s ease;
+  z-index: 300;
+  pointer-events: none;
+}
+.admin-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.admin-toast.error { background: #d32f2f; }
+.admin-toast.success { background: #1a8a1a; }
+
+.hidden { display: none !important; }
+
+/* ===== Modal de confirmação ===== */
+.admin-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 20px;
+}
+.admin-modal-bg.show { display: flex; }
+.admin-modal {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: adminModalIn .2s ease-out;
+}
+@keyframes adminModalIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.admin-modal h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.admin-modal p {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+.admin-modal .modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.admin-modal .modal-actions .btn {
+  flex: 1;
+  max-width: 160px;
+  padding: 10px 18px;
+}
+</style>
+</head>
+<body>
+
+<!-- ====== Tela de login ====== -->
+<div class="admin-login-shell" id="adminLoginScreen">
+  <form class="admin-login-card" id="adminLoginForm" autocomplete="off">
+    <h1>Painel administrativo</h1>
+    <p class="muted">Acesso restrito — use suas credenciais de administrador.</p>
+    <div class="field">
+      <label for="adminEmail">E-mail</label>
+      <input type="email" id="adminEmail" autocomplete="username" required />
+    </div>
+    <div class="field">
+      <label for="adminSenha">Senha</label>
+      <input type="password" id="adminSenha" autocomplete="current-password" required />
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" id="adminLoginBtn">Entrar</button>
+  </form>
+</div>
+
+<!-- ====== Painel principal ====== -->
+<div class="admin-app hidden" id="adminAppScreen">
+  <aside class="admin-sidebar">
+    <a href="/" class="logo">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      moravo <small>admin</small>
+    </a>
+    <nav>
+      <button class="admin-nav-item active" data-view="pendentes">Pendentes <span class="admin-nav-badge" id="cntPendentes">0</span></button>
+      <button class="admin-nav-item" data-view="aprovados">Aprovados <span class="admin-nav-badge" id="cntAprovados">0</span></button>
+      <button class="admin-nav-item" data-view="reprovados">Reprovados <span class="admin-nav-badge" id="cntReprovados">0</span></button>
+      <button class="admin-nav-item" data-view="logs">Logins</button>
+    </nav>
+    <button class="btn btn-ghost" id="adminSairBtn">Sair</button>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-header">
+      <h1 id="adminSectionTitle">Pendentes</h1>
+      <div class="admin-user-badge" id="adminUserBadge"></div>
+    </div>
+    <div id="adminContent"></div>
+  </main>
+</div>
+
+<!-- ====== Modal de confirmação (genérico) ====== -->
+<div class="admin-modal-bg" id="adminConfirmModal">
+  <div class="admin-modal">
+    <h2 id="adminConfirmTitle">Confirmar ação</h2>
+    <p id="adminConfirmMsg">Tem certeza?</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="adminConfirmCancel">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="adminConfirmOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Modal de motivo da reprovação ====== -->
+<div class="modal-bg" id="adminReprovarModal">
+  <div class="modal">
+    <h2>Reprovar imóvel</h2>
+    <p class="muted">Explique ao vendedor o motivo da reprovação (mínimo 10 caracteres).</p>
+    <div class="field">
+      <textarea id="adminReprovarMotivo" rows="4" placeholder="Ex.: fotos em baixa resolução / matrícula inconsistente…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="adminReprovarCancel">Cancelar</button>
+      <button type="button" class="btn btn-danger" id="adminReprovarConfirm">Confirmar reprovação</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-toast" id="adminToast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
+  var TOKEN = localStorage.getItem('moravo_admin_token');
+  var USER  = null;
+  try { USER = JSON.parse(localStorage.getItem('moravo_admin_user') || 'null'); } catch (e) { USER = null; }
+
+  var currentView = 'pendentes';
+  var reprovarId = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- Toast
+  var toastTimer = null;
+  function toast(msg, type) {
+    var el = $('adminToast');
+    el.textContent = msg;
+    el.className = 'admin-toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'admin-toast'; }, 4000);
+  }
+
+  // ---- Modal de confirmação (substitui confirm() nativo feio)
+  function adminConfirm(message, opts) {
+    var title = (opts && opts.title) || 'Confirmar ação';
+    var okText = (opts && opts.okText) || 'Confirmar';
+    var cancelText = (opts && opts.cancelText) || 'Cancelar';
+    var kind = (opts && opts.kind) || 'primary';   // 'primary' ou 'danger'
+    var onConfirm = (opts && opts.onConfirm) || function () {};
+
+    var modal = $('adminConfirmModal');
+    $('adminConfirmTitle').textContent = title;
+    $('adminConfirmMsg').textContent = message;
+    var okBtn = $('adminConfirmOk');
+    var cancelBtn = $('adminConfirmCancel');
+    okBtn.textContent = okText;
+    cancelBtn.textContent = cancelText;
+    okBtn.className = 'btn ' + (kind === 'danger' ? 'btn-danger' : 'btn-primary');
+
+    function close(result) {
+      modal.classList.remove('show');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      modal.onclick = null;
+      if (result && typeof onConfirm === 'function') onConfirm();
+    }
+    okBtn.onclick = function () { close(true); };
+    cancelBtn.onclick = function () { close(false); };
+    modal.onclick = function (e) { if (e.target === modal) close(false); };
+    modal.classList.add('show');
+  }
+
+  // ---- API helper (com Authorization)
+  function api(path, opts) {
+    opts = opts || {};
+    var headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+    var init = Object.assign({}, opts, { headers: headers });
+    if (init.body && typeof init.body !== 'string') init.body = JSON.stringify(init.body);
+    return fetch(API_BASE + path, init).then(function (r) {
+      return r.json().then(function (body) { return { ok: r.ok, status: r.status, body: body }; });
+    });
+  }
+
+  // ---- Estado das telas
+  function showLogin() {
+    $('adminLoginScreen').classList.remove('hidden');
+    $('adminAppScreen').classList.add('hidden');
+    $('adminEmail').focus();
+  }
+  function showApp() {
+    $('adminLoginScreen').classList.add('hidden');
+    $('adminAppScreen').classList.remove('hidden');
+    $('adminUserBadge').innerHTML = 'Logado como <strong>' + (USER && USER.nome || 'admin') + '</strong>';
+    refreshContadores();
+    renderView(currentView);
+  }
+
+  // ---- Login
+  $('adminLoginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('adminLoginBtn');
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.innerHTML = '<span class="spinner"></span> Entrando…';
+
+    var payload = {
+      email: $('adminEmail').value.trim(),
+      senha: $('adminSenha').value
+    };
+
+    fetch(API_BASE + '/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().then(function (body) { return { ok: r.ok, status: r.status, body: body }; });
+    }).then(function (r) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (!r.ok) {
+        toast(r.body.error || 'Erro ao entrar', 'error');
+        return;
+      }
+      TOKEN = r.body.token;
+      USER = r.body.user;
+      localStorage.setItem('moravo_admin_token', TOKEN);
+      localStorage.setItem('moravo_admin_user', JSON.stringify(USER));
+      showApp();
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      toast('Erro de rede ao entrar.', 'error');
+      console.error(err);
+    });
+  });
+
+  $('adminSairBtn').addEventListener('click', function () {
+    TOKEN = null; USER = null;
+    localStorage.removeItem('moravo_admin_token');
+    localStorage.removeItem('moravo_admin_user');
+    showLogin();
+  });
+
+  // ---- Sidebar
+  document.querySelectorAll('.admin-nav-item').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.admin-nav-item').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentView = btn.getAttribute('data-view');
+      renderView(currentView);
+    });
+  });
+
+  function refreshContadores() {
+    api('/api/admin/imoveis/contadores').then(function (r) {
+      if (!r.ok) return;
+      $('cntPendentes').textContent  = r.body.contadores.pendente || 0;
+      $('cntAprovados').textContent  = r.body.contadores.aprovado || 0;
+      $('cntReprovados').textContent = r.body.contadores.reprovado || 0;
+    });
+  }
+
+  function renderView(view) {
+    var titleMap = {
+      pendentes: 'Pendentes',
+      aprovados: 'Aprovados',
+      reprovados: 'Reprovados',
+      logs: 'Logins de admin'
+    };
+    $('adminSectionTitle').textContent = titleMap[view] || view;
+
+    if (view === 'logs') {
+      renderLogs();
+    } else {
+      // 'pendentes' → 'pendente' (a sidebar usa plural para ficar natural em PT-BR;
+      // o backend espera o valor singular do CHECK constraint).
+      var status = view.replace(/s$/, '');
+      renderImoveis(status);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function parseFotos(im) {
+    var fotos = im.fotos;
+    if (typeof fotos === 'string') {
+      try { fotos = JSON.parse(fotos); } catch (e) { fotos = []; }
+    }
+    return Array.isArray(fotos) ? fotos : [];
+  }
+
+  function fotoUrl(value) {
+    if (!value) return null;
+    if (value.indexOf('data:') === 0) return value;
+    if (value.indexOf('http') === 0) return value;
+    return API_BASE + value;
+  }
+
+  function formatBRL(p, frac) {
+    var n = Number(p) || 0;
+    return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: frac, maximumFractionDigits: frac });
+  }
+
+  function formatPreco(p) {
+    // Preço do imóvel: sem casas decimais (ex.: R$ 1.950.000)
+    return formatBRL(p, 0);
+  }
+
+  function formatDateTime(s) {
+    if (!s) return '';
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleString('pt-BR');
+  }
+
+  // ---- Estado do filtro "Apenas com documento"
+  // Default true (só mostra imóveis com documento). O estado vive em uma
+  // variável para sobreviver à re-renderização do conteúdo (o checkbox no DOM
+  // é recriado a cada troca de aba e não seria confiável).
+  var docFilterEnabled = true;
+  function onlyDocChecked() { return docFilterEnabled; }
+  function wireFilter() {
+    var cb = document.getElementById('adminOnlyDoc');
+    if (cb && !cb.__wired) {
+      cb.checked = docFilterEnabled;
+      cb.addEventListener('change', function () {
+        docFilterEnabled = cb.checked;
+        renderView(currentView);
+      });
+      cb.__wired = true;
+    }
+  }
+
+  function renderImoveis(view) {
+    var status = view; // pendente | aprovado | reprovado
+    var filterDoc = onlyDocChecked();
+    var queryStr = '/api/admin/imoveis?status=' + status + (filterDoc ? '&com_documento=1' : '');
+    $('adminContent').innerHTML = '<div class="admin-empty">Carregando…</div>';
+    api(queryStr).then(function (r) {
+      if (!r.ok) {
+        $('adminContent').innerHTML = '<div class="admin-empty">' + escapeHtml(r.body.error || 'Erro ao carregar') + '</div>';
+        wireFilter();
+        return;
+      }
+      var imoveis = r.body.imoveis || [];
+      var filterHtml = '<div class="admin-filter">' +
+        '<label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem;">' +
+          '<input type="checkbox" id="adminOnlyDoc"' + (filterDoc ? ' checked' : '') + ' />' +
+          '<span>Apenas com documento anexado <small style="color:var(--ink-soft); font-weight:400;">(desmarque para ver todos)</small></span>' +
+        '</label>' +
+      '</div>';
+      if (!imoveis.length) {
+        var emptyMsg = filterDoc
+          ? 'Nenhum imóvel ' + status + ' com documento anexado.'
+          : 'Nenhum imóvel ' + status + '.';
+        $('adminContent').innerHTML = filterHtml + '<div class="admin-empty">' + emptyMsg + '</div>';
+        wireFilter();
+        return;
+      }
+
+      var html = filterHtml + '<div class="admin-list">';
+      imoveis.forEach(function (im) {
+        var fotos = parseFotos(im);
+        var primeiraFoto = fotos[0] ? fotoUrl(fotos[0]) : null;
+        var thumbStyle = primeiraFoto
+          ? 'background-image:url(\'' + primeiraFoto.replace(/'/g, "\\'") + '\')'
+          : '';
+
+        var motivoHtml = (view === 'reprovados' && im.reprovado_motivo)
+          ? '<div class="motivo-bar"><strong>Motivo da reprovação:</strong> ' + escapeHtml(im.reprovado_motivo) + ' <span style="color:rgba(192,57,43,.7)">— ' + escapeHtml(formatDateTime(im.reprovado_em)) + '</span></div>'
+          : '';
+
+        html += '<div class="admin-card" data-id="' + im.id + '">' +
+          // Capa à esquerda (240px)
+          '<div class="card-cover' + (primeiraFoto ? '' : ' cover-empty') + '" style="' + thumbStyle + '">' +
+            (primeiraFoto ? '' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15l-5-5L5 20" stroke-linecap="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>') +
+            '<span class="cover-status">' + ({pendente: 'Pendente', aprovado: 'Aprovado', reprovado: 'Reprovado'}[status] || 'Pendente') + '</span>' +
+          '</div>' +
+          // Cabeçalho
+          '<div class="card-head">' +
+            '<div class="head-row">' +
+              '<div class="head-titles">' +
+                '<h3>' + escapeHtml(im.titulo) + '</h3>' +
+                '<div class="tags">' +
+                  '<span class="tag tipo">' + escapeHtml(im.tipo) + '</span>' +
+                  '<span class="tag">' + escapeHtml(im.cidade + (im.uf ? '/' + im.uf : '')) + '</span>' +
+                  (im.bairro ? '<span class="tag">' + escapeHtml(im.bairro) + '</span>' : '') +
+                '</div>' +
+                '<div class="preco">' + formatPreco(im.preco) + '</div>' +
+                (im.condominio ? '<div class="preco-cond">+ ' + formatBRL(im.valor_condominio, 2) + ' de condomínio</div>' : '') +
+              '</div>' +
+              // Ações no canto superior direito
+              '<div class="actions">' +
+                '<button type="button" class="btn btn-success" data-action="aprovar" data-id="' + im.id + '">✓ Aprovar</button>' +
+                '<button type="button" class="btn btn-danger" data-action="reprovar" data-id="' + im.id + '">✕ Reprovar</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          // Rodapé cinza com contato e documento
+          '<div class="card-foot">' +
+            '<span class="foot-item">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+              '<span class="foot-label">Vendedor</span>' +
+              '<strong>' + escapeHtml(im.dono_nome) + '</strong>' +
+            '</span>' +
+            '<span class="foot-item foot-link">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>' +
+              '<a href="mailto:' + escapeHtml(im.dono_email) + '">' + escapeHtml(im.dono_email) + '</a>' +
+            '</span>' +
+            '<span class="foot-item foot-link foot-wpp">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1s-.8.9-.9 1.1c-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.7-1.7c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.2.8 3 .7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>' +
+              '<a href="https://wa.me/55' + escapeHtml(im.dono_whatsapp) + '" target="_blank" rel="noopener">' + escapeHtml(im.dono_whatsapp) + '</a>' +
+            '</span>' +
+            (im.matricula ? '<span class="foot-item"><span class="foot-label">Matrícula</span><strong>' + escapeHtml(im.matricula) + '</strong></span>' : '') +
+            '<span class="foot-spacer"></span>' +
+            (im.escritura_arquivo_url
+              ? '<a href="' + escapeHtml(fotoUrl(im.escritura_arquivo_url)) + '" target="_blank" rel="noopener" class="foot-doc has-doc">📎 Documento da matrícula</a>'
+              : '<span class="foot-doc empty">⚠ Sem documento</span>') +
+          '</div>' +
+          motivoHtml +
+        '</div>';
+      });
+      html += '</div>';
+      $('adminContent').innerHTML = html;
+
+      // Re-wire o filtro de documento (sempre que o conteúdo é re-renderizado)
+      wireFilter();
+
+      // Wire up buttons
+      document.querySelectorAll('.admin-card [data-action]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = parseInt(btn.getAttribute('data-id'), 10);
+          var action = btn.getAttribute('data-action');
+          if (action === 'aprovar') confirmarAprovar(id);
+          else if (action === 'reprovar') abrirReprovar(id);
+        });
+      });
+    }).catch(function (err) {
+      $('adminContent').innerHTML = '<div class="admin-empty">Erro de rede.</div>';
+      console.error(err);
+    });
+  }
+
+  function renderLogs() {
+    $('adminContent').innerHTML = '<div class="admin-empty">Carregando…</div>';
+    api('/api/admin/logs').then(function (r) {
+      if (!r.ok) {
+        $('adminContent').innerHTML = '<div class="admin-empty">' + escapeHtml(r.body.error || 'Erro') + '</div>';
+        return;
+      }
+      var logs = r.body.logs || [];
+      if (!logs.length) {
+        $('adminContent').innerHTML = '<div class="admin-empty">Nenhum login registrado.</div>';
+        return;
+      }
+      var html = '<div class="admin-logs"><table><thead><tr>' +
+        '<th>Data/hora</th><th>E-mail</th><th>Status</th><th>IP</th><th>User-agent</th>' +
+        '</tr></thead><tbody>';
+      logs.forEach(function (l) {
+        var chipClass = l.sucesso ? 'chip-ok' : 'chip-fail';
+        var chipText = l.sucesso ? 'Sucesso' : 'Falha';
+        var ua = (l.user_agent || '').slice(0, 80);
+        html += '<tr>' +
+          '<td>' + escapeHtml(formatDateTime(l.created_at)) + '</td>' +
+          '<td>' + escapeHtml(l.email) + '</td>' +
+          '<td><span class="chip ' + chipClass + '">' + chipText + '</span></td>' +
+          '<td>' + escapeHtml(l.ip || '—') + '</td>' +
+          '<td style="font-size:0.78rem; color:var(--ink-soft)">' + escapeHtml(ua) + '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table></div>';
+      $('adminContent').innerHTML = html;
+    }).catch(function (err) {
+      $('adminContent').innerHTML = '<div class="admin-empty">Erro de rede.</div>';
+      console.error(err);
+    });
+  }
+
+  // ---- Ações de aprovação/reprovação
+  function confirmarAprovar(id) {
+    adminConfirm(
+      'Aprovar este imóvel? Ele ficará visível publicamente com o selo "Verificado".',
+      {
+        title: 'Aprovar imóvel',
+        okText: 'Aprovar',
+        kind: 'primary',
+        onConfirm: function () {
+          api('/api/admin/imoveis/' + id + '/aprovar', { method: 'POST' }).then(function (r) {
+            if (!r.ok) {
+              toast(r.body.error || 'Erro ao aprovar', 'error');
+              return;
+            }
+            toast('Imóvel aprovado.', 'success');
+            refreshContadores();
+            renderView(currentView);
+          });
+        }
+      }
+    );
+  }
+
+  function abrirReprovar(id) {
+    reprovarId = id;
+    $('adminReprovarMotivo').value = '';
+    $('adminReprovarModal').classList.add('show');
+    setTimeout(function () { $('adminReprovarMotivo').focus(); }, 50);
+  }
+  $('adminReprovarCancel').addEventListener('click', function () {
+    $('adminReprovarModal').classList.remove('show');
+    reprovarId = null;
+  });
+  $('adminReprovarConfirm').addEventListener('click', function () {
+    var motivo = $('adminReprovarMotivo').value.trim();
+    if (motivo.length < 10) {
+      toast('Motivo deve ter pelo menos 10 caracteres.', 'error');
+      return;
+    }
+    var id = reprovarId;
+    if (!id) return;
+    var btn = $('adminReprovarConfirm');
+    btn.disabled = true;
+    api('/api/admin/imoveis/' + id + '/reprovar', {
+      method: 'POST',
+      body: { motivo: motivo }
+    }).then(function (r) {
+      btn.disabled = false;
+      if (!r.ok) {
+        toast(r.body.error || 'Erro ao reprovar', 'error');
+        return;
+      }
+      $('adminReprovarModal').classList.remove('show');
+      reprovarId = null;
+      toast('Imóvel reprovado.', 'success');
+      refreshContadores();
+      renderView(currentView);
+    }).catch(function (err) {
+      btn.disabled = false;
+      toast('Erro de rede.', 'error');
+      console.error(err);
+    });
+  });
+  // Click-outside fecha o modal
+  $('adminReprovarModal').addEventListener('click', function (e) {
+    if (e.target === $('adminReprovarModal')) {
+      $('adminReprovarModal').classList.remove('show');
+      reprovarId = null;
+    }
+  });
+
+  // ---- Init
+  if (TOKEN && USER) {
+    showApp();
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>

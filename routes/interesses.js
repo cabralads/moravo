@@ -6,6 +6,7 @@ const router  = express.Router();
 const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { criarNotificacao } = require('../lib/notifications');
+const { criarGrupo, enviarMensagem, montarLinkGrupo, extrairIdGrupo, gerarInviteGrupo } = require('../lib/waha');
 
 const STATUS_VALIDOS = ['pendente', 'aceito', 'recusado'];
 
@@ -31,15 +32,6 @@ router.post('/imovel/:imovelId', requireAuth, requireRole('corretor'), async (re
       return res.status(400).json({ ok: false, error: 'Você é o dono deste imóvel.' });
     }
 
-    // Bloqueia nova candidatura se já existir corretor aceito
-    const jaAceito = await query(
-      `SELECT id FROM moravo.interesses
-       WHERE imovel_id = $1 AND status = 'aceito' LIMIT 1`,
-      [imovelId]
-    );
-    if (jaAceito.rowCount > 0) {
-      return res.status(409).json({ ok: false, error: 'Este imóvel já possui um corretor responsável.' });
-    }
 
     // Não permite interesse duplicado do mesmo corretor no mesmo imóvel
     const dup = await query(
@@ -113,7 +105,10 @@ router.get('/', requireAuth, async (req, res) => {
       }
       const r = await query(
         `SELECT i.*, u.nome AS corretor_nome, u.whatsapp AS corretor_whatsapp,
-                u.email AS corretor_email, u.creci, u.regiao_atuacao
+                u.email AS corretor_email, u.creci, u.regiao_atuacao,
+                i.grupo_whatsapp_id AS grupo_whatsapp_id,
+                i.grupo_whatsapp_link AS grupo_whatsapp_link,
+                i.grupo_whatsapp_created_at AS grupo_whatsapp_created_at
          FROM moravo.interesses i
          JOIN moravo.usuarios u ON u.id = i.corretor_id
          WHERE i.imovel_id = $1
@@ -129,10 +124,10 @@ router.get('/', requireAuth, async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Você só pode ver seus próprios interesses.' });
       }
       const r = await query(
-        `SELECT i.*, 
-                im.titulo AS imovel_titulo, 
-                im.cidade AS imovel_cidade, 
-                im.tipo AS imovel_tipo, 
+        `SELECT i.*,
+                im.titulo AS imovel_titulo,
+                im.cidade AS imovel_cidade,
+                im.tipo AS imovel_tipo,
                 im.fotos AS imovel_fotos,
                 im.bairro AS imovel_bairro,
                 im.quartos AS imovel_quartos,
@@ -141,7 +136,10 @@ router.get('/', requireAuth, async (req, res) => {
                 im.vagas AS imovel_vagas,
                 im.preco AS imovel_preco,
                 im.status AS imovel_status,
-                im.interesses_compradores AS imovel_interesses_compradores
+                im.interesses_compradores AS imovel_interesses_compradores,
+                i.grupo_whatsapp_id AS grupo_whatsapp_id,
+                i.grupo_whatsapp_link AS grupo_whatsapp_link,
+                i.grupo_whatsapp_created_at AS grupo_whatsapp_created_at
          FROM moravo.interesses i
          JOIN moravo.imoveis im ON im.id = i.imovel_id
          WHERE i.corretor_id = $1
@@ -155,7 +153,7 @@ router.get('/', requireAuth, async (req, res) => {
     if (req.user.perfil === 'corretor') {
       const r = await query(
         `-- 1. Interessados nos imóveis que este corretor atua (como intermediador)
-         SELECT 
+         SELECT
            ic.id, ic.imovel_id, ic.created_at, 'comprador_rep' AS type,
            im.titulo AS imovel_titulo, im.cidade AS imovel_cidade, im.tipo AS imovel_tipo, im.fotos AS imovel_fotos,
            'comprador' AS other_role,
@@ -168,7 +166,10 @@ router.get('/', requireAuth, async (req, res) => {
            -- campos legados para retrocompatibilidade
            u_comp.nome AS comprador_nome, u_comp.whatsapp AS comprador_whatsapp, u_comp.email AS comprador_email,
            u_corr.nome AS corretor_nome, u_corr.whatsapp AS corretor_whatsapp, u_corr.email AS corretor_email,
-           u_corr.creci
+           u_corr.creci,
+           NULL::TEXT AS grupo_whatsapp_id,
+           NULL::TEXT AS grupo_whatsapp_link,
+           NULL::TIMESTAMPTZ AS grupo_whatsapp_created_at
          FROM moravo.interesses_compradores ic
          JOIN moravo.imoveis im ON im.id = ic.imovel_id
          JOIN moravo.usuarios u_comp ON u_comp.id = ic.comprador_id
@@ -179,7 +180,7 @@ router.get('/', requireAuth, async (req, res) => {
          UNION ALL
 
          -- 2. Interesses de intermediação com proprietários (todas as propostas)
-         SELECT 
+         SELECT
            i.id, i.imovel_id, i.created_at, 'broker_rep' AS type,
            im.titulo AS imovel_titulo, im.cidade AS imovel_cidade, im.tipo AS imovel_tipo, im.fotos AS imovel_fotos,
            'proprietario' AS other_role,
@@ -192,7 +193,10 @@ router.get('/', requireAuth, async (req, res) => {
            -- campos legados para retrocompatibilidade
            u_owner.nome AS comprador_nome, u_owner.whatsapp AS comprador_whatsapp, u_owner.email AS comprador_email,
            u_corr.nome AS corretor_nome, u_corr.whatsapp AS corretor_whatsapp, u_corr.email AS corretor_email,
-           u_corr.creci
+           u_corr.creci,
+           i.grupo_whatsapp_id AS grupo_whatsapp_id,
+           i.grupo_whatsapp_link AS grupo_whatsapp_link,
+           i.grupo_whatsapp_created_at AS grupo_whatsapp_created_at
          FROM moravo.interesses i
          JOIN moravo.imoveis im ON im.id = i.imovel_id
          JOIN moravo.usuarios u_owner ON u_owner.id = im.dono_id
@@ -208,7 +212,7 @@ router.get('/', requireAuth, async (req, res) => {
     if (req.user.perfil === 'proprietario' || req.user.perfil === 'comprador') {
       const r = await query(
         `-- 1. Minhas demonstrações de interesse como comprador
-         SELECT 
+         SELECT
            ic.id, ic.imovel_id, ic.created_at, 'comprador_sent' AS type,
            im.titulo AS imovel_titulo, im.cidade AS imovel_cidade, im.tipo AS imovel_tipo, im.fotos AS imovel_fotos,
            CASE WHEN u_corr.id IS NOT NULL THEN 'corretor' ELSE 'proprietario' END AS other_role,
@@ -225,7 +229,10 @@ router.get('/', requireAuth, async (req, res) => {
            COALESCE(u_corr.nome, u_owner.nome) AS corretor_nome,
            COALESCE(u_corr.whatsapp, u_owner.whatsapp) AS corretor_whatsapp,
            COALESCE(u_corr.email, u_owner.email) AS corretor_email,
-           COALESCE(u_corr.creci, '') AS creci
+           COALESCE(u_corr.creci, '') AS creci,
+           NULL::TEXT AS grupo_whatsapp_id,
+           NULL::TEXT AS grupo_whatsapp_link,
+           NULL::TIMESTAMPTZ AS grupo_whatsapp_created_at
          FROM moravo.interesses_compradores ic
          JOIN moravo.imoveis im ON im.id = ic.imovel_id
          JOIN moravo.usuarios u_owner ON u_owner.id = im.dono_id
@@ -237,7 +244,7 @@ router.get('/', requireAuth, async (req, res) => {
          UNION ALL
 
          -- 2. Interesses de compradores direto nos meus imóveis (quando NÃO tem corretor associado)
-         SELECT 
+         SELECT
            ic.id, ic.imovel_id, ic.created_at, 'comprador_received' AS type,
            im.titulo AS imovel_titulo, im.cidade AS imovel_cidade, im.tipo AS imovel_tipo, im.fotos AS imovel_fotos,
            'comprador' AS other_role,
@@ -250,12 +257,15 @@ router.get('/', requireAuth, async (req, res) => {
            -- campos legados para retrocompatibilidade
            u_comp.nome AS comprador_nome, u_comp.whatsapp AS comprador_whatsapp, u_comp.email AS comprador_email,
            u_owner.nome AS corretor_nome, u_owner.whatsapp AS corretor_whatsapp, u_owner.email AS corretor_email,
-           '' AS creci
+           '' AS creci,
+           NULL::TEXT AS grupo_whatsapp_id,
+           NULL::TEXT AS grupo_whatsapp_link,
+           NULL::TIMESTAMPTZ AS grupo_whatsapp_created_at
          FROM moravo.interesses_compradores ic
          JOIN moravo.imoveis im ON im.id = ic.imovel_id
          JOIN moravo.usuarios u_owner ON u_owner.id = im.dono_id
          JOIN moravo.usuarios u_comp ON u_comp.id = ic.comprador_id
-         WHERE im.dono_id = $1 
+         WHERE im.dono_id = $1
            AND NOT EXISTS (
              SELECT 1 FROM moravo.interesses i WHERE i.imovel_id = im.id AND i.status = 'aceito'
            )
@@ -263,7 +273,7 @@ router.get('/', requireAuth, async (req, res) => {
          UNION ALL
 
          -- 3. Interesses de intermediação com corretores (todas as propostas)
-         SELECT 
+         SELECT
            i.id, i.imovel_id, i.created_at, 'broker_rep' AS type,
            im.titulo AS imovel_titulo, im.cidade AS imovel_cidade, im.tipo AS imovel_tipo, im.fotos AS imovel_fotos,
            'corretor' AS other_role,
@@ -276,7 +286,10 @@ router.get('/', requireAuth, async (req, res) => {
            -- campos legados para retrocompatibilidade
            u_owner.nome AS comprador_nome, u_owner.whatsapp AS comprador_whatsapp, u_owner.email AS comprador_email,
            u_corr.nome AS corretor_nome, u_corr.whatsapp AS corretor_whatsapp, u_corr.email AS corretor_email,
-           u_corr.creci AS creci
+           u_corr.creci AS creci,
+           i.grupo_whatsapp_id AS grupo_whatsapp_id,
+           i.grupo_whatsapp_link AS grupo_whatsapp_link,
+           i.grupo_whatsapp_created_at AS grupo_whatsapp_created_at
          FROM moravo.interesses i
          JOIN moravo.imoveis im ON im.id = i.imovel_id
          JOIN moravo.usuarios u_owner ON u_owner.id = im.dono_id
@@ -293,6 +306,56 @@ router.get('/', requireAuth, async (req, res) => {
     return res.json({ ok: true, total: 0, interesses: [] });
   } catch (err) {
     console.error('[interesses GET] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/interesses/aceitar-todos — dono do imóvel aceita todas as candidaturas pendentes
+router.post('/aceitar-todos', requireAuth, requireRole('proprietario'), async (req, res) => {
+  try {
+    // 1. Busca todas as candidaturas pendentes de corretores nos imóveis deste dono
+    const pendentes = await query(
+      `SELECT i.id, i.corretor_id, i.imovel_id, im.titulo AS imovel_titulo
+       FROM moravo.interesses i
+       JOIN moravo.imoveis im ON im.id = i.imovel_id
+       WHERE im.dono_id = $1 AND i.status = 'pendente'`,
+      [req.user.id]
+    );
+
+    if (pendentes.rowCount === 0) {
+      return res.json({ ok: true, message: 'Nenhuma candidatura pendente encontrada.', count: 0 });
+    }
+
+    // 2. Atualiza todas as candidaturas para 'aceito'
+    await query(
+      `UPDATE moravo.interesses i
+       SET status = 'aceito'
+       FROM moravo.imoveis im
+       WHERE i.imovel_id = im.id AND im.dono_id = $1 AND i.status = 'pendente'`,
+      [req.user.id]
+    );
+
+    // 3. Cria as notificações para cada um dos corretores aceitos
+    for (const p of pendentes.rows) {
+      try {
+        await criarNotificacao({
+          usuario_id: p.corretor_id,
+          tipo: 'corretor_escolhido',
+          imovel_id: p.imovel_id,
+          interesse_id: p.id,
+          remetente_id: req.user.id,
+          payload: {
+            imovel_titulo: p.imovel_titulo,
+          },
+        });
+      } catch (notifErr) {
+        console.warn('[interesses aceitar-todos] falha ao notificar corretor:', p.corretor_id, notifErr.message);
+      }
+    }
+
+    return res.json({ ok: true, message: `${pendentes.rowCount} proposta(s) aceita(s) com sucesso.`, count: pendentes.rowCount });
+  } catch (err) {
+    console.error('[interesses aceitar-todos] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
   }
 });
@@ -333,35 +396,8 @@ router.patch('/:id', requireAuth, async (req, res) => {
     );
     const updated = r.rows[0];
 
-    // ---- Efeitos colaterais: recusa automática dos outros pendentes e notificações
+    // ---- Efeitos colaterais: notificações
     if (novoStatus === 'aceito') {
-      // Recusa todos os outros pendentes do mesmo imóvel e captura quem eram
-      const outros = await query(
-        `UPDATE moravo.interesses
-           SET status = 'recusado'
-         WHERE imovel_id = $1
-           AND id <> $2
-           AND status = 'pendente'
-         RETURNING id, corretor_id`,
-        [imovelId, id]
-      );
-
-      // Notifica cada corretor que foi recusado automaticamente
-      for (const o of outros.rows) {
-        await criarNotificacao({
-          usuario_id: o.corretor_id,
-          tipo: 'corretor_recusado',
-          imovel_id: imovelId,
-          interesse_id: o.id,
-          remetente_id: req.user.id,
-          payload: {
-            imovel_titulo: imovelTitulo,
-            motivo: 'outro_corretor_aceito',
-            corretor_escolhido_id: corretorId,
-          },
-        });
-      }
-
       // Notifica o corretor que foi aceito
       await criarNotificacao({
         usuario_id: corretorId,
@@ -446,6 +482,216 @@ router.delete('/:id', requireAuth, async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     console.error('[interesses DELETE] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/interesses/:id/criar-grupo-whatsapp
+// Cria (ou recupera) um grupo de WhatsApp no Waha com:
+//   - Proprietário (vendedor)
+//   - Corretor
+//   - Atendente principal (número fixo configurado no .env)
+//
+// Pode ser chamado tanto pelo corretor do interesse quanto pelo dono do imóvel.
+// Só funciona se o status for 'aceito'. Se o grupo já existe, retorna o link (idempotente).
+router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
+  const interesseId = parseInt(req.params.id, 10);
+  console.log('🔥🔥🔥 ENDPOINT CHAMADO! interesseId:', interesseId);
+  if (!Number.isFinite(interesseId)) {
+    return res.status(400).json({ ok: false, error: 'ID de interesse inválido.' });
+  }
+
+  try {
+    // 1. Busca interesse + dados do imóvel + dono + corretor
+    const interesseRow = await query(
+      `SELECT i.id, i.imovel_id, i.corretor_id, i.status,
+              i.grupo_whatsapp_id, i.grupo_whatsapp_link, i.grupo_whatsapp_created_at,
+              im.titulo AS imovel_titulo, im.dono_id,
+              u_dono.nome   AS dono_nome,      u_dono.whatsapp   AS dono_whatsapp,
+              u_corr.nome   AS corretor_nome,  u_corr.whatsapp   AS corretor_whatsapp
+       FROM moravo.interesses i
+       JOIN moravo.imoveis im     ON im.id = i.imovel_id
+       JOIN moravo.usuarios u_dono ON u_dono.id = im.dono_id
+       JOIN moravo.usuarios u_corr ON u_corr.id = i.corretor_id
+       WHERE i.id = $1`,
+      [interesseId]
+    );
+
+    if (interesseRow.rowCount === 0) {
+      console.log('❌ interesse não encontrado');
+      return res.status(404).json({ ok: false, error: 'Interesse não encontrado.' });
+    }
+    const interesse = interesseRow.rows[0];
+    console.log('✅ interesse encontrado:', { id: interesse.id, status: interesse.status, dono: interesse.dono_whatsapp, corretor: interesse.corretor_whatsapp, link_existente: interesse.grupo_whatsapp_link });
+
+    // 2. Permissão: corretor do interesse OU dono do imóvel podem disparar
+    const ehCorretor = interesse.corretor_id === req.user.id;
+    const ehDono = interesse.dono_id === req.user.id;
+    console.log('🔐 permissão: ehCorretor=' + ehCorretor + ' ehDono=' + ehDono + ' req.user.id=' + req.user.id);
+    if (!ehCorretor && !ehDono) {
+      console.log('❌ sem permissão');
+      return res.status(403).json({ ok: false, error: 'Você não tem permissão para este interesse.' });
+    }
+
+    // 3. Só permite criar grupo quando o proprietário aceitou
+    if (interesse.status !== 'aceito') {
+      console.log('❌ status não é aceito:', interesse.status);
+      return res.status(400).json({ ok: false, error: 'Você ainda não foi aceito pelo proprietário.' });
+    }
+    console.log('✅ status aceito');
+
+    // 4. Valida que todos os participantes têm WhatsApp
+    if (!interesse.dono_whatsapp || !interesse.corretor_whatsapp) {
+      return res.status(400).json({
+        ok: false,
+        error: 'WhatsApp do vendedor ou do corretor não está cadastrado.',
+      });
+    }
+
+    const atendentePrincipal = (process.env.WAHA_ATENDENTE_PRINCIPAL || '').replace(/\D/g, '');
+    if (!atendentePrincipal) {
+      return res.status(500).json({
+        ok: false,
+        error: 'WAHA_ATENDENTE_PRINCIPAL não configurado no servidor.',
+      });
+    }
+
+    // 5. Se já existe grupo E o link é válido (chat.whatsapp.com), devolve (idempotência)
+    // Se o link for wa.me/<jid> (formato antigo que não funciona pra grupos), tenta
+    // REGENERAR o invite code usando o grupo existente (não recria!)
+    const linkExiste = interesse.grupo_whatsapp_link;
+    const grupoIdExistente = interesse.grupo_whatsapp_id;
+    const linkInvalidoWaMe = linkExiste && linkExiste.startsWith('https://wa.me/');
+
+    if (linkExiste && !linkInvalidoWaMe) {
+      console.log('✅ grupo já existe com link válido:', linkExiste);
+      return res.json({
+        ok: true,
+        grupo_link: linkExiste,
+        grupo_id: grupoIdExistente,
+        ja_existia: true,
+        created_at: interesse.grupo_whatsapp_created_at,
+      });
+    }
+
+    let grupoId;
+    let grupoLink = '';
+    let grupoOwner = '';
+    let jaExistia = false;
+
+    // Se o link é inválido mas JID existe → tenta gerar invite code do grupo existente
+    if (linkInvalidoWaMe && grupoIdExistente) {
+      console.log('⚠️ link antigo wa.me detectado. Reutilizando grupo existente JID:', grupoIdExistente);
+
+      // Não cria grupo — só tenta gerar invite code do grupo que já existe
+      const inviteGerado = await gerarInviteGrupo(grupoIdExistente).catch((err) => {
+        console.warn('[waha] falha ao gerar invite do grupo existente:', err.message);
+        return '';
+      });
+
+      if (inviteGerado && !inviteGerado.startsWith('https://wa.me/')) {
+        grupoId = grupoIdExistente;
+        grupoLink = inviteGerado;
+        jaExistia = true;
+        console.log('[waha] invite code regenerado com sucesso:', grupoLink);
+
+        // Atualiza o link no banco
+        await query(
+          `UPDATE moravo.interesses SET grupo_whatsapp_link = $1 WHERE id = $2`,
+          [grupoLink, interesseId]
+        );
+
+        return res.json({
+          ok: true,
+          grupo_link: grupoLink,
+          grupo_id: grupoId,
+          grupo_owner: '',
+          ja_existia: true,
+        });
+      } else {
+        console.warn('[waha] não foi possível regenerar invite do grupo existente; criando novo grupo...');
+      }
+    }
+
+    // 6. Cria o grupo no Waha
+    const grupoNome = `Moravo - ${interesse.imovel_titulo}`;
+    const grupoDesc = `Negociação do imóvel "${interesse.imovel_titulo}". Vendedor: ${interesse.dono_nome}. Corretor: ${interesse.corretor_nome}.`;
+
+    let wahaResult;
+    try {
+      wahaResult = await criarGrupo({
+        nome: grupoNome,
+        descricao: grupoDesc,
+        participantes: [
+          interesse.dono_whatsapp,
+          interesse.corretor_whatsapp,
+          atendentePrincipal,
+        ],
+      });
+    } catch (wahaErr) {
+      console.error('[criar-grupo-whatsapp] erro Waha:', wahaErr.message);
+      return res.status(502).json({
+        ok: false,
+        error: 'Não foi possível criar o grupo no WhatsApp. Tente novamente em alguns instantes.',
+      });
+    }
+
+    grupoId = extrairIdGrupo(wahaResult);
+    grupoOwner = wahaResult.OwnerPN || wahaResult.owner || '';
+
+    console.log('[waha] grupo criado — JID:', grupoId, '| Owner:', grupoOwner, '| SuperAdmin:', atendentePrincipal + '@s.whatsapp.net');
+
+    // Tenta primeiro extrair invite da resposta; se não vier, gera via endpoint separado
+    grupoLink = montarLinkGrupo(wahaResult);
+
+    // Se montarLinkGrupo devolveu um link wa.me (JID puro), tenta gerar o invite real
+    if (grupoLink.startsWith('https://wa.me/')) {
+      console.log('[waha] resposta não trouxe invite; tentando gerar invite code via endpoint dedicado...');
+      const inviteGerado = await gerarInviteGrupo(grupoId).catch((err) => {
+        console.warn('[waha] falha ao gerar invite:', err.message);
+        return '';
+      });
+      if (inviteGerado) {
+        grupoLink = inviteGerado;
+        console.log('[waha] invite gerado:', grupoLink);
+      } else {
+        console.warn('[waha] não foi possível gerar invite; usando wa.me como fallback');
+      }
+    }
+
+    // 7. Salva no banco
+    await query(
+      `UPDATE moravo.interesses
+          SET grupo_whatsapp_id         = $1,
+              grupo_whatsapp_link       = $2,
+              grupo_whatsapp_created_at = NOW()
+        WHERE id = $3`,
+      [grupoId, grupoLink, interesseId]
+    );
+
+    // 8. Envia mensagem inicial de boas-vindas no grupo (best effort, não bloqueia a resposta)
+    if (grupoId) {
+      const msgInicial =
+        `👋 Olá! Bem-vindos ao grupo oficial de negociação do imóvel "${interesse.imovel_titulo}".\n\n` +
+        `🏠 Vendedor: ${interesse.dono_nome}\n` +
+        `🤝 Corretor: ${interesse.corretor_nome}\n\n` +
+        `A Moravo está acompanhando esta negociação para garantir segurança e transparência ` +
+        `para todos os envolvidos. Por favor, mantenham a comunicação cordial e organizada.`;
+
+      enviarMensagem(grupoId, msgInicial).catch((err) => {
+        console.warn('[criar-grupo-whatsapp] falha ao enviar msg inicial:', err.message);
+      });
+    }
+
+    return res.json({
+      ok: true,
+      grupo_link: grupoLink,
+      grupo_id:   grupoId,
+      grupo_owner: grupoOwner,
+      ja_existia: false,
+    });
+  } catch (err) {
+    console.error('[criar-grupo-whatsapp] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
   }
 });

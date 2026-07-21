@@ -194,6 +194,21 @@
     font-size: 2rem;
     margin-bottom: 8px;
   }
+  .badge-verificado {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 5px 12px 5px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: middle;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+  }
+  .badge-verificado svg { flex-shrink: 0; }
   .property-meta-row {
     display: flex;
     justify-content: space-between;
@@ -969,7 +984,7 @@
 </div>
 
 <script>
-  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  var API_BASE = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
   
   // ---- Nav: logado vs deslogado ----
   (function () {
@@ -1048,7 +1063,7 @@
 
         // ---- Sync Notif Badge in Navbar
         function refreshNavNotifBadge() {
-          var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+          var apiBase = (window.MORAVO_API || 'http://127.0.0.1:3001').replace(/\/+$/, '');
           fetch(apiBase + '/api/notificacoes/nao-lidas/count', {
             headers: token ? { 'Authorization': 'Bearer ' + token } : {}
           })
@@ -1217,7 +1232,12 @@
       });
   }
 
-  fetch(API_BASE + '/api/imoveis/' + imovelId)
+  var token = localStorage.getItem('moravo_token');
+  var headers = {};
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
+  fetch(API_BASE + '/api/imoveis/' + imovelId, { headers: headers })
     .then(function (r) {
       if (!r.ok) throw new Error('Não foi possível carregar o imóvel.');
       return r.json();
@@ -1248,7 +1268,20 @@
 
   function renderPropertyDetails(im) {
     document.title = 'Moravo — ' + im.titulo;
-    document.getElementById('propTitle').textContent = im.titulo;
+    var safeTitle = String(im.titulo || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    var titleEl = document.getElementById('propTitle');
+    titleEl.innerHTML = safeTitle +
+      (im.status_aprovacao === 'aprovado'
+        ? ' <span class="badge-verificado" title="Imóvel aprovado pela Moravo">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none">' +
+              '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+              '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>' +
+            'Verificado' +
+          '</span>'
+        : '');
     document.getElementById('propAddressSummary').textContent = im.bairro + ', ' + im.cidade + ' - ' + (im.uf || 'SC');
     document.getElementById('propTypeHeadline').textContent = String(im.tipo).charAt(0).toUpperCase() + String(im.tipo).slice(1) + ' em ' + im.cidade;
     
@@ -1309,8 +1342,8 @@
         };
       } else if (loggedUser.perfil === 'corretor') {
         // Se estiver logado e for Corretor, mas o imóvel já possui corretor atribuído → bloqueia
-        if (im.tem_corretor_aceito) {
-          ctaText.textContent = 'Esse imóvel já tem um responsável';
+        if (im.meu_interesse_status === 'aceito') {
+          ctaText.textContent = 'Você representa este imóvel';
           ctaIcon.innerHTML = '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>';
           ctaBtn.disabled = true;
           ctaBtn.style.background = '#22c55e';
@@ -1321,7 +1354,33 @@
           ctaBtn.style.transform = 'none';
           ctaBtn.style.boxShadow = 'none';
           ctaBtn.onclick = null;
-          if (ctaTitle) ctaTitle.textContent = 'Este imóvel já possui um corretor atribuído.';
+          if (ctaTitle) ctaTitle.textContent = 'Você já foi aceito para intermediar este imóvel.';
+        } else if (im.meu_interesse_status === 'pendente') {
+          ctaText.textContent = 'Solicitação pendente';
+          ctaIcon.innerHTML = '<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>';
+          ctaBtn.disabled = true;
+          ctaBtn.style.background = '#ff9800';
+          ctaBtn.style.color = '#fff';
+          ctaBtn.style.border = '2px solid #ff9800';
+          ctaBtn.style.cursor = 'not-allowed';
+          ctaBtn.style.opacity = '1';
+          ctaBtn.style.transform = 'none';
+          ctaBtn.style.boxShadow = 'none';
+          ctaBtn.onclick = null;
+          if (ctaTitle) ctaTitle.textContent = 'Aguardando aprovação do proprietário.';
+        } else if (im.meu_interesse_status === 'recusado') {
+          ctaText.textContent = 'Intermediação Recusada';
+          ctaIcon.innerHTML = '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 9v4M12 17h.01"/>';
+          ctaBtn.disabled = true;
+          ctaBtn.style.background = '#f44336';
+          ctaBtn.style.color = '#fff';
+          ctaBtn.style.border = '2px solid #f44336';
+          ctaBtn.style.cursor = 'not-allowed';
+          ctaBtn.style.opacity = '1';
+          ctaBtn.style.transform = 'none';
+          ctaBtn.style.boxShadow = 'none';
+          ctaBtn.onclick = null;
+          if (ctaTitle) ctaTitle.textContent = 'O proprietário recusou sua intermediação.';
         } else {
           // Sem corretor atribuído: permite intermediar
           ctaText.textContent = 'Intermediar este imóvel';

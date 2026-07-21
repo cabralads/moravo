@@ -158,6 +158,16 @@ CREATE INDEX IF NOT EXISTS idx_interesses_imovel_id   ON moravo.interesses (imov
 CREATE INDEX IF NOT EXISTS idx_interesses_corretor_id ON moravo.interesses (corretor_id);
 CREATE INDEX IF NOT EXISTS idx_interesses_status      ON moravo.interesses (status);
 
+-- ---- Migração: colunas para armazenar o grupo de WhatsApp criado via Waha ----
+ALTER TABLE moravo.interesses
+    ADD COLUMN IF NOT EXISTS grupo_whatsapp_id         TEXT,
+    ADD COLUMN IF NOT EXISTS grupo_whatsapp_link       TEXT,
+    ADD COLUMN IF NOT EXISTS grupo_whatsapp_created_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_interesses_grupo_whatsapp_id
+    ON moravo.interesses (grupo_whatsapp_id)
+    WHERE grupo_whatsapp_id IS NOT NULL;
+
 DROP TRIGGER IF EXISTS trg_interesses_touch_updated_at ON moravo.interesses;
 CREATE TRIGGER trg_interesses_touch_updated_at
     BEFORE UPDATE ON moravo.interesses
