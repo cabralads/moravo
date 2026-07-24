@@ -23,7 +23,11 @@ const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 
 // ---- Middlewares
-app.use(express.json({ limit: '64kb' }));
+// Limite alto porque o POST /api/imoveis aceita fotos em data URL dentro do JSON.
+// (Há também endpoints multipart separados em /api/imoveis/:id/fotos e /documentos
+//  que recebem FormData e usam os limites padrão do multer/busboy — esses não
+//  passam por aqui.)
+app.use(express.json({ limit: '50mb' }));
 
 // Desabilita cache para todas as requisições de API
 app.use((req, res, next) => {

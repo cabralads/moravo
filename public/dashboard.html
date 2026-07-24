@@ -2261,15 +2261,15 @@
                   conta.</p>
                 <div class="field">
                   <label for="p-senha-atual">Senha atual</label>
-                  <input type="password" id="p-senha-atual" placeholder="Sua senha atual" />
+                  <input type="password" id="p-senha-atual" placeholder="Sua senha atual" maxlength="10" />
                 </div>
                 <div class="field" style="margin-top: 16px;">
-                  <label for="p-senha-nova">Nova senha <span class="opt">(mínimo 6 caracteres)</span></label>
-                  <input type="password" id="p-senha-nova" placeholder="Mínimo 6 caracteres" />
+                  <label for="p-senha-nova">Nova senha <span class="opt">(mínimo 6 e máximo 10 caracteres)</span></label>
+                  <input type="password" id="p-senha-nova" placeholder="Mínimo 6 caracteres" maxlength="10" />
                 </div>
                 <div class="field" style="margin-top: 16px;">
                   <label for="p-senha-confirma">Confirmar nova senha</label>
-                  <input type="password" id="p-senha-confirma" placeholder="Confirme a nova senha" />
+                  <input type="password" id="p-senha-confirma" placeholder="Confirme a nova senha" maxlength="10" />
                 </div>
               </div>
               <div class="settings-pane" id="pane-privacidade">
@@ -3563,7 +3563,8 @@
         });
       }
 
-      function editarImovel(id) {
+      function editarImovel(id, opts) {
+        opts = opts || {};
         var saveBtn = document.getElementById('saveImovelBtn');
         saveBtn.disabled = false;
         saveBtn.textContent = 'Próximo';
@@ -3591,7 +3592,6 @@
           document.getElementById('i-vagas').value = im.vagas || '';
           document.getElementById('i-descricao').value = im.descricao || '';
           document.getElementById('imovelModalTitle').textContent = 'Editar imóvel';
-          document.getElementById('imovelModal').classList.add('show');
 
           // Inicializa o mapa com coordenadas salvas
           setupModalMap(im.lat, im.lng);
@@ -3601,6 +3601,10 @@
             fotosState = (im.fotos || []).slice();
             renderFotos();
           }
+
+          // Salva o status de aprovação atual na step1
+          // (passo 2 do modal vai usar isso pra decidir se pula)
+          window._imovelStep1 = { id: im.id, status_aprovacao: im.status_aprovacao || 'aprovado' };
 
           // ---- Pré-popula o passo 2 com os dados já gravados (vendedor revisa/edita)
           document.getElementById('step2-matricula').value       = im.matricula || '';
@@ -3632,6 +3636,24 @@
             link.textContent = '📎 Ver arquivo da escritura atual';
             prevArea.parentNode.insertBefore(link, prevArea.nextSibling);
           }
+
+          // Se for pra pular pro passo 2 direto (ex: reenvio de doc reprovada), só não abre o modal 1
+          if (opts.skipToStep2) {
+            // Esconde o modal 1 e abre direto o modal 2 com título específico
+            var titleEl = document.getElementById('step2Title');
+            if (titleEl) titleEl.textContent = 'Reenviar documentação';
+            document.getElementById('imovelStep2Modal').classList.add('show');
+            setTimeout(function () {
+              var m = document.getElementById('step2-matricula');
+              if (m && !m.value) m.focus();
+            }, 50);
+            return;
+          }
+
+          // Caso normal: restaura o título padrão e abre modal 1 (usuário clica Próximo pra ir pro passo 2)
+          var titleEl = document.getElementById('step2Title');
+          if (titleEl) titleEl.textContent = 'Dados do imóvel';
+          document.getElementById('imovelModal').classList.add('show');
         });
       }
 
@@ -3643,6 +3665,9 @@
         var saveBtn = document.getElementById('saveImovelBtn');
         saveBtn.disabled = false;
         saveBtn.textContent = 'Próximo';
+
+        // Limpa o estado de edição (cadastro novo sempre abre passo 2)
+        window._imovelStep1 = null;
 
         var cidadeSelect = document.getElementById('i-cidade');
         cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro…</option>';
@@ -3708,8 +3733,55 @@
           fotos: fotosState.slice() // cópia para evitar referência mutável
         };
 
-        // Guarda o estado do passo 1 e abre o modal 2 empilhado por cima
-        window._imovelStep1 = { id: id, payload: payload, lat: selectedLat, lng: selectedLng };
+        // Decidir se pula o passo 2:
+        //  - cadastro novo (sem id) → sempre passa pelo passo 2
+        //  - edição de reprovado → passa (precisa reenviar doc)
+        //  - edição de aprovado/pendente → pula (doc já está ok ou em análise)
+        var prevStatus = (window._imovelStep1 && window._imovelStep1.status_aprovacao) || '';
+        var pulaPasso2 = !!id && prevStatus !== 'reprovado';
+
+        // Guarda o estado do passo 1
+        window._imovelStep1 = Object.assign({}, window._imovelStep1 || {}, {
+          id: id, payload: payload, lat: selectedLat, lng: selectedLng
+        });
+
+        if (pulaPasso2) {
+          // Salva direto sem abrir o passo 2
+          var directBtn = document.getElementById('saveImovelBtn');
+          directBtn.disabled = true;
+          directBtn.innerHTML = '<span class="spinner"></span> Salvando…';
+          api('/api/imoveis' + (id ? '/' + id : ''), {
+            method: id ? 'PUT' : 'POST',
+            body: JSON.stringify(payload)
+          }).then(function (r) {
+            directBtn.disabled = false;
+            directBtn.innerHTML = '';
+            directBtn.textContent = 'Próximo';
+            if (r.ok) {
+              document.getElementById('imovelModal').classList.remove('show');
+              document.getElementById('imovelForm').reset();
+              document.getElementById('imovelId').value = '';
+              document.getElementById('imovelModalTitle').textContent = 'Adicionar imóvel';
+              if (typeof fotosState !== 'undefined') { fotosState = []; if (typeof renderFotos === 'function') renderFotos(); }
+              selectedLat = null; selectedLng = null;
+              if (modalMapInstance && modalMarker) { modalMapInstance.removeLayer(modalMarker); modalMarker = null; }
+              window._imovelStep1 = null;
+              toast('Imóvel atualizado!', 'success');
+              activate('meus');
+            } else {
+              var msg = (r.body && r.body.error) || 'Erro ao atualizar imóvel.';
+              toast(msg, 'error');
+            }
+          }).catch(function () {
+            directBtn.disabled = false;
+            directBtn.innerHTML = '';
+            directBtn.textContent = 'Próximo';
+            toast('Erro de rede ao salvar imóvel.', 'error');
+          });
+          return;
+        }
+
+        // Caso contrário: abre passo 2 (cadastro novo OU reprovado)
         document.getElementById('imovelStep2Modal').classList.add('show');
         // Foco no campo obrigatório assim que abrir
         setTimeout(function () {
@@ -4939,6 +5011,12 @@
             return 'O imóvel <strong>' + escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) +
               '</strong> foi marcado como vendido por ' + quem +
               ' (' + escapeHtml((n.payload && n.payload.remetente_nome) || '') + ').';
+          case 'documento_reprovado':
+            var motivoDoc = (n.payload && n.payload.motivo) || '';
+            return 'A documentação do imóvel <strong>' +
+              escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) +
+              '</strong> foi reprovada. Envie uma nova documentação.' +
+              (motivoDoc ? '<br><span style="color:#d32f2f; font-size:0.85rem;">Motivo: ' + escapeHtml(motivoDoc) + '</span>' : '');
           default:
             return escapeHtml(n.tipo);
         }
@@ -5055,10 +5133,17 @@
                 'corretor_recusado': 'Proposta recusada',
                 'corretor_recusado_auto': 'Proposta encerrada',
                 'imovel_vendido': 'Imóvel vendido',
+                'documento_reprovado': 'Documentação reprovada',
               }[n.tipo] || n.tipo;
 
               var whatsBtn = '';
-              if (n.tipo === 'corretor_interessado' || n.tipo === 'corretor_escolhido' || n.tipo === 'corretor_recusado' || n.tipo === 'corretor_recusado_auto' || n.tipo === 'imovel_vendido') {
+              if (n.tipo === 'documento_reprovado') {
+                // Botão dedicado: abre o modal de edição já no passo 2 para reenviar a doc
+                whatsBtn = '<button class="btn btn-primary btn-sm btn-reenviar-doc" data-id="' + n.imovel_id + '" ' +
+                  'style="text-decoration:none; background:var(--emerald); border-color:var(--emerald); color:#fff;">' +
+                  '📤 Enviar documentação' +
+                  '</button>';
+              } else if (n.tipo === 'corretor_interessado' || n.tipo === 'corretor_escolhido' || n.tipo === 'corretor_recusado' || n.tipo === 'corretor_recusado_auto' || n.tipo === 'imovel_vendido') {
                 whatsBtn = '<button class="btn btn-primary btn-sm btn-acompanhar-solicitacao" style="text-decoration:none;">' +
                   '📋 Acompanhar solicitação' +
                   '</button>';
@@ -5130,6 +5215,14 @@
                 acompanharBtn.addEventListener('click', function () {
                   showSection('notificacoes');
                   if (window.switchNotifTab) window.switchNotifTab('solicitacoes');
+                });
+              }
+              var reenviarDocBtn = card.querySelector('.btn-reenviar-doc');
+              if (reenviarDocBtn) {
+                reenviarDocBtn.addEventListener('click', function () {
+                  // Abre o modal de edição direto no passo 2 (imóvel reprovado)
+                  var imovelId = parseInt(reenviarDocBtn.dataset.id, 10);
+                  if (imovelId) editarImovel(imovelId, { skipToStep2: true });
                 });
               }
             });
@@ -5458,6 +5551,41 @@
           email: document.getElementById('p-email').value.trim(),
           whatsapp: document.getElementById('p-whats').value.trim()
         };
+
+        // ---- Troca de senha (campos opcionais; só envia se preenchidos)
+        var senhaAtual = document.getElementById('p-senha-atual').value;
+        var senhaNova = document.getElementById('p-senha-nova').value;
+        var senhaConfirma = document.getElementById('p-senha-confirma').value;
+        if (senhaAtual || senhaNova || senhaConfirma) {
+          if (!senhaAtual) {
+            toast('Informe a senha atual para poder alterá-la.', 'error');
+            document.getElementById('p-senha-atual').focus();
+            return;
+          }
+          if (!senhaNova) {
+            toast('Informe a nova senha.', 'error');
+            document.getElementById('p-senha-nova').focus();
+            return;
+          }
+          if (senhaNova.length < 6) {
+            toast('A nova senha deve ter no mínimo 6 caracteres.', 'error');
+            document.getElementById('p-senha-nova').focus();
+            return;
+          }
+          if (senhaNova.length > 10) {
+            toast('A nova senha deve ter no máximo 10 caracteres.', 'error');
+            document.getElementById('p-senha-nova').focus();
+            return;
+          }
+          if (senhaNova !== senhaConfirma) {
+            toast('A confirmação da nova senha não confere.', 'error');
+            document.getElementById('p-senha-confirma').focus();
+            return;
+          }
+          payload.senha_atual = senhaAtual;
+          payload.senha_nova = senhaNova;
+        }
+
         if (user.perfil !== 'corretor') {
           payload.cidade = document.getElementById('p-cidade').value.trim();
         }
@@ -5499,7 +5627,7 @@
         api('/api/usuarios/me', { method: 'PUT', body: JSON.stringify(payload) })
           .then(function (r) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Próximo';
+            saveBtn.textContent = 'Salvar';
             if (r.ok) {
               var updatedUser = r.body.user;
               updatedUser.perfil = user.perfil; // preserva perfil local
@@ -5510,14 +5638,22 @@
               document.getElementById('userName').textContent = user.nome;
               updateHeaderAvatar(user);
 
-              toast('Perfil atualizado com sucesso!', 'success');
+              // Limpa os campos de senha após salvar com sucesso
+              if (payload.senha_nova) {
+                document.getElementById('p-senha-atual').value = '';
+                document.getElementById('p-senha-nova').value = '';
+                document.getElementById('p-senha-confirma').value = '';
+                toast('Perfil e senha atualizados com sucesso!', 'success');
+              } else {
+                toast('Perfil atualizado com sucesso!', 'success');
+              }
             } else {
               toast(r.body.error || 'Erro ao atualizar perfil.', 'error');
             }
           })
           .catch(function (err) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Próximo';
+            saveBtn.textContent = 'Salvar';
             toast('Erro de rede ao salvar perfil.', 'error');
             console.error(err);
           });

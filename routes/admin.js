@@ -6,6 +6,7 @@ const bcrypt  = require('bcrypt');
 const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { sign: signJwt } = require('../lib/jwt');
+const { criarNotificacao } = require('../lib/notifications');
 
 const router = express.Router();
 
@@ -141,6 +142,17 @@ router.post('/imoveis/:id/reprovar', async (req, res) => {
     if (motivo.length < 10) {
       return res.status(400).json({ ok: false, error: 'Informe o motivo (mínimo 10 caracteres).' });
     }
+
+    // Busca o imóvel antes de atualizar pra ter o dono_id e titulo na notificação
+    const imovelAntes = await query(
+      `SELECT id, dono_id, titulo FROM moravo.imoveis WHERE id = $1`,
+      [id]
+    );
+    if (imovelAntes.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'Imóvel não encontrado.' });
+    }
+    const imovel = imovelAntes.rows[0];
+
     const r = await query(
       `UPDATE moravo.imoveis
          SET status_aprovacao = 'reprovado',
@@ -152,6 +164,24 @@ router.post('/imoveis/:id/reprovar', async (req, res) => {
       [motivo, id]
     );
     if (r.rowCount === 0) return res.status(404).json({ ok: false, error: 'Imóvel não encontrado.' });
+
+    // Notifica o dono pra reenviar a documentação
+    try {
+      await criarNotificacao({
+        usuario_id: imovel.dono_id,
+        tipo: 'documento_reprovado',
+        imovel_id: imovel.id,
+        remetente_id: req.user.id,
+        payload: {
+          imovel_titulo: imovel.titulo,
+          motivo: motivo,
+        },
+      });
+    } catch (notifErr) {
+      // Não bloqueia o fluxo se a notificação falhar
+      console.error('[admin/reprovar] erro ao criar notificação:', notifErr.message);
+    }
+
     return res.json({ ok: true });
   } catch (err) {
     console.error('[admin/reprovar] erro:', err);

@@ -112,6 +112,9 @@ router.put('/me', requireAuth, async (req, res) => {
       if (senha_nova.length < 6) {
         return res.status(400).json({ ok: false, error: 'A nova senha deve ter no mínimo 6 caracteres.' });
       }
+      if (senha_nova.length > 10) {
+        return res.status(400).json({ ok: false, error: 'A nova senha deve ter no máximo 10 caracteres.' });
+      }
 
       // Busca hash atual
       const userRes = await query('SELECT senha_hash FROM moravo.usuarios WHERE id = $1', [req.user.id]);
