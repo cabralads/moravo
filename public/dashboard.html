@@ -530,7 +530,7 @@
     html body #section-configuracoes .field select,
     html body #section-configuracoes .field textarea {
       padding: 7px 11px;
-      font-size: 0.85rem;
+      font-size: 16px;
     }
     html body #section-configuracoes .settings-content > div {
       margin: 0 !important;
@@ -2197,12 +2197,12 @@
                     <div class="field" style="flex: 2;">
                       <label for="p-creci-num">CRECI (número)</label>
                       <input type="text" id="p-creci-num" placeholder="Ex.: 12345"
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit;" />
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;" />
                     </div>
                     <div class="field" style="flex: 1;">
                       <label for="p-creci-tipo">Dígito/Letra</label>
                       <select id="p-creci-tipo"
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit;">
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
                         <option value="">Selecione</option>
                         <option value="F">F (Autônomo)</option>
                         <option value="J">J (PJ)</option>
@@ -2214,7 +2214,7 @@
                     <div class="field" style="flex: 1;">
                       <label for="p-regiao-uf">Estado</label>
                       <select id="p-regiao-uf"
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit;">
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
                         <option value="">Selecione</option>
                         <option value="AC">Acre</option>
                         <option value="AL">Alagoas</option>
@@ -2248,7 +2248,7 @@
                     <div class="field" style="flex: 1;">
                       <label for="p-regiao-cidade">Cidade de atuação</label>
                       <select id="p-regiao-cidade" disabled
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit;">
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
                         <option value="">Selecione o estado primeiro</option>
                       </select>
                     </div>
@@ -6278,6 +6278,18 @@
         opacity: 1;
         transform: none;
       }
+    }
+
+    /* Selects de Estado e Cidade de atuação: aumentados para melhor leitura */
+    #p-regiao-uf,
+    #p-regiao-cidade,
+    #p-regiao-uf option,
+    #p-regiao-cidade option {
+      font-size: 16px;
+    }
+    #p-regiao-uf option,
+    #p-regiao-cidade option {
+      padding: 8px 12px;
     }
   </style>
 

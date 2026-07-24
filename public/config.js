@@ -12,7 +12,11 @@ window.MORAVO_API = (window.location.protocol === 'file:')
 // do servidor local (como npx serve) limpem a query string (ex: ?id=9).
 window.verDetalhes = function(id) {
   var ext = (window.location.protocol === 'file:') ? '.html' : '';
-  window.location.href = 'detalhes' + ext + '?id=' + id;
+  var url = 'detalhes' + ext + '?id=' + id;
+  // Abre a página do imóvel em uma nova aba
+  var win = window.open(url, '_blank');
+  // Fallback: se o navegador bloqueou o popup, navega na mesma aba
+  if (!win) window.location.href = url;
 };
 
 window.fotoUrl = function(f) {
