@@ -147,107 +147,134 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`[moravo] Health: http://0.0.0.0:${PORT}/api/health`);
   
   if (dbMode !== 'json-stub') {
+    // -----------------------------------------------------------------------
+    // Migrações de boot.
+    // Cada uma roda isolada: se uma falhar, registra o erro e as demais seguem.
+    // (Antes era um try/catch único e a primeira falha abortava todo o resto,
+    //  em silêncio. Foi assim que o conflito da matrícula escondeu 7 migrações.)
+    // -----------------------------------------------------------------------
+    const falhas = [];
+    async function migrar(nome, sql) {
+      try {
+        return await query(sql);
+      } catch (err) {
+        falhas.push(nome);
+        console.error(`[moravo][migração: ${nome}] falhou: ${err.message}`);
+        return null;
+      }
+    }
+
+    await migrar('imoveis.interesses_compradores',
+      'ALTER TABLE moravo.imoveis ADD COLUMN IF NOT EXISTS interesses_compradores INT DEFAULT 0;');
+
+    await migrar('usuarios.foto_perfil',
+      'ALTER TABLE moravo.usuarios ADD COLUMN IF NOT EXISTS foto_perfil TEXT;');
+
+    // Colunas do grupo de WhatsApp (Waha) na tabela interesses
+    await migrar('interesses.grupo_whatsapp', `
+      ALTER TABLE moravo.interesses
+        ADD COLUMN IF NOT EXISTS grupo_whatsapp_id         TEXT,
+        ADD COLUMN IF NOT EXISTS grupo_whatsapp_link       TEXT,
+        ADD COLUMN IF NOT EXISTS grupo_whatsapp_created_at TIMESTAMPTZ;
+    `);
+
+    await migrar('interesses.idx_grupo_whatsapp', `
+      CREATE INDEX IF NOT EXISTS idx_interesses_grupo_whatsapp_id
+        ON moravo.interesses (grupo_whatsapp_id)
+        WHERE grupo_whatsapp_id IS NOT NULL;
+    `);
+
+    await migrar('tabela interesses_compradores', `
+      CREATE TABLE IF NOT EXISTS moravo.interesses_compradores (
+        id BIGSERIAL PRIMARY KEY,
+        imovel_id BIGINT NOT NULL REFERENCES moravo.imoveis(id) ON DELETE CASCADE,
+        comprador_id BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uk_interesse_comprador_unico UNIQUE (imovel_id, comprador_id)
+      );
+    `);
+
+    await migrar('tabela notificacoes', `
+      CREATE TABLE IF NOT EXISTS moravo.notificacoes (
+        id BIGSERIAL PRIMARY KEY,
+        usuario_id BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
+        tipo TEXT NOT NULL,
+        imovel_id BIGINT REFERENCES moravo.imoveis(id) ON DELETE CASCADE,
+        interesse_id BIGINT REFERENCES moravo.interesses(id) ON DELETE SET NULL,
+        remetente_id BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        lida BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await migrar('notificacoes.indice', `
+      CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida
+        ON moravo.notificacoes (usuario_id, lida, created_at DESC);
+    `);
+
+    // Dados legais/administrativos do imóvel (passo 2 do cadastro).
+    // matricula fica NULLABLE de propósito: no banco, "sem matrícula" é NULL.
+    // A constraint imoveis_matricula_chk proíbe string vazia, então nada aqui
+    // pode gravar '' — nem como default, nem normalizando registros antigos.
+    await migrar('imoveis.dados_legais', `
+      ALTER TABLE moravo.imoveis
+        ADD COLUMN IF NOT EXISTS matricula             TEXT,
+        ADD COLUMN IF NOT EXISTS escritura_texto       TEXT,
+        ADD COLUMN IF NOT EXISTS escritura_arquivo_url TEXT,
+        ADD COLUMN IF NOT EXISTS condominio            BOOLEAN     NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS valor_condominio      NUMERIC(14, 2);
+    `);
+
+    // Normaliza perfis legados (ex.: 'comprador') antes de ampliar o CHECK
+    await migrar('usuarios.normaliza_perfis', `
+      UPDATE moravo.usuarios
+      SET perfil = 'proprietario'
+      WHERE perfil IS NOT NULL
+        AND perfil NOT IN ('proprietario', 'corretor', 'admin');
+    `);
+    await migrar('usuarios.perfil_check_drop',
+      'ALTER TABLE moravo.usuarios DROP CONSTRAINT IF EXISTS usuarios_perfil_check;');
+    await migrar('usuarios.perfil_check_add', `
+      ALTER TABLE moravo.usuarios
+        ADD CONSTRAINT usuarios_perfil_check
+        CHECK (perfil IN ('proprietario', 'corretor', 'admin'));
+    `);
+
+    // Dados de aprovação de imóveis
+    await migrar('imoveis.status_aprovacao', `
+      ALTER TABLE moravo.imoveis
+        ADD COLUMN IF NOT EXISTS status_aprovacao  TEXT NOT NULL DEFAULT 'pendente'
+          CHECK (status_aprovacao IN ('pendente', 'aprovado', 'reprovado')),
+        ADD COLUMN IF NOT EXISTS aprovado_por       BIGINT REFERENCES moravo.usuarios(id),
+        ADD COLUMN IF NOT EXISTS aprovado_em        TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS reprovado_motivo  TEXT,
+        ADD COLUMN IF NOT EXISTS reprovado_em      TIMESTAMPTZ;
+    `);
+    await migrar('imoveis.idx_status_aprovacao', `
+      CREATE INDEX IF NOT EXISTS idx_imoveis_status_aprovacao
+        ON moravo.imoveis (status_aprovacao, created_at DESC);
+    `);
+
+    // Auditoria de logins do admin
+    await migrar('tabela admin_login_logs', `
+      CREATE TABLE IF NOT EXISTS moravo.admin_login_logs (
+        id          BIGSERIAL PRIMARY KEY,
+        usuario_id  BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        email       TEXT NOT NULL,
+        sucesso     BOOLEAN NOT NULL,
+        ip          INET,
+        user_agent  TEXT,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('admin_login_logs.indice', `
+      CREATE INDEX IF NOT EXISTS idx_admin_login_logs_created
+        ON moravo.admin_login_logs (created_at DESC);
+    `);
+
+    // Seed: usuário mestre admin (idempotente - só cria se não existir)
     try {
-      await query('ALTER TABLE moravo.imoveis ADD COLUMN IF NOT EXISTS interesses_compradores INT DEFAULT 0;');
-      await query('ALTER TABLE moravo.usuarios ADD COLUMN IF NOT EXISTS foto_perfil TEXT;');
-      // Migração: colunas do grupo de WhatsApp (Waha) na tabela interesses
-      await query(`
-        ALTER TABLE moravo.interesses
-          ADD COLUMN IF NOT EXISTS grupo_whatsapp_id         TEXT,
-          ADD COLUMN IF NOT EXISTS grupo_whatsapp_link       TEXT,
-          ADD COLUMN IF NOT EXISTS grupo_whatsapp_created_at TIMESTAMPTZ;
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS idx_interesses_grupo_whatsapp_id
-          ON moravo.interesses (grupo_whatsapp_id)
-          WHERE grupo_whatsapp_id IS NOT NULL;
-      `);
-      await query(`
-        CREATE TABLE IF NOT EXISTS moravo.interesses_compradores (
-          id BIGSERIAL PRIMARY KEY,
-          imovel_id BIGINT NOT NULL REFERENCES moravo.imoveis(id) ON DELETE CASCADE,
-          comprador_id BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          CONSTRAINT uk_interesse_comprador_unico UNIQUE (imovel_id, comprador_id)
-        );
-      `);
-      await query(`
-        CREATE TABLE IF NOT EXISTS moravo.notificacoes (
-          id BIGSERIAL PRIMARY KEY,
-          usuario_id BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
-          tipo TEXT NOT NULL,
-          imovel_id BIGINT REFERENCES moravo.imoveis(id) ON DELETE CASCADE,
-          interesse_id BIGINT REFERENCES moravo.interesses(id) ON DELETE SET NULL,
-          remetente_id BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
-          payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-          lida BOOLEAN NOT NULL DEFAULT false,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida
-          ON moravo.notificacoes (usuario_id, lida, created_at DESC);
-      `);
-      // Migração: dados legais/administrativos do imóvel (passo 2 do cadastro)
-      await query(`
-        ALTER TABLE moravo.imoveis
-          ADD COLUMN IF NOT EXISTS matricula             TEXT        NOT NULL DEFAULT '',
-          ADD COLUMN IF NOT EXISTS escritura_texto       TEXT,
-          ADD COLUMN IF NOT EXISTS escritura_arquivo_url TEXT,
-          ADD COLUMN IF NOT EXISTS condominio            BOOLEAN     NOT NULL DEFAULT false,
-          ADD COLUMN IF NOT EXISTS valor_condominio      NUMERIC(14, 2);
-      `);
-      await query(`UPDATE moravo.imoveis SET matricula = '' WHERE matricula IS NULL;`);
-
-      // Migração: ampliar CHECK constraint do perfil para incluir 'admin'.
-      // Antes, normalizar perfis legados (ex.: 'comprador') para 'proprietario'
-      // para não violar o novo CHECK.
-      await query(`
-        UPDATE moravo.usuarios
-        SET perfil = 'proprietario'
-        WHERE perfil IS NOT NULL
-          AND perfil NOT IN ('proprietario', 'corretor', 'admin');
-      `);
-      await query(`ALTER TABLE moravo.usuarios DROP CONSTRAINT IF EXISTS usuarios_perfil_check;`);
-      await query(`
-        ALTER TABLE moravo.usuarios
-          ADD CONSTRAINT usuarios_perfil_check
-          CHECK (perfil IN ('proprietario', 'corretor', 'admin'));
-      `);
-
-      // Migração: dados de aprovação de imóveis (status_aprovacao, aprovado_*, reprovado_*)
-      await query(`
-        ALTER TABLE moravo.imoveis
-          ADD COLUMN IF NOT EXISTS status_aprovacao  TEXT NOT NULL DEFAULT 'pendente'
-            CHECK (status_aprovacao IN ('pendente', 'aprovado', 'reprovado')),
-          ADD COLUMN IF NOT EXISTS aprovado_por       BIGINT REFERENCES moravo.usuarios(id),
-          ADD COLUMN IF NOT EXISTS aprovado_em        TIMESTAMPTZ,
-          ADD COLUMN IF NOT EXISTS reprovado_motivo  TEXT,
-          ADD COLUMN IF NOT EXISTS reprovado_em      TIMESTAMPTZ;
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS idx_imoveis_status_aprovacao
-          ON moravo.imoveis (status_aprovacao, created_at DESC);
-      `);
-
-      // Migração: tabela de auditoria de logins do admin
-      await query(`
-        CREATE TABLE IF NOT EXISTS moravo.admin_login_logs (
-          id          BIGSERIAL PRIMARY KEY,
-          usuario_id  BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
-          email       TEXT NOT NULL,
-          sucesso     BOOLEAN NOT NULL,
-          ip          INET,
-          user_agent  TEXT,
-          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS idx_admin_login_logs_created
-          ON moravo.admin_login_logs (created_at DESC);
-      `);
-
-      // Seed: usuário mestre admin (idempotente — só cria se não existir)
       const adminExists = await query(
         `SELECT id FROM moravo.usuarios WHERE email = $1`,
         ['admin@moravo.local']
@@ -265,20 +292,25 @@ app.listen(PORT, '0.0.0.0', async () => {
       } else {
         console.log('[moravo] Usuário mestre admin já existe.');
       }
-
-      console.log('[moravo] Banco: tabelas/colunas verificadas/criadas (interesses_compradores, notificacoes, grupo_whatsapp_*, foto_perfil, matricula, escritura_*, condominio, admin_login_logs, status_aprovacao).');
-      console.log('[moravo] Limpando links wa.me antigos do banco...');
-      await query(`
-        UPDATE moravo.interesses
-        SET grupo_whatsapp_link = NULL
-        WHERE grupo_whatsapp_link LIKE 'https://wa.me/%'
-      `).then((r) => {
-        console.log('[moravo] ' + r.rowCount + ' link(s) wa.me antigo(s) limpo(s).');
-      }).catch((err) => {
-        console.warn('[moravo] falha ao limpar links wa.me:', err.message);
-      });
     } catch (err) {
-      console.error('[moravo] Erro ao atualizar banco:', err.message);
+      falhas.push('seed do admin');
+      console.error('[moravo][migração: seed do admin] falhou:', err.message);
+    }
+
+    // Limpeza de links wa.me antigos (não funcionam para grupos)
+    const limpeza = await migrar('limpeza wa.me', `
+      UPDATE moravo.interesses
+      SET grupo_whatsapp_link = NULL
+      WHERE grupo_whatsapp_link LIKE 'https://wa.me/%'
+    `);
+    if (limpeza) {
+      console.log('[moravo] ' + limpeza.rowCount + ' link(s) wa.me antigo(s) limpo(s).');
+    }
+
+    if (falhas.length === 0) {
+      console.log('[moravo] Banco: todas as migrações verificadas com sucesso.');
+    } else {
+      console.warn(`[moravo] Banco: ${falhas.length} migração(ões) falharam: ${falhas.join(', ')}`);
     }
   }
 });

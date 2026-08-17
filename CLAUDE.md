@@ -35,27 +35,63 @@ adicionar um bloco ali.
 
 ---
 
+## Infraestrutura
+
+| Camada | Onde fica |
+|---|---|
+| **Aplicação** | VPS **Hostinger** — `srv848979.hstgr.cloud` (103.199.184.81), numa **stack Docker chamada `moravo`** |
+| **Banco** | **Supabase**, projeto `slebpxrifihecanljzak` (nome: `relatorios_ads_wpp`), região `sa-east-1`, Postgres 15, via pooler na porta `6543` |
+| **Imagem** | GitHub Actions builda e publica no `ghcr.io` a cada push na `main` |
+| **Hostoo** | Hospeda **outros domínios** da conta. Tem uma integração Git que aponta para o repo, mas **não serve o moravo.com.br** |
+
+O schema fica em `moravo` (não em `public`).
+
+---
+
 ## Deploy
 
-⚠️ **`git push` NÃO publica nada.** Descoberto em 17/08/2026.
+⚠️ **`git push` sozinho NÃO publica nada.** Descoberto em 17/08/2026, depois de quase um mês
+com o commit `6c99c20` (21/07) no ar sem ninguém perceber.
 
-`moravo.com.br` resolve para **103.199.184.81 (srv848979.hstgr.cloud)**, uma **VPS da
-Hostinger**. É lá que o site roda.
+O push builda a imagem no ghcr.io, mas quem atende o domínio é a **stack `moravo` na VPS
+Hostinger**. Enquanto ela não for atualizada, o site não muda.
 
-A integração "Deploy via GIT" da Hostoo continua ativa e entrega os arquivos em
-`/public_html/moravo` a cada push, sempre com sucesso no histórico — mas **aquela máquina não
-atende o domínio**. Os outros domínios da mesma conta Hostoo resolvem para 200.9.22.4; o
-moravo, não. É trabalho jogado fora.
+**Para publicar:** atualizar a stack `moravo` na VPS Hostinger (painel da Hostinger →
+Docker/stack, ou por SSH com `docker compose pull && docker compose up -d` no diretório da
+stack). Só depois disso o que está na `main` chega ao ar.
 
-Consequência: o que esteve no ar entre 24/07 e 17/08/2026 foi o commit `6c99c20` (21/07).
-Tudo depois disso ficou parado, incluindo o `84f4dc4` de 24/07.
-
-**Para publicar de verdade:** acessar a VPS Hostinger e atualizar o processo lá. O repo tem
-`Dockerfile`, `docker-compose.yml` e workflow que publica imagem no ghcr.io, então é
-provavelmente container (`docker compose pull && docker compose up -d`). Confirmar com
-`docker ps` na VPS. [PROCEDIMENTO A CONFIRMAR E DOCUMENTAR AQUI]
+**Pegadinhas conhecidas:**
+- O histórico de deploys da Hostoo mostra **sucesso** mesmo sem efeito nenhum. Não use como
+  confirmação — confira o site.
+- Mudança em `public/` só aparece depois que o container é recriado.
+- Mudança em `server.js`, `routes/` ou `lib/` exige recriar o container **e** reiniciar o
+  processo Node, porque o código só é lido na inicialização.
+- Para conferir se subiu, compare o tamanho do arquivo servido com o do repo:
+  `curl -s https://moravo.com.br/dashboard.html | wc -c`
 
 → Testar local antes. Em mudança arriscada, usar branch separada e só mergear depois de revisar.
+
+---
+
+## Divergência entre o banco e o repositório
+
+O banco de produção tem objetos que **não existem no repo** — foram criados direto no Supabase.
+Um banco novo montado a partir do `db/schema.sql` não fica igual à produção.
+
+Conhecidos até agora:
+
+- `imoveis_matricula_chk`: `CHECK (matricula IS NULL OR char_length(matricula) BETWEEN 1 AND 100)`.
+  Ou seja, **string vazia é proibida** e "sem matrícula" se representa com `NULL`.
+  A coluna é `nullable` em produção, embora o `server.js` antigo a declarasse `NOT NULL DEFAULT ''`.
+  Isso derrubava as migrações de boot a cada inicialização (corrigido em 17/08/2026).
+- `imoveis_valor_condominio_chk`.
+
+Antes de escrever qualquer migração que mexa em `imoveis`, confira as constraints reais:
+
+```sql
+SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+WHERE conrelid = 'moravo.imoveis'::regclass;
+```
 
 ---
 
@@ -293,3 +329,9 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Joinville/SC. CNPJ e endereço ficam de fora até a empresa ser constituída.
 - **2026-08-17** — **Descoberto que o deploy nunca funcionou.** Produção roda numa VPS
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
+- **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
+  + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-17** — Corrigidas as migrações de boot do `server.js`: cada uma passa a rodar
+  isolada (antes, a primeira falha abortava as sete seguintes em silêncio) e a normalização
+  `matricula = ''` foi removida por violar a constraint real do banco. No Supabase, removido
+  o default `''` da coluna `matricula`.
