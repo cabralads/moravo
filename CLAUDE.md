@@ -123,6 +123,7 @@ routes/
 public/
   index.html       landing
   cadastro.html    criar conta (escolhe proprietario ou corretor)
+anuncie.html     landing de conversão do proprietário (URL limpa /anuncie)
   login.html       login normal
   busca.html       busca e filtros
   detalhes.html    página do imóvel + CTA que muda conforme o perfil
@@ -360,6 +361,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-17** — Criada a landing do proprietário em `/anuncie`, focada em conversão de
+  cadastro. Sem números de catálogo (a home ainda exibe 2.480 imóveis e 1.100+ corretores,
+  contra 7 e 9 reais). Argumentos usados são só os que o produto sustenta: anúncio gratuito,
+  endereço único, dono escolhe o corretor, conferência documental e grupo único no WhatsApp.
 - **2026-08-17** — WhatsApp migrado para modelo híbrido: Waha cria o grupo (sem adicionar
   ninguém) e a Cloud API oficial envia o convite. Novo `lib/whatsapp.js`, tabelas
   `config_whatsapp` e `whatsapp_envios`, painel do admin com configuração, teste e log de
