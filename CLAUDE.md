@@ -37,8 +37,23 @@ adicionar um bloco ali.
 
 ## Deploy
 
-**`git push` na branch `main` publica direto em produção.** A Hostoo tem integração Git
-apontando `main` → `/public_html/moravo`. Não há staging entre o commit e o ar.
+⚠️ **`git push` NÃO publica nada.** Descoberto em 17/08/2026.
+
+`moravo.com.br` resolve para **103.199.184.81 (srv848979.hstgr.cloud)**, uma **VPS da
+Hostinger**. É lá que o site roda.
+
+A integração "Deploy via GIT" da Hostoo continua ativa e entrega os arquivos em
+`/public_html/moravo` a cada push, sempre com sucesso no histórico — mas **aquela máquina não
+atende o domínio**. Os outros domínios da mesma conta Hostoo resolvem para 200.9.22.4; o
+moravo, não. É trabalho jogado fora.
+
+Consequência: o que esteve no ar entre 24/07 e 17/08/2026 foi o commit `6c99c20` (21/07).
+Tudo depois disso ficou parado, incluindo o `84f4dc4` de 24/07.
+
+**Para publicar de verdade:** acessar a VPS Hostinger e atualizar o processo lá. O repo tem
+`Dockerfile`, `docker-compose.yml` e workflow que publica imagem no ghcr.io, então é
+provavelmente container (`docker compose pull && docker compose up -d`). Confirmar com
+`docker ps` na VPS. [PROCEDIMENTO A CONFIRMAR E DOCUMENTAR AQUI]
 
 → Testar local antes. Em mudança arriscada, usar branch separada e só mergear depois de revisar.
 
@@ -274,3 +289,7 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 - **2026-08-17** — Criadas as páginas legais `/politica-de-privacidade` e `/termos-de-uso`
   (exigidas pelo app do Meta para a WhatsApp API), ligadas no rodapé e no cadastro. Faltam
   preencher razão social, CNPJ, endereço e comarca, e passar por revisão jurídica.
+- **2026-08-17** — Páginas legais: responsável definido como "Moravo Portal" e foro de
+  Joinville/SC. CNPJ e endereço ficam de fora até a empresa ser constituída.
+- **2026-08-17** — **Descoberto que o deploy nunca funcionou.** Produção roda numa VPS
+  Hostinger, não na Hostoo. Seção "Deploy" reescrita.
