@@ -105,6 +105,7 @@ middleware/auth.js     requireAuth (valida JWT) + requireRole(...perfis)
 lib/jwt.js             sign/verify, fail-fast se faltar JWT_SECRET em produção
 lib/notifications.js   criarNotificacao()
 lib/waha.js            integração WhatsApp (criar grupo, enviar msg, gerar convite)
+lib/whatsapp.js        WhatsApp Cloud API oficial (envio do convite, config cifrada)
 
 routes/
   auth.js          register, login, me
@@ -230,9 +231,37 @@ Vendedor cadastra imóvel (+ matrícula / escritura)
 
 ## Integrações
 
-**Waha (WhatsApp)** — `lib/waha.js`. Cria o grupo com proprietário + corretor + atendente
-principal (`WAHA_ATENDENTE_PRINCIPAL`). Só funciona com o interesse em `aceito`. É
-idempotente: se o grupo já existe, devolve o link.
+**WhatsApp — dois serviços, dois papéis:**
+
+| Etapa | Quem faz | Observação |
+|---|---|---|
+| Criar o grupo | **Waha** (sessão `moravo_portal`, em `wpp.atendentex.com.br`) | Número não oficial controlado por API |
+| Enviar o convite | **WhatsApp Cloud API** (oficial, Meta) | Template `link_grupo_convite`, idioma `pt_BR` |
+
+**O grupo nasce só com os números da Moravo.** Proprietário e corretor **não são mais
+adicionados à força** — recebem o link e entram por vontade própria. Foi essa mudança que
+tirou o risco de banimento do número da sessão. Se o Waha exigir mais de um participante
+para criar o grupo, informe um segundo número interno em `WAHA_PARTICIPANTES_EXTRA`.
+
+**O template usa botão de URL dinâmica.** Na Meta, esse botão tem base fixa e só o sufixo
+varia: o template fica cadastrado como `https://chat.whatsapp.com/{{1}}` e o sistema envia
+**apenas o código** do convite, nunca a URL inteira (`lib/whatsapp.js`, `extrairCodigoConvite`).
+
+**A configuração fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
+`moravo.config_whatsapp` (linha única). O **token é cifrado com AES-256-GCM** usando
+`CONFIG_SECRET` (ou `JWT_SECRET` como reserva) e **nunca volta para o front-end** — a tela
+mostra só os 4 últimos caracteres. Com `ativo` desligado, o grupo é criado e o link aparece,
+mas nenhuma mensagem é disparada.
+
+**Toda tentativa de envio vira uma linha em `moravo.whatsapp_envios`.** Falha gera notificação
+para todos os admins (`tipo = 'envio_whatsapp_falhou'`) e aparece em `/admin` → Envios
+WhatsApp, com botão de reenviar. Envio por SMS como alternativa fica para um segundo momento.
+
+**Telefones**: no banco há números com e sem o DDI 55. A normalização acontece no envio
+(`lib/whatsapp.js`, `normalizarTelefone`). É a causa clássica de mensagem que não chega.
+
+Criar o grupo só é permitido com o interesse em `aceito`, e é idempotente: se o grupo já
+existe, o link é devolvido e o convite reenviado.
 
 **Geocoding** — `GET /api/geocode` tenta ArcGIS e cai pra Nominatim.
 
@@ -331,6 +360,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-17** — WhatsApp migrado para modelo híbrido: Waha cria o grupo (sem adicionar
+  ninguém) e a Cloud API oficial envia o convite. Novo `lib/whatsapp.js`, tabelas
+  `config_whatsapp` e `whatsapp_envios`, painel do admin com configuração, teste e log de
+  erros. Template `link_grupo_convite` ainda em aprovação na Meta — manter `ativo` desligado
+  até liberar.
 - **2026-08-17** — Corrigidas as migrações de boot do `server.js`: cada uma passa a rodar
   isolada (antes, a primeira falha abortava as sete seguintes em silêncio) e a normalização
   `matricula = ''` foi removida por violar a constraint real do banco. No Supabase, removido
