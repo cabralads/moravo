@@ -84,6 +84,7 @@ body {
 .btn-success  { background: transparent; color: #1a8a1a; border-color: #1a8a1a; }
 .btn-success:hover { background: #e6f9e6; }
 .btn-block    { width: 100%; padding: 14px 22px; font-size: 1rem; }
+.btn-sm       { padding: 7px 14px; font-size: .86rem; }
 .btn:disabled { opacity: .6; cursor: not-allowed; }
 
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -777,6 +778,8 @@ body {
       <button class="admin-nav-item" data-view="aprovados">Aprovados <span class="admin-nav-badge" id="cntAprovados">0</span></button>
       <button class="admin-nav-item" data-view="reprovados">Reprovados <span class="admin-nav-badge" id="cntReprovados">0</span></button>
       <button class="admin-nav-item" data-view="logs">Logins</button>
+      <button class="admin-nav-item" data-view="envios">Envios WhatsApp <span class="admin-nav-badge" id="cntFalhas">0</span></button>
+      <button class="admin-nav-item" data-view="whatsapp">Config. WhatsApp</button>
     </nav>
     <button class="btn btn-ghost" id="adminSairBtn">Sair</button>
   </aside>
@@ -961,6 +964,12 @@ body {
       $('cntAprovados').textContent  = r.body.contadores.aprovado || 0;
       $('cntReprovados').textContent = r.body.contadores.reprovado || 0;
     });
+    api('/api/admin/whatsapp/envios?status=falhou').then(function (r) {
+      if (!r.ok) return;
+      var n = (r.body.contadores && r.body.contadores.falhou) || 0;
+      var el = $('cntFalhas');
+      if (el) { el.textContent = n; el.style.background = n > 0 ? '#c0392b' : ''; el.style.color = n > 0 ? '#fff' : ''; }
+    });
   }
 
   function renderView(view) {
@@ -968,12 +977,18 @@ body {
       pendentes: 'Pendentes',
       aprovados: 'Aprovados',
       reprovados: 'Reprovados',
-      logs: 'Logins de admin'
+      logs: 'Logins de admin',
+      envios: 'Envios de convite pelo WhatsApp',
+      whatsapp: 'Configuração da WhatsApp Cloud API'
     };
     $('adminSectionTitle').textContent = titleMap[view] || view;
 
     if (view === 'logs') {
       renderLogs();
+    } else if (view === 'envios') {
+      renderEnvios();
+    } else if (view === 'whatsapp') {
+      renderWhatsappConfig();
     } else {
       // 'pendentes' → 'pendente' (a sidebar usa plural para ficar natural em PT-BR;
       // o backend espera o valor singular do CHECK constraint).
@@ -1145,6 +1160,155 @@ body {
     }).catch(function (err) {
       $('adminContent').innerHTML = '<div class="admin-empty">Erro de rede.</div>';
       console.error(err);
+    });
+  }
+
+  // ---- Configuração da WhatsApp Cloud API
+  function renderWhatsappConfig() {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/whatsapp/config').then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var c = r.body.config;
+      box.innerHTML =
+        '<div class="admin-card" style="max-width:720px">' +
+          '<p class="muted" style="margin-bottom:18px">Dados do app no Meta Developers, em WhatsApp → Configuração da API. ' +
+          'O token é gravado cifrado e não volta para esta tela: para trocá-lo, digite o novo; deixando em branco, o atual é mantido.</p>' +
+
+          '<div class="field"><label>Phone Number ID</label>' +
+            '<input id="wappPhone" value="' + escapeHtml(c.phone_number_id || '') + '" placeholder="123456789012345" /></div>' +
+
+          '<div class="field"><label>WhatsApp Business Account ID (WABA)</label>' +
+            '<input id="wappWaba" value="' + escapeHtml(c.waba_id || '') + '" placeholder="123456789012345" /></div>' +
+
+          '<div class="field"><label>Versão da Graph API</label>' +
+            '<input id="wappVersao" value="' + escapeHtml(c.api_version || 'v23.0') + '" placeholder="v23.0" /></div>' +
+
+          '<div class="field"><label>Token de acesso permanente</label>' +
+            '<input id="wappToken" type="password" autocomplete="new-password" placeholder="' +
+            (c.token_definido ? 'definido (' + escapeHtml(c.token_mascarado) + ') — preencha só para trocar' : 'ainda não configurado') + '" /></div>' +
+
+          '<div class="field"><label>Nome do template</label>' +
+            '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || 'link_grupo_convite') + '" /></div>' +
+
+          '<div class="field"><label>Idioma do template</label>' +
+            '<input id="wappIdioma" value="' + escapeHtml(c.template_idioma || 'pt_BR') + '" placeholder="pt_BR" /></div>' +
+
+          '<label style="display:flex;align-items:center;gap:9px;margin:16px 0;font-weight:600;cursor:pointer">' +
+            '<input type="checkbox" id="wappAtivo" ' + (c.ativo ? 'checked' : '') + ' style="width:17px;height:17px" />' +
+            'Enviar convites pela API oficial' +
+          '</label>' +
+          '<p class="muted" style="margin-top:-8px;margin-bottom:18px;font-size:.88rem">' +
+            'Desligado, o grupo continua sendo criado e o link aparece na tela, mas nenhuma mensagem é disparada. ' +
+            'Mantenha desligado enquanto o template não estiver aprovado.</p>' +
+
+          '<button class="btn btn-primary" id="wappSalvar">Salvar configuração</button>' +
+          (c.atualizado_em ? '<p class="muted" style="margin-top:12px;font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</p>' : '') +
+        '</div>' +
+
+        '<div class="admin-card" style="max-width:720px;margin-top:18px">' +
+          '<h3 style="margin-bottom:6px">Enviar teste</h3>' +
+          '<p class="muted" style="margin-bottom:14px">Dispara o template para um número, sem depender de negociação. ' +
+          'Use um número que já tenha conversado com a conta ou que esteja na lista de testes do app.</p>' +
+          '<div class="field"><label>Telefone (com DDD)</label>' +
+            '<input id="wappTesteTel" placeholder="47999998888" /></div>' +
+          '<div class="field"><label>Código do convite (opcional)</label>' +
+            '<input id="wappTesteCod" placeholder="TESTE123" /></div>' +
+          '<button class="btn btn-ghost" id="wappTestar">Enviar teste</button>' +
+        '</div>';
+
+      $('wappSalvar').onclick = function () {
+        var btn = this; btn.disabled = true; btn.textContent = 'Salvando…';
+        api('/api/admin/whatsapp/config', {
+          method: 'PUT',
+          body: {
+            phone_number_id: $('wappPhone').value,
+            waba_id:         $('wappWaba').value,
+            api_version:     $('wappVersao').value,
+            token:           $('wappToken').value,
+            template_nome:   $('wappTemplate').value,
+            template_idioma: $('wappIdioma').value,
+            ativo:           $('wappAtivo').checked
+          }
+        }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Salvar configuração';
+          if (!resp.ok) { toast(resp.body.error || 'Erro ao salvar.', 'error'); return; }
+          toast(resp.body.pronto ? 'Salvo. Envio pronto para uso.' : ('Salvo. ' + (resp.body.motivo || '')), 'success');
+          renderWhatsappConfig();
+        });
+      };
+
+      $('wappTestar').onclick = function () {
+        var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
+        api('/api/admin/whatsapp/testar', {
+          method: 'POST',
+          body: { telefone: $('wappTesteTel').value, codigo: $('wappTesteCod').value || 'TESTE123' }
+        }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Enviar teste';
+          if (!resp.ok) { toast(resp.body.error || 'Falha no envio.', 'error'); return; }
+          toast('Enviado. ID da mensagem: ' + (resp.body.wamid || '—'), 'success');
+        });
+      };
+    });
+  }
+
+  // ---- Envios de convite (log e reenvio)
+  function renderEnvios(filtro) {
+    filtro = filtro || 'todos';
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/whatsapp/envios?status=' + encodeURIComponent(filtro)).then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var lista = r.body.envios || [];
+      var cnt = r.body.contadores || {};
+
+      var abas = ['todos', 'falhou', 'enviado'].map(function (f) {
+        var rotulo = f === 'todos' ? 'Todos' : (f === 'falhou' ? 'Falharam (' + (cnt.falhou || 0) + ')' : 'Enviados (' + (cnt.enviado || 0) + ')');
+        return '<button class="btn ' + (f === filtro ? 'btn-primary' : 'btn-ghost') + ' btn-sm" data-filtro="' + f + '" style="margin-right:8px">' + rotulo + '</button>';
+      }).join('');
+
+      if (!lista.length) {
+        box.innerHTML = '<div style="margin-bottom:16px">' + abas + '</div>' +
+          '<div class="admin-card"><p class="muted">Nenhum envio registrado ainda.</p></div>';
+      } else {
+        var linhas = lista.map(function (e) {
+          var falhou = e.status === 'falhou';
+          return '<tr>' +
+            '<td>' + escapeHtml(formatDateTime(e.created_at)) + '</td>' +
+            '<td><span style="font-weight:700;color:' + (falhou ? '#c0392b' : '#1e7e34') + '">' +
+              (falhou ? 'falhou' : 'enviado') + '</span>' +
+              (e.tentativas > 1 ? '<br><span class="muted" style="font-size:.8rem">' + e.tentativas + ' tentativas</span>' : '') + '</td>' +
+            '<td>' + escapeHtml(e.destinatario_nome || '-') +
+              '<br><span class="muted" style="font-size:.82rem">' + escapeHtml(e.papel || '-') + ' · ' + escapeHtml(e.telefone || '-') + '</span></td>' +
+            '<td>' + escapeHtml(e.imovel_titulo || '-') + '</td>' +
+            '<td style="max-width:280px">' + (falhou
+                ? '<span style="color:#c0392b;font-size:.86rem">' + escapeHtml(e.erro || 'sem detalhe') + '</span>'
+                : '<span class="muted" style="font-size:.8rem">' + escapeHtml(e.wamid || '') + '</span>') + '</td>' +
+            '<td>' + (falhou ? '<button class="btn btn-ghost btn-sm" data-reenviar="' + e.id + '">Reenviar</button>' : '') + '</td>' +
+          '</tr>';
+        }).join('');
+
+        box.innerHTML = '<div style="margin-bottom:16px">' + abas + '</div>' +
+          '<div class="admin-logs"><table>' +
+          '<thead><tr><th>Quando</th><th>Status</th><th>Destinatário</th><th>Imóvel</th><th>Detalhe</th><th></th></tr></thead>' +
+          '<tbody>' + linhas + '</tbody></table></div>';
+      }
+
+      box.querySelectorAll('[data-filtro]').forEach(function (b) {
+        b.onclick = function () { renderEnvios(b.getAttribute('data-filtro')); };
+      });
+      box.querySelectorAll('[data-reenviar]').forEach(function (b) {
+        b.onclick = function () {
+          b.disabled = true; b.textContent = 'Reenviando…';
+          api('/api/admin/whatsapp/envios/' + b.getAttribute('data-reenviar') + '/reenviar', { method: 'POST' })
+            .then(function (resp) {
+              if (resp.ok) { toast('Convite reenviado.', 'success'); }
+              else { toast(resp.body.error || 'Falhou de novo.', 'error'); }
+              refreshContadores();
+              renderEnvios(filtro);
+            });
+        };
+      });
     });
   }
 

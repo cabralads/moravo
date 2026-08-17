@@ -273,6 +273,48 @@ app.listen(PORT, '0.0.0.0', async () => {
         ON moravo.admin_login_logs (created_at DESC);
     `);
 
+    // Configuração da WhatsApp Cloud API (preenchida pelo painel do admin).
+    // Linha única (id = 1). O token é gravado cifrado, nunca em texto puro.
+    await migrar('tabela config_whatsapp', `
+      CREATE TABLE IF NOT EXISTS moravo.config_whatsapp (
+        id              SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        phone_number_id TEXT,
+        waba_id         TEXT,
+        api_version     TEXT NOT NULL DEFAULT 'v23.0',
+        token_cifrado   TEXT,
+        template_nome   TEXT NOT NULL DEFAULT 'link_grupo_convite',
+        template_idioma TEXT NOT NULL DEFAULT 'pt_BR',
+        ativo           BOOLEAN NOT NULL DEFAULT false,
+        atualizado_por  BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        atualizado_em   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('config_whatsapp.linha_inicial', `
+      INSERT INTO moravo.config_whatsapp (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // Log de envios do convite pelo WhatsApp (alimenta a tela de erros do admin)
+    await migrar('tabela whatsapp_envios', `
+      CREATE TABLE IF NOT EXISTS moravo.whatsapp_envios (
+        id              BIGSERIAL PRIMARY KEY,
+        interesse_id    BIGINT REFERENCES moravo.interesses(id) ON DELETE SET NULL,
+        destinatario_id BIGINT REFERENCES moravo.usuarios(id)   ON DELETE SET NULL,
+        papel           TEXT,
+        telefone        TEXT,
+        template        TEXT,
+        codigo_convite  TEXT,
+        status          TEXT NOT NULL CHECK (status IN ('enviado', 'falhou')),
+        wamid           TEXT,
+        erro            TEXT,
+        tentativas      INT NOT NULL DEFAULT 1,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('whatsapp_envios.indices', `
+      CREATE INDEX IF NOT EXISTS idx_whatsapp_envios_status
+        ON moravo.whatsapp_envios (status, created_at DESC);
+    `);
+
     // Seed: usuário mestre admin (idempotente - só cria se não existir)
     try {
       const adminExists = await query(

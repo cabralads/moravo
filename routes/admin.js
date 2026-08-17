@@ -7,6 +7,7 @@ const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { sign: signJwt } = require('../lib/jwt');
 const { criarNotificacao } = require('../lib/notifications');
+const wa = require('../lib/whatsapp');
 
 const router = express.Router();
 
@@ -203,6 +204,195 @@ router.get('/logs', async (req, res) => {
     return res.json({ ok: true, logs: r.rows });
   } catch (err) {
     console.error('[admin/logs GET] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// =========================================================================
+// WhatsApp Cloud API — configuração e monitoramento (só admin)
+// =========================================================================
+
+// Mostra só os 4 últimos caracteres do token. O valor nunca volta inteiro.
+function mascararToken(token) {
+  if (!token) return '';
+  return token.length <= 4 ? '••••' : '••••••••' + token.slice(-4);
+}
+
+// ---- GET /api/admin/whatsapp/config
+router.get('/whatsapp/config', async (req, res) => {
+  try {
+    const c = await wa.getConfig({ semCache: true });
+    return res.json({
+      ok: true,
+      config: {
+        phone_number_id: c.phone_number_id,
+        waba_id:         c.waba_id,
+        api_version:     c.api_version,
+        template_nome:   c.template_nome,
+        template_idioma: c.template_idioma,
+        ativo:           c.ativo,
+        atualizado_em:   c.atualizado_em,
+        token_definido:  !!c.token,
+        token_mascarado: mascararToken(c.token),
+      },
+    });
+  } catch (err) {
+    console.error('[admin/whatsapp/config GET] erro:', err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ---- PUT /api/admin/whatsapp/config
+// O token só é gravado quando vem preenchido. Campo vazio mantém o atual.
+router.put('/whatsapp/config', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const phone   = (b.phone_number_id || '').trim();
+    const waba    = (b.waba_id || '').trim();
+    const versao  = (b.api_version || 'v23.0').trim();
+    const tmpl    = (b.template_nome || 'link_grupo_convite').trim();
+    const idioma  = (b.template_idioma || 'pt_BR').trim();
+    const ativo   = !!b.ativo;
+    const token   = (b.token || '').trim();
+
+    if (!/^v\d+\.\d+$/.test(versao)) {
+      return res.status(400).json({ ok: false, error: 'Versão da API inválida. Use o formato v23.0.' });
+    }
+    if (ativo && !phone) {
+      return res.status(400).json({ ok: false, error: 'Informe o Phone Number ID antes de ativar o envio.' });
+    }
+
+    let tokenCifrado = null;
+    if (token) {
+      try {
+        tokenCifrado = wa.cifrar(token);
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+    await query(
+      `UPDATE moravo.config_whatsapp
+          SET phone_number_id = $1,
+              waba_id         = $2,
+              api_version     = $3,
+              template_nome   = $4,
+              template_idioma = $5,
+              ativo           = $6,
+              token_cifrado   = COALESCE($7, token_cifrado),
+              atualizado_por  = $8,
+              atualizado_em   = NOW()
+        WHERE id = 1`,
+      [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id]
+    );
+
+    wa.limparCache();
+    const check = await wa.prontoParaEnviar();
+    return res.json({ ok: true, pronto: check.pronto, motivo: check.motivo || null });
+  } catch (err) {
+    console.error('[admin/whatsapp/config PUT] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/admin/whatsapp/testar  { telefone, codigo }
+// Dispara o template para um número, sem depender de negociação real.
+router.post('/whatsapp/testar', async (req, res) => {
+  try {
+    const telefone = (req.body && req.body.telefone || '').trim();
+    const codigo   = (req.body && req.body.codigo || 'TESTE123').trim();
+    if (!telefone) return res.status(400).json({ ok: false, error: 'Informe o telefone de destino.' });
+
+    const envio = await wa.enviarTemplateConvite({ telefone: telefone, codigoConvite: codigo });
+    await wa.registrarEnvio({
+      papel: 'teste', telefone: telefone, template: null,
+      codigo_convite: codigo, status: 'enviado', wamid: envio.wamid,
+    });
+    return res.json({ ok: true, wamid: envio.wamid, destino: envio.destino });
+  } catch (err) {
+    await wa.registrarEnvio({
+      papel: 'teste', telefone: (req.body && req.body.telefone) || '',
+      status: 'falhou', erro: err.message,
+    });
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ---- GET /api/admin/whatsapp/envios?status=falhou|enviado|todos
+router.get('/whatsapp/envios', async (req, res) => {
+  try {
+    const status = (req.query.status || 'todos').toLowerCase();
+    const filtro = ['enviado', 'falhou'].indexOf(status) !== -1 ? 'WHERE e.status = $1' : '';
+    const params = filtro ? [status] : [];
+    const r = await query(
+      `SELECT e.id, e.interesse_id, e.papel, e.telefone, e.template,
+              e.codigo_convite, e.status, e.wamid, e.erro, e.tentativas, e.created_at,
+              u.nome AS destinatario_nome,
+              im.titulo AS imovel_titulo
+         FROM moravo.whatsapp_envios e
+         LEFT JOIN moravo.usuarios  u  ON u.id = e.destinatario_id
+         LEFT JOIN moravo.interesses i ON i.id = e.interesse_id
+         LEFT JOIN moravo.imoveis   im ON im.id = i.imovel_id
+         ${filtro}
+         ORDER BY e.created_at DESC
+         LIMIT 200`,
+      params
+    );
+    const cnt = await query(
+      `SELECT count(*) FILTER (WHERE status = 'falhou')::int  AS falhou,
+              count(*) FILTER (WHERE status = 'enviado')::int AS enviado
+         FROM moravo.whatsapp_envios`
+    );
+    return res.json({ ok: true, envios: r.rows, contadores: cnt.rows[0] });
+  } catch (err) {
+    console.error('[admin/whatsapp/envios] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/admin/whatsapp/envios/:id/reenviar
+router.post('/whatsapp/envios/:id/reenviar', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
+
+    const r = await query(
+      `SELECT e.*, i.grupo_whatsapp_link
+         FROM moravo.whatsapp_envios e
+         LEFT JOIN moravo.interesses i ON i.id = e.interesse_id
+        WHERE e.id = $1`,
+      [id]
+    );
+    if (r.rowCount === 0) return res.status(404).json({ ok: false, error: 'Envio não encontrado.' });
+    const env = r.rows[0];
+
+    // Prefere o código atual do grupo; cai para o que foi registrado na tentativa
+    const codigo = wa.extrairCodigoConvite(env.grupo_whatsapp_link) || env.codigo_convite;
+    if (!codigo) {
+      return res.status(400).json({ ok: false, error: 'Não há código de convite disponível para este envio.' });
+    }
+
+    try {
+      const envio = await wa.enviarTemplateConvite({ telefone: env.telefone, codigoConvite: codigo });
+      await query(
+        `UPDATE moravo.whatsapp_envios
+            SET status = 'enviado', wamid = $1, erro = NULL,
+                tentativas = tentativas + 1, created_at = NOW()
+          WHERE id = $2`,
+        [envio.wamid, id]
+      );
+      return res.json({ ok: true, wamid: envio.wamid });
+    } catch (err) {
+      await query(
+        `UPDATE moravo.whatsapp_envios
+            SET status = 'falhou', erro = $1, tentativas = tentativas + 1
+          WHERE id = $2`,
+        [String(err.message).slice(0, 500), id]
+      );
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+  } catch (err) {
+    console.error('[admin/whatsapp/reenviar] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
   }
 });

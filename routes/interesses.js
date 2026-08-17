@@ -7,6 +7,7 @@ const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { criarNotificacao } = require('../lib/notifications');
 const { criarGrupo, enviarMensagem, montarLinkGrupo, extrairIdGrupo, gerarInviteGrupo } = require('../lib/waha');
+const wa = require('../lib/whatsapp');
 
 const STATUS_VALIDOS = ['pendente', 'aceito', 'recusado'];
 
@@ -486,6 +487,78 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// =========================================================================
+// Envia o convite do grupo para proprietário e corretor pela WhatsApp Cloud API.
+// O grupo é criado pelo Waha, mas quem manda a mensagem é o número oficial —
+// é isso que tira o risco de banimento do número da sessão.
+// Cada tentativa vira uma linha em whatsapp_envios. Falha notifica os admins.
+// =========================================================================
+async function enviarConvites(interesse, grupoLink) {
+  const codigo = wa.extrairCodigoConvite(grupoLink);
+  const config = await wa.getConfig().catch(() => null);
+  const template = (config && config.template_nome) || 'link_grupo_convite';
+
+  const destinatarios = [
+    { id: interesse.dono_id,     papel: 'proprietario', nome: interesse.dono_nome,     telefone: interesse.dono_whatsapp },
+    { id: interesse.corretor_id, papel: 'corretor',     nome: interesse.corretor_nome, telefone: interesse.corretor_whatsapp },
+  ];
+
+  const resultados = [];
+
+  for (const d of destinatarios) {
+    const base = {
+      interesse_id: interesse.id,
+      destinatario_id: d.id,
+      papel: d.papel,
+      telefone: d.telefone,
+      template: template,
+      codigo_convite: codigo,
+    };
+
+    if (!codigo) {
+      const erro = 'Não foi possível extrair o código do convite a partir do link do grupo.';
+      await wa.registrarEnvio(Object.assign({}, base, { status: 'falhou', erro: erro }));
+      resultados.push({ papel: d.papel, ok: false, erro: erro });
+      continue;
+    }
+
+    try {
+      const envio = await wa.enviarTemplateConvite({ telefone: d.telefone, codigoConvite: codigo });
+      await wa.registrarEnvio(Object.assign({}, base, { status: 'enviado', wamid: envio.wamid }));
+      resultados.push({ papel: d.papel, ok: true, wamid: envio.wamid });
+      console.log(`[convite] enviado para ${d.papel} (${envio.destino}) — wamid ${envio.wamid}`);
+    } catch (err) {
+      await wa.registrarEnvio(Object.assign({}, base, { status: 'falhou', erro: err.message }));
+      resultados.push({ papel: d.papel, ok: false, erro: err.message });
+      console.error(`[convite] falhou para ${d.papel}: ${err.message}`);
+    }
+  }
+
+  // Avisa os admins quando algum envio não passou
+  const falhas = resultados.filter((r) => !r.ok);
+  if (falhas.length) {
+    try {
+      const admins = await query(`SELECT id FROM moravo.usuarios WHERE perfil = 'admin'`);
+      for (const a of admins.rows) {
+        await criarNotificacao({
+          usuario_id: a.id,
+          tipo: 'envio_whatsapp_falhou',
+          imovel_id: interesse.imovel_id,
+          interesse_id: interesse.id,
+          payload: {
+            imovel_titulo: interesse.imovel_titulo,
+            falhas: falhas.map((f) => ({ papel: f.papel, erro: f.erro })),
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.warn('[convite] falha ao notificar admins:', notifErr.message);
+    }
+  }
+
+  return resultados;
+}
+
 // ---- POST /api/interesses/:id/criar-grupo-whatsapp
 // Cria (ou recupera) um grupo de WhatsApp no Waha com:
 //   - Proprietário (vendedor)
@@ -565,12 +638,15 @@ router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
 
     if (linkExiste && !linkInvalidoWaMe) {
       console.log('✅ grupo já existe com link válido:', linkExiste);
+      // Reenvia o convite: é o caminho de "não recebi o link"
+      const envios = await enviarConvites(interesse, linkExiste);
       return res.json({
         ok: true,
         grupo_link: linkExiste,
         grupo_id: grupoIdExistente,
         ja_existia: true,
         created_at: interesse.grupo_whatsapp_created_at,
+        envios: envios,
       });
     }
 
@@ -601,12 +677,14 @@ router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
           [grupoLink, interesseId]
         );
 
+        const enviosRegen = await enviarConvites(interesse, grupoLink);
         return res.json({
           ok: true,
           grupo_link: grupoLink,
           grupo_id: grupoId,
           grupo_owner: '',
           ja_existia: true,
+          envios: enviosRegen,
         });
       } else {
         console.warn('[waha] não foi possível regenerar invite do grupo existente; criando novo grupo...');
@@ -619,14 +697,17 @@ router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
 
     let wahaResult;
     try {
+      // Ninguém é adicionado à força: o grupo nasce só com os números da Moravo
+      // e as partes entram pelo link de convite enviado pela API oficial.
+      // WAHA_PARTICIPANTES_EXTRA aceita outros números internos separados por
+      // vírgula (a API do Waha costuma exigir mais de um participante).
+      const internos = (process.env.WAHA_PARTICIPANTES_EXTRA || '')
+        .split(',').map((n) => n.replace(/\D/g, '')).filter(Boolean);
+
       wahaResult = await criarGrupo({
         nome: grupoNome,
         descricao: grupoDesc,
-        participantes: [
-          interesse.dono_whatsapp,
-          interesse.corretor_whatsapp,
-          atendentePrincipal,
-        ],
+        participantes: [atendentePrincipal].concat(internos),
       });
     } catch (wahaErr) {
       console.error('[criar-grupo-whatsapp] erro Waha:', wahaErr.message);
@@ -683,12 +764,16 @@ router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
       });
     }
 
+    // 9. Convida proprietário e corretor pela API oficial
+    const envios = await enviarConvites(interesse, grupoLink);
+
     return res.json({
       ok: true,
       grupo_link: grupoLink,
       grupo_id:   grupoId,
       grupo_owner: grupoOwner,
       ja_existia: false,
+      envios: envios,
     });
   } catch (err) {
     console.error('[criar-grupo-whatsapp] erro:', err);
