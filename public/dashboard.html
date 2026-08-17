@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Moravo — Dashboard</title>
+  <title>Moravo | Dashboard</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -278,7 +278,7 @@
       color: #fff;
     }
 
-    /* Tabs — pills modernas */
+    /* Tabs - pills modernas */
     .tabs-bar {
       background: #fff;
       border: 1px solid var(--beige);
@@ -325,7 +325,7 @@
       box-shadow: 0 2px 8px rgba(255, 90, 95, 0.25);
     }
 
-    /* Tab CTA (ex: "Cadastrar imóvel") — destacada em laranja */
+    /* Tab CTA (ex: "Cadastrar imóvel") - destacada em laranja */
     .tab.tab-cta {
       color: var(--emerald);
       font-weight: 700;
@@ -943,7 +943,7 @@
       cursor: pointer;
     }
 
-    /* Mini card de preview (anúncio) — aparece no hover, position absolute em relação ao .notif-row */
+    /* Mini card de preview (anúncio) - aparece no hover, position absolute em relação ao .notif-row */
     .notif-row__preview {
       position: fixed;
       background: #fff;
@@ -1120,7 +1120,7 @@
       margin-bottom: 20px;
     }
 
-    /* Modal do passo 2 — fica empilhado sobre o passo 1 */
+    /* Modal do passo 2 - fica empilhado sobre o passo 1 */
     #imovelStep2Modal { z-index: 200; }
     #imovelStep2Modal .modal { max-width: 500px; }
     .step2-drop {
@@ -1533,7 +1533,7 @@
       }
     }
 
-    /* Switches (toggles) para Privacidade e Notificações — puramente estéticos */
+    /* Switches (toggles) para Privacidade e Notificações - puramente estéticos */
     .toggle-card {
       display: flex;
       align-items: center;
@@ -2425,7 +2425,7 @@
 
         <!-- Upload de fotos (até 5) -->
         <div class="field">
-          <label>Fotos <span class="opt">(até 5 — JPEG, PNG ou WebP, máx 5MB cada)</span></label>
+          <label>Fotos <span class="opt">(até 5: JPEG, PNG ou WebP, máx 5MB cada)</span></label>
           <div class="fotos-area">
             <div class="fotos-grid" id="fotosGrid"></div>
             <label class="fotos-upload" id="fotosUploadLabel">
@@ -2463,7 +2463,7 @@
         </div>
 
         <div class="field">
-          <label>Documento da matrícula <span class="opt">(PDF ou imagem, máx 5MB — opcional)</span></label>
+          <label>Documento da matrícula <span class="opt">(PDF ou imagem, máx 5MB, opcional)</span></label>
           <div id="step2EscrituraArea" class="step2-drop">
             <input type="file" id="step2-escritura-arquivo" accept=".pdf,image/jpeg,image/png,image/webp" style="display:none" />
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ink-soft)">
@@ -2539,7 +2539,7 @@
         id="cp-avatar">?</div>
       <h2 id="cp-nome" style="margin: 0 0 4px; font-size: 1.35rem; font-weight: 800;">Nome do Corretor</h2>
       <div style="font-size: 0.9rem; color: var(--emerald); font-weight: 700; margin-bottom: 20px;" id="cp-creci">CRECI:
-        —</div>
+        -</div>
 
       <div
         style="text-align: left; background: #fafafa; border: 1px solid var(--beige); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
@@ -2547,18 +2547,18 @@
           <span
             style="font-size: 0.75rem; color: var(--ink-soft); display: block; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Região
             de atuação</span>
-          <strong id="cp-regiao" style="font-size: 0.92rem; color: var(--ink); font-weight: 600;">—</strong>
+          <strong id="cp-regiao" style="font-size: 0.92rem; color: var(--ink); font-weight: 600;">-</strong>
         </div>
         <div style="border-top: 1px solid var(--beige); padding-top: 10px;">
           <span
             style="font-size: 0.75rem; color: var(--ink-soft); display: block; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">WhatsApp</span>
-          <strong id="cp-whats" style="font-size: 0.92rem; color: var(--ink); font-weight: 600;">—</strong>
+          <strong id="cp-whats" style="font-size: 0.92rem; color: var(--ink); font-weight: 600;">-</strong>
         </div>
         <div style="border-top: 1px solid var(--beige); padding-top: 10px;">
           <span
             style="font-size: 0.75rem; color: var(--ink-soft); display: block; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">E-mail</span>
           <strong id="cp-email"
-            style="font-size: 0.92rem; color: var(--ink); word-break: break-all; font-weight: 600;">—</strong>
+            style="font-size: 0.92rem; color: var(--ink); word-break: break-all; font-weight: 600;">-</strong>
         </div>
       </div>
 
@@ -2760,7 +2760,7 @@
         // da lista (loadMensagensSection), que é a fonte da verdade. Evita
         // dessincronização (ex.: badge "3" sem bolinhas visíveis).
         if (window._mensagensSectionActive) return;
-        // USA A MESMA URL QUE loadMensagensSection usa — sem filtro corretor_id.
+        // USA A MESMA URL QUE loadMensagensSection usa - sem filtro corretor_id.
         // O backend retorna conversas DIFERENTES dependendo do filtro: com
         // corretor_id=X retorna só os interesses do corretor (1 conversa);
         // sem filtro retorna também comprador_rep/comprador_received (4 conversas).
@@ -2770,7 +2770,7 @@
           .then(function (res) {
             if (res.ok && res.body.interesses) {
               checkUnreadBadges(res.body.interesses);
-              // Conta mensagens não lidas — USA O MESMO FILTRO QUE A LISTA
+              // Conta mensagens não lidas - USA O MESMO FILTRO QUE A LISTA
               // (loadMensagensSection) usa, senão o badge pode mostrar conversas
               // que nem aparecem na seção Mensagens (ex.: type 'broker_rep').
               var unread = 0;
@@ -2792,7 +2792,7 @@
       // ---- Sincroniza o badge com o estado visto atual (chamado após login/F5) ----
       // Garante que o badge reflita exatamente a contagem de conversas válidas
       // que AINDA NÃO foram vistas (comparado com localStorage). NÃO sobrescreve
-      // o estado visto — apenas força a contagem correta.
+      // o estado visto - apenas força a contagem correta.
       window.syncSeenChatsFromServer = function () {
         if (!user) return;
         var interestsUrl = user.perfil === 'corretor' ? '/api/interesses?corretor_id=' + user.id : '/api/interesses';
@@ -2999,7 +2999,7 @@
         });
 
       function money(n) {
-        if (n == null) return '—';
+        if (n == null) return '-';
         return 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       }
 
@@ -3466,9 +3466,9 @@
                     '<div class="avatar">' + initials + '</div>' +
                     '<div class="info">' +
                     '<h3>' + escapeHtml(it.corretor_nome || 'Corretor') + '</h3>' +
-                    '<div class="role">Corretor · CRECI ' + (it.corretor_creci || '—') + '</div>' +
+                    '<div class="role">Corretor · CRECI ' + (it.corretor_creci || '-') + '</div>' +
                     '<div class="msg">' + (it.mensagem ? '"' + escapeHtml(it.mensagem) + '"' : '<em style="color:#999">Sem mensagem</em>') + '</div>' +
-                    '<div class="contato">📞 ' + (it.corretor_whatsapp || '—') + ' · ✉ ' + (it.corretor_email || '—') + '</div>' +
+                    '<div class="contato">📞 ' + (it.corretor_whatsapp || '-') + ' · ✉ ' + (it.corretor_email || '-') + '</div>' +
                     '<div class="contato" style="margin-top:4px;font-size:.78rem">Interessado no imóvel <span class="imovel-hover-link" style="color:var(--emerald); text-decoration:underline; font-weight:700; cursor:pointer;" data-imovel-id="' + it.imovel_id + '">' + escapeHtml(it.imovel_titulo || 'Imóvel #' + it.imovel_id) + '</span></div>' +
                     '</div>' +
                     acoes +
@@ -3792,7 +3792,7 @@
       });
 
       // ============================================================
-      // PASSO 2 — Matrícula, Escritura, Condomínio
+      // PASSO 2 - Matrícula, Escritura, Condomínio
       // ============================================================
 
       // Estado transitório do passo 2 (não persistido até o submit final)
@@ -3913,7 +3913,7 @@
         step2EscrituraPreview.style.display = 'none';
       });
 
-      // ---- Botão Cancelar do passo 2 — descarta TUDO
+      // ---- Botão Cancelar do passo 2 - descarta TUDO
       document.getElementById('step2CancelBtn').addEventListener('click', function () {
         document.getElementById('imovelStep2Modal').classList.remove('show');
         document.getElementById('imovelModal').classList.remove('show');
@@ -3929,7 +3929,7 @@
         window._imovelStep1 = null;
       });
 
-      // ---- Botão Voltar do passo 2 — preserva ambos os passos
+      // ---- Botão Voltar do passo 2 - preserva ambos os passos
       document.getElementById('step2VoltarBtn').addEventListener('click', function () {
         // Persiste o que foi digitado no passo 2 antes de fechar (caso o usuário reabra)
         step2State.matricula = document.getElementById('step2-matricula').value.trim();
@@ -3941,7 +3941,7 @@
         if (modalMapInstance) setTimeout(function () { modalMapInstance.invalidateSize(); }, 50);
       });
 
-      // ---- Submit final do passo 2 — esse é o que de fato grava o imóvel
+      // ---- Submit final do passo 2 - esse é o que de fato grava o imóvel
       // Monta o payload completo, decide entre POST e PUT, e (quando há arquivo de escritura)
       // faz o POST/PUT sem URL → upload do doc → PUT final com a URL.
       function uploadDocumento(imovelId, file) {
@@ -4024,7 +4024,7 @@
               return uploadDataUrls(imovelId, dataUrls).then(function () { return imovelId; });
             }
           }
-          // Sempre devolver uma Promise (resolve com o ID) — evita TypeError no .then() acima
+          // Sempre devolver uma Promise (resolve com o ID) - evita TypeError no .then() acima
           return Promise.resolve(imovelId);
         }
 
@@ -4131,7 +4131,7 @@
         if (im.vagas) specs.push(im.vagas + (im.vagas > 1 ? ' vagas' : ' vaga') + ' <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-soft);"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 21h14"/><path d="M9 10h6"/></svg>');
         var specsStr = specs.join(' · ');
 
-        // fotos pode vir como string JSON do banco — faz parse seguro
+        // fotos pode vir como string JSON do banco - faz parse seguro
         var fotos = im.fotos;
         if (typeof fotos === 'string') {
           try { fotos = JSON.parse(fotos); } catch (e) { fotos = []; }
@@ -4829,7 +4829,7 @@
               }
 
               // ---- Preview local (mini card no hover, sem fetch) ----
-              // Usa os dados que já estão em notif — não depende de /api/imoveis/:id nem de initImovelHoverLinks
+              // Usa os dados que já estão em notif - não depende de /api/imoveis/:id nem de initImovelHoverLinks
               var previewHtml = '';
               if (notif.imovel_id) {
                 var pvFotos = [];
@@ -4871,7 +4871,7 @@
                 }
               }
 
-              // Botão "Ver perfil" — sempre presente para o proprietário (exceto aceito/recusado onde já vai pra coluna esquerda)
+              // Botão "Ver perfil" - sempre presente para o proprietário (exceto aceito/recusado onde já vai pra coluna esquerda)
               var verPerfilBelowAvatar = '';
               if (user.perfil === 'proprietario') {
                 verPerfilBelowAvatar = '<button class="btn btn-ghost btn-sm btn-ver-perfil-notif">Ver perfil</button>';
@@ -4926,7 +4926,7 @@
                     left = rect.left - previewWidth - 8;
                   }
                   // Top: começa um pouco acima da base do link (8px acima)
-                  // pra não grudar em baixo — fica "flutuando" ao lado
+                  // pra não grudar em baixo - fica "flutuando" ao lado
                   var top = rect.bottom - 8;
                   previewEl.style.left = left + 'px';
                   previewEl.style.top = top + 'px';
@@ -4941,7 +4941,7 @@
                 window.addEventListener('scroll', function () { if (previewEl.classList.contains('show')) positionPreview(); }, { passive: true });
               }
 
-              // Binds (mesmos seletores de antes — handlers existentes continuam funcionando)
+              // Binds (mesmos seletores de antes - handlers existentes continuam funcionando)
               var verAnuncioBtn = row.querySelector('.btn-ver-anuncio');
               if (verAnuncioBtn) {
                 verAnuncioBtn.addEventListener('click', function () {
@@ -4968,7 +4968,7 @@
               }
             });
 
-            // O preview do anúncio é local (mouseenter/mouseleave no próprio link) — sem fetch
+            // O preview do anúncio é local (mouseenter/mouseleave no próprio link) - sem fetch
           })
           .catch(function () {
             container.innerHTML = '<div style="padding: 20px; text-align: center; color: #d32f2f;">Erro ao carregar notificações.</div>';
@@ -5243,7 +5243,7 @@
         var name = it.other_name || (user.perfil === 'corretor' ? 'Comprador' : 'Corretor');
         var subtitle = '';
         if (it.other_role === 'corretor') {
-          subtitle = 'CRECI: ' + (it.other_creci || '—');
+          subtitle = 'CRECI: ' + (it.other_creci || '-');
         }
 
         if (user.perfil === 'proprietario' && it.other_role === 'corretor') {
@@ -5382,8 +5382,8 @@
           }
         } else if (it.status === 'aceito') {
           var loggedInUserIsCorretor = (user.perfil === 'corretor');
-          var otherWhats = it.other_whatsapp || '—';
-          var otherEmail = it.other_email || '—';
+          var otherWhats = it.other_whatsapp || '-';
+          var otherEmail = it.other_email || '-';
           var whatsButtonHtml = '';
 
           if (it.type === 'broker_rep') {
@@ -5430,7 +5430,7 @@
             }
           } else {
             // Conversas normais (comprador e corretor/proprietário)
-            if (loggedInUserIsCorretor && otherWhats && otherWhats !== '—') {
+            if (loggedInUserIsCorretor && otherWhats && otherWhats !== '-') {
               var wNum = otherWhats.replace(/\D/g, '');
               whatsButtonHtml = '<a href="https://wa.me/55' + wNum + '" target="_blank" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 0.88rem; background: #25d366; border-color: #25d366; text-decoration: none; border-radius: 8px; font-weight: 600; color: #fff; margin-top: 10px;">' +
                 '💬 Chamar no WhatsApp' +
@@ -5526,10 +5526,10 @@
         }
 
         document.getElementById('cp-nome').textContent = name;
-        document.getElementById('cp-creci').textContent = 'CRECI: ' + (it.creci || it.corretor_creci || it.other_creci || '—');
+        document.getElementById('cp-creci').textContent = 'CRECI: ' + (it.creci || it.corretor_creci || it.other_creci || '-');
         document.getElementById('cp-regiao').textContent = it.regiao_atuacao || 'Não informada';
-        document.getElementById('cp-whats').textContent = it.corretor_whatsapp || it.other_whatsapp || '—';
-        document.getElementById('cp-email').textContent = it.corretor_email || it.other_email || '—';
+        document.getElementById('cp-whats').textContent = it.corretor_whatsapp || it.other_whatsapp || '-';
+        document.getElementById('cp-email').textContent = it.corretor_email || it.other_email || '-';
 
         modal.classList.add('show');
       }

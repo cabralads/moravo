@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Moravo — Painel Administrativo</title>
+<title>Moravo | Painel Administrativo</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -750,7 +750,7 @@ body {
 <div class="admin-login-shell" id="adminLoginScreen">
   <form class="admin-login-card" id="adminLoginForm" autocomplete="off">
     <h1>Painel administrativo</h1>
-    <p class="muted">Acesso restrito — use suas credenciais de administrador.</p>
+    <p class="muted">Acesso restrito. Use suas credenciais de administrador.</p>
     <div class="field">
       <label for="adminEmail">E-mail</label>
       <input type="email" id="adminEmail" autocomplete="username" required />
@@ -1074,7 +1074,7 @@ body {
           : '';
 
         var motivoHtml = (view === 'reprovados' && im.reprovado_motivo)
-          ? '<div class="motivo-bar"><strong>Motivo da reprovação:</strong> ' + escapeHtml(im.reprovado_motivo) + ' <span style="color:rgba(192,57,43,.7)">— ' + escapeHtml(formatDateTime(im.reprovado_em)) + '</span></div>'
+          ? '<div class="motivo-bar"><strong>Motivo da reprovação:</strong> ' + escapeHtml(im.reprovado_motivo) + ' <span style="color:rgba(192,57,43,.7)">· ' + escapeHtml(formatDateTime(im.reprovado_em)) + '</span></div>'
           : '';
 
         html += '<div class="admin-card" data-id="' + im.id + '">' +
@@ -1171,7 +1171,7 @@ body {
           '<td>' + escapeHtml(formatDateTime(l.created_at)) + '</td>' +
           '<td>' + escapeHtml(l.email) + '</td>' +
           '<td><span class="chip ' + chipClass + '">' + chipText + '</span></td>' +
-          '<td>' + escapeHtml(l.ip || '—') + '</td>' +
+          '<td>' + escapeHtml(l.ip || '-') + '</td>' +
           '<td style="font-size:0.78rem; color:var(--ink-soft)">' + escapeHtml(ua) + '</td>' +
         '</tr>';
       });
