@@ -184,12 +184,31 @@ idempotente: se o grupo já existe, devolve o link.
 
 ---
 
+## Decisões de produto
+
+Escolhas deliberadas que podem parecer bug para quem lê o código sem contexto.
+
+### A aprovação não bloqueia o imóvel no feed (decidido em 2026-08-17)
+
+O `status_aprovacao` **não filtra a listagem**. Imóvel pendente ou reprovado continua
+aparecendo na busca pública e nas telas internas — a única diferença é o selo
+**"Verificado"**, que só o aprovado exibe (`index.html`, `busca.html`, `detalhes.html`,
+`dashboard.html`).
+
+O filtro existia no `GET /api/imoveis` e foi removido de propósito; o comentário no lugar
+dele (`routes/imoveis.js`, no GET `/`) marca onde ficava.
+
+**Motivo:** o catálogo ainda tem poucos imóveis e só existe um login de admin. Esconder o
+que não foi moderado criaria fila e travaria o crescimento do catálogo sem ganho real nessa
+escala. A moderação funciona como **selo de confiança**, não como portão.
+
+**Reavaliar quando:** o volume de imóveis crescer, ou passar a existir mais de um moderador.
+Aí decidir se some só o reprovado ou se nada aparece antes de aprovado.
+
+---
+
 ## Pontos de atenção / dívida conhecida
 
-- **A aprovação não é um portão.** O filtro que escondia imóveis não aprovados do feed foi
-  removido de propósito (`routes/imoveis.js`, no GET `/`): imóvel pendente ou reprovado
-  continua aparecendo na busca, só com badge diferente. Se a intenção for bloquear, precisa
-  voltar o filtro.
 - **Credenciais no repositório**: senha do Postgres num comentário do `db/schema.sql`,
   `WAHA_API_KEY` preenchida no `.env.example`, e senha do admin fixa no `server.js`.
   Deveriam sair para variáveis de ambiente e ser rotacionadas.
@@ -215,3 +234,5 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 - **2026-08-17** — Documento criado: mapeamento dos 3 perfis (admin / vendedor-proprietário /
   corretor), fluxo de intermediação, modelo de dados e dívidas conhecidas.
+- **2026-08-17** — Registrado que a aprovação não bloquear o imóvel no feed é decisão de
+  produto (poucos imóveis, um só admin), e não dívida. Movido para "Decisões de produto".
