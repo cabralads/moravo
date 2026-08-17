@@ -48,3 +48,6 @@ db/deploy-api.sh
 
 # ===== Screenshots / referências visuais =====
 screens/
+
+# Material de alinhamento (mantido só local, fora do repo)
+arquivos-alinhamento/
