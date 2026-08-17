@@ -184,6 +184,34 @@ idempotente: se o grupo já existe, devolve o link.
 
 ---
 
+## Posicionamento e modelo de receita
+
+**Nome da marca: Moravo.** Os nomes alternativos estudados (BrokerOS, Broker Cloud, ABAS,
+REaaS Brasil, AgentOS, Cloud Realty, RealtyOS) ficaram de fora por ora.
+
+**Não usar a sigla "REaaS" em nada voltado ao cliente.** No Brasil ela já significa outra
+coisa (moradia por assinatura, tipo Housi) e criaria confusão. O conceito pode ser explicado
+em texto corrido, sem o rótulo.
+
+### O corretor fica com 77% (decidido em 2026-08-05, Marcos e Amandus)
+
+A imobiliária deixa de ser a "chefe" e vira **infraestrutura contratada**. O corretor usa a
+plataforma e paga **23%** da comissão pelo uso — contra os **50%** da imobiliária tradicional.
+
+Assinatura comercial: **50/50 × 77/23**.
+
+Isso substitui o posicionamento anterior ("Modelo Fora Imobiliária" / "100% da comissão"),
+que foi removido da copy em 2026-08-17.
+
+**Buraco conhecido:** o produto **não tem gancho nenhum para cobrar os 23%**. Marcar um imóvel
+como "vendido" é só um flip de status que o dono ou o corretor aceito fazem com um clique
+(`PATCH /api/imoveis/:id/status`) — sem valor da venda, sem contrato, sem comprovação, sem
+cobrança. A receita da empresa não existe no código. Isso precisa ser desenhado.
+
+Material de referência da reunião: `arquivos-alinhamento/`.
+
+---
+
 ## Decisões de produto
 
 Escolhas deliberadas que podem parecer bug para quem lê o código sem contexto.
@@ -236,3 +264,6 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   corretor), fluxo de intermediação, modelo de dados e dívidas conhecidas.
 - **2026-08-17** — Registrado que a aprovação não bloquear o imóvel no feed é decisão de
   produto (poucos imóveis, um só admin), e não dívida. Movido para "Decisões de produto".
+- **2026-08-17** — Modelo do corretor mudou de "100% da comissão" para **77/23**. Copy do site
+  atualizada em 6 pontos (`public/index.html`, `public/cadastro.html`). Marca segue Moravo e a
+  sigla "REaaS" não é usada na comunicação.
