@@ -100,10 +100,15 @@ h2{font-family:var(--display);font-size:clamp(1.6rem,3.6vw,2.4rem);font-weight:8
 .gratis{background:var(--ink);color:#fff;border-radius:var(--raio-lg);padding:clamp(30px,5vw,54px);text-align:center}
 .gratis h2{color:#fff}
 .gratis .sub{color:rgba(255,255,255,.72);margin-inline:auto;text-align:center}
-.split{display:flex;justify-content:center;gap:clamp(20px,5vw,60px);flex-wrap:wrap;margin:32px 0 30px}
-.split div{text-align:center}
-.split .big{font-family:var(--display);font-size:clamp(2.4rem,6vw,3.4rem);font-weight:800;line-height:1;color:var(--laranja)}
-.split .lbl{font-size:.9rem;color:rgba(255,255,255,.7);margin-top:8px;max-width:190px}
+.big{font-family:var(--display);font-size:clamp(3rem,9vw,4.6rem);font-weight:800;line-height:1;color:var(--laranja);margin:30px 0 6px}
+.big-lbl{font-size:1rem;color:rgba(255,255,255,.78);margin-bottom:30px}
+.conta{max-width:520px;margin:0 auto 26px;text-align:left}
+.conta div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.conta div:last-child{border-bottom:none}
+.conta span{color:rgba(255,255,255,.8);font-size:.98rem}
+.conta b{font-weight:800;white-space:nowrap;color:#fff}
+.conta b.zero{color:var(--laranja);font-size:1.15rem}
+.ressalva{max-width:560px;margin:0 auto 30px;font-size:.93rem;color:rgba(255,255,255,.62);line-height:1.6}
 
 /* checklist */
 .check{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 30px;margin-bottom:30px}
@@ -284,11 +289,16 @@ footer a:hover{color:#fff}
     <div class="gratis rev">
       <p class="kicker" style="color:var(--laranja)">A pergunta que todo mundo faz</p>
       <h2>Se é de graça para mim, de onde vem o dinheiro?</h2>
-      <p class="sub">Do outro lado. O corretor que fecha a venda paga uma parte da comissão dele pelo uso da plataforma. Você não paga nada, nem antes, nem depois.</p>
-      <div class="split">
-        <div><div class="big">R$ 0</div><div class="lbl">é o que você paga para anunciar, hoje e sempre</div></div>
-        <div><div class="big">23%</div><div class="lbl">da comissão é o que o corretor paga, e só quando vende</div></div>
+      <p class="sub">De quem usa a plataforma para trabalhar. O corretor que fecha a venda paga pelo uso com uma parte do que ele mesmo recebe. Do seu lado, não existe cobrança em momento nenhum.</p>
+      <div class="big">R$ 0</div>
+      <p class="big-lbl">é o seu custo na Moravo, do anúncio até a venda</p>
+      <div class="conta">
+        <div><span>Anunciar seu imóvel</span><b class="zero">R$ 0</b></div>
+        <div><span>Receber candidaturas e escolher o corretor</span><b class="zero">R$ 0</b></div>
+        <div><span>Acompanhamento da negociação</span><b class="zero">R$ 0</b></div>
+        <div><span>Comissão do corretor</span><b>a que vocês combinarem</b></div>
       </div>
+      <p class="ressalva">A comissão continua sendo acertada entre você e o corretor, como sempre foi. <strong style="color:#fff">A Moravo não aumenta esse valor</strong> e não entra nessa conta: quem paga pelo uso da plataforma é o corretor, com uma parte do que ele recebe, e só quando a venda acontece.</p>
       <a href="/cadastro?prefill=proprietario" class="btn btn-p btn-xl">Criar minha conta grátis</a>
     </div>
   </div>
