@@ -76,6 +76,9 @@ public/
   detalhes.html    página do imóvel + CTA que muda conforme o perfil
   dashboard.html   painel do usuário logado (proprietario e corretor)
   admin.html       painel do admin (login próprio)
+  politica-de-privacidade.html   página legal (URL limpa /politica-de-privacidade)
+  termos-de-uso.html             página legal (URL limpa /termos-de-uso)
+  _legal-shell.css               estilo compartilhado das duas páginas legais
   config.js        define window.MORAVO_API
 ```
 
@@ -267,3 +270,7 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 - **2026-08-17** — Modelo do corretor mudou de "100% da comissão" para **77/23**. Copy do site
   atualizada em 6 pontos (`public/index.html`, `public/cadastro.html`). Marca segue Moravo e a
   sigla "REaaS" não é usada na comunicação.
+- **2026-08-17** — Removidos todos os travessões do site (70 ocorrências em 7 páginas).
+- **2026-08-17** — Criadas as páginas legais `/politica-de-privacidade` e `/termos-de-uso`
+  (exigidas pelo app do Meta para a WhatsApp API), ligadas no rodapé e no cadastro. Faltam
+  preencher razão social, CNPJ, endereço e comarca, e passar por revisão jurídica.
