@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo | Quanto custa deixar seu imóvel parado</title>
+<meta name="description" content="Enquanto o imóvel não vende, condomínio e IPTU continuam correndo. Faça a conta do que a espera já custou e anuncie de graça na Moravo." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@600&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+:root{
+  --laranja:#FF6A00; --laranja-dk:#E05300; --areia:#FDF6EF; --areia-2:#F7EDE3;
+  --ink:#1a1613; --ink-soft:#6f665f; --linha:#e8ded3;
+  --alerta:#B4341C;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);color:var(--ink);background:#fff;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding-inline:24px}
+.estreito{max-width:700px}
+a{color:inherit}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:1.02rem;padding:17px 32px;border-radius:10px;border:2px solid transparent;text-decoration:none;cursor:pointer;transition:.15s}
+.btn-l{background:var(--laranja);color:#fff;box-shadow:0 8px 24px rgba(255,106,0,.26)}
+.btn-l:hover{background:var(--laranja-dk)}
+.btn-v{background:transparent;color:var(--ink);border-color:var(--linha)}
+.btn-v:hover{border-color:var(--ink)}
+.btn-p{padding:11px 20px;font-size:.93rem}
+
+.topo{border-bottom:1px solid var(--linha);background:#fff;position:sticky;top:0;z-index:30}
+.topo-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+.marca{display:flex;align-items:center;gap:9px;text-decoration:none}
+.marca span{font-family:'Quicksand',sans-serif;font-weight:600;font-size:1.4rem;line-height:1;text-transform:lowercase}
+
+/* hero */
+.hero{background:var(--areia);border-bottom:1px solid var(--linha);padding:clamp(52px,7vw,86px) 0;text-align:center}
+.selo{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--linha);border-radius:100px;padding:8px 16px;font-size:.85rem;font-weight:600;color:var(--ink-soft);margin-bottom:26px}
+.selo i{width:7px;height:7px;border-radius:50%;background:var(--alerta);display:block;animation:pulsa 1.9s ease-in-out infinite}
+@keyframes pulsa{0%,100%{opacity:1}50%{opacity:.25}}
+h1{font-family:var(--display);font-size:clamp(2rem,5.4vw,3.5rem);font-weight:800;line-height:1.06;letter-spacing:-.025em;margin-bottom:20px}
+h1 em{font-style:normal;color:var(--laranja)}
+.hero p{font-size:clamp(1.03rem,2vw,1.2rem);color:var(--ink-soft);max-width:600px;margin:0 auto 32px}
+
+/* calculadora */
+.calc{background:#fff;border:2px solid var(--laranja);border-radius:20px;padding:clamp(24px,4vw,38px);box-shadow:0 18px 50px rgba(180,52,28,.09);text-align:left;max-width:660px;margin:0 auto}
+.calc h2{font-family:var(--display);font-size:1.25rem;font-weight:800;margin-bottom:6px}
+.calc .dica{font-size:.92rem;color:var(--ink-soft);margin-bottom:24px}
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.campo label{display:block;font-size:.86rem;font-weight:700;margin-bottom:7px}
+.campo input,.campo select{width:100%;height:50px;border:1.5px solid var(--linha);border-radius:10px;padding:0 14px;font:inherit;font-size:1rem;background:#fff;color:var(--ink)}
+.campo input:focus,.campo select:focus{outline:none;border-color:var(--laranja)}
+.resultado{margin-top:24px;background:var(--areia-2);border-radius:14px;padding:22px;text-align:center}
+.resultado .rot{font-size:.85rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+.resultado .valor{font-family:var(--display);font-size:clamp(2.1rem,7vw,3.1rem);font-weight:800;line-height:1;color:var(--alerta)}
+.resultado .nota{font-size:.93rem;color:var(--ink-soft);margin-top:10px}
+.resultado .nota b{color:var(--ink)}
+
+section{padding:clamp(56px,7.5vw,96px) 0}
+.kicker{font-size:.79rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--laranja);margin-bottom:12px}
+h2.tit{font-family:var(--display);font-size:clamp(1.6rem,3.8vw,2.5rem);font-weight:800;line-height:1.14;letter-spacing:-.02em;margin-bottom:14px}
+.apoio{color:var(--ink-soft);font-size:1.03rem;margin-bottom:40px;max-width:600px}
+.areia{background:var(--areia)}
+
+/* motivos */
+.motivo{display:grid;grid-template-columns:70px 1fr;gap:22px;padding:26px 0;border-top:1px solid var(--linha)}
+.motivo:last-child{border-bottom:1px solid var(--linha)}
+.motivo .idx{font-family:var(--display);font-size:2.4rem;font-weight:800;color:var(--linha);line-height:.9}
+.motivo h3{font-family:var(--display);font-size:1.18rem;font-weight:800;margin-bottom:7px}
+.motivo p{color:var(--ink-soft)}
+.motivo .sol{display:inline-flex;align-items:flex-start;gap:9px;margin-top:12px;font-size:.94rem;font-weight:600;color:var(--ink)}
+.motivo .sol svg{color:var(--laranja);flex-shrink:0;margin-top:3px}
+
+/* honestidade */
+.franco{border:1px dashed var(--linha);border-radius:16px;padding:clamp(24px,4vw,36px);background:#fff}
+.franco h3{font-family:var(--display);font-size:1.25rem;font-weight:800;margin-bottom:10px}
+.franco p{color:var(--ink-soft)}
+.franco p + p{margin-top:12px}
+
+/* preco */
+.linha-preco{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:34px 0 30px}
+.pill{background:#fff;border:1px solid var(--linha);border-radius:100px;padding:13px 24px;font-weight:700;display:flex;align-items:baseline;gap:9px}
+.pill b{font-family:var(--display);font-size:1.5rem;color:var(--laranja)}
+.pill span{font-size:.93rem;color:var(--ink-soft);font-weight:500}
+
+/* faq */
+details{border-bottom:1px solid var(--linha)}
+summary{padding:18px 0;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--laranja);font-size:1.35rem;line-height:1}
+details[open] summary::after{content:"−"}
+details p{padding-bottom:18px;color:var(--ink-soft);font-size:.96rem}
+
+.fecho{background:var(--areia);text-align:center;border-top:1px solid var(--linha)}
+.fecho h2.tit{margin-inline:auto;max-width:600px}
+.fecho .apoio{margin:0 auto 30px;text-align:center}
+
+footer{background:#1a1613;color:rgba(255,255,255,.5);padding:34px 0;font-size:.88rem}
+.rod{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.rod a{color:rgba(255,255,255,.5);text-decoration:none;margin-left:18px}
+.rod a:hover{color:#fff}
+
+.fixa{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--linha);padding:11px 16px calc(11px + env(safe-area-inset-bottom));display:none}
+.fixa .btn{width:100%}
+
+@media(max-width:700px){
+  .campos{grid-template-columns:1fr}
+  .motivo{grid-template-columns:1fr;gap:6px}
+  .motivo .idx{font-size:1.7rem}
+  .topo .btn{display:none}
+  .fixa{display:block}
+  body{padding-bottom:74px}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <a href="/" class="marca">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="width:23px;height:23px;display:block" aria-label="moravo">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span>moravo</span>
+    </a>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l btn-p">Anunciar grátis</a>
+  </div>
+</header>
+
+<!-- ============ HERO + CALCULADORA ============ -->
+<section class="hero">
+  <div class="wrap">
+    <span class="selo"><i></i>Enquanto não vende, a conta corre</span>
+    <h1>Seu imóvel está parado.<br /><em>O custo dele, não.</em></h1>
+    <p>Condomínio, IPTU e manutenção não esperam a venda acontecer. Faça a conta do que a espera já tirou do seu bolso.</p>
+
+    <div class="calc">
+      <h2>A conta de esperar</h2>
+      <p class="dica">Preencha com os seus números. Nada é enviado para lugar nenhum, a conta acontece aqui na sua tela.</p>
+      <div class="campos">
+        <div class="campo">
+          <label for="c-valor">Valor pedido no imóvel</label>
+          <input type="text" id="c-valor" inputmode="numeric" placeholder="R$ 500.000,00" />
+        </div>
+        <div class="campo">
+          <label for="c-mensal">Custo mensal (condomínio, IPTU, luz)</label>
+          <input type="text" id="c-mensal" inputmode="numeric" placeholder="R$ 900,00" />
+        </div>
+        <div class="campo">
+          <label for="c-meses">Há quanto tempo está à venda</label>
+          <select id="c-meses">
+            <option value="3">3 meses</option>
+            <option value="6" selected>6 meses</option>
+            <option value="12">1 ano</option>
+            <option value="24">2 anos ou mais</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="c-corretores">Quantos corretores oferecem hoje</label>
+          <select id="c-corretores">
+            <option value="0">Nenhum, anuncio sozinho</option>
+            <option value="1" selected>1, de uma imobiliária</option>
+            <option value="2">2 ou 3</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resultado">
+        <div class="rot">A espera já custou</div>
+        <div class="valor" id="c-total">R$ 5.400,00</div>
+        <p class="nota" id="c-nota"></p>
+      </div>
+
+      <a href="/cadastro?prefill=proprietario" class="btn btn-l" style="width:100%;margin-top:22px">Anunciar de graça na Moravo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POR QUE ESTÁ PARADO ============ -->
+<section>
+  <div class="wrap estreito">
+    <p class="kicker">O diagnóstico</p>
+    <h2 class="tit">Imóvel parado quase nunca é preço. É alcance.</h2>
+    <p class="apoio">Antes de baixar o valor, vale olhar três coisas que travam a venda e não têm nada a ver com quanto você está pedindo.</p>
+
+    <div class="motivo">
+      <div class="idx">01</div>
+      <div>
+        <h3>Pouca gente oferecendo</h3>
+        <p>Com exclusividade, seu imóvel depende da carteira de compradores de uma equipe só. Se ninguém ali procura o que você tem, ele fica parado sem que nada de errado esteja acontecendo.</p>
+        <span class="sol"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Na Moravo, vários corretores colocam seu imóvel na carteira ao mesmo tempo, sem exclusividade.</span>
+      </div>
+    </div>
+
+    <div class="motivo">
+      <div class="idx">02</div>
+      <div>
+        <h3>O mesmo imóvel com preços diferentes</h3>
+        <p>Quando o anúncio se multiplica pelos portais com valores que não batem, o comprador conclui que dá para pechinchar. Ele não desiste do imóvel: desiste do preço.</p>
+        <span class="sol"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Aqui é um endereço, um anúncio, um preço. O sistema não deixa duplicar.</span>
+      </div>
+    </div>
+
+    <div class="motivo">
+      <div class="idx">03</div>
+      <div>
+        <h3>Dúvida na documentação</h3>
+        <p>Comprador que desconfia da matrícula recua na última hora, e você descobre tarde demais. Negócio que quase fechou é o que mais custa tempo.</p>
+        <span class="sol"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Conferimos matrícula e escritura antes, e o anúncio ganha o selo Verificado.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRANQUEZA ============ -->
+<section class="areia">
+  <div class="wrap estreito">
+    <div class="franco">
+      <h3>O que a gente não vai prometer</h3>
+      <p>Ninguém honesto consegue dizer em quantos dias um imóvel vende. Depende do bairro, do preço, do momento e de sorte. Quem promete prazo está chutando.</p>
+      <p>O que dá para mudar é <strong>quantas pessoas estão oferecendo o seu</strong>, se o preço aparece igual em todo lugar e se a documentação resiste à primeira olhada de um comprador. É nisso que a Moravo mexe. O resto é o mercado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PREÇO ============ -->
+<section>
+  <div class="wrap estreito" style="text-align:center">
+    <p class="kicker">Quanto custa tentar</p>
+    <h2 class="tit" style="margin-inline:auto">Nada. E se vender, você paga o de sempre.</h2>
+    <div class="linha-preco">
+      <span class="pill"><b>R$ 0</b><span>para anunciar</span></span>
+      <span class="pill"><b>R$ 0</b><span>para ter corretores trabalhando</span></span>
+      <span class="pill"><b>6%</b><span>comissão do CRECI, só na venda</span></span>
+    </div>
+    <p class="apoio" style="margin:0 auto 30px;text-align:center">Os 6% são a comissão de corretagem que se paga em qualquer imobiliária. A Moravo não acrescenta nada a esse valor: quem paga pelo uso da plataforma é o corretor, com uma parte do que ele recebe.</p>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l">Colocar meu imóvel para trabalhar</a>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="areia">
+  <div class="wrap estreito">
+    <p class="kicker">Antes de decidir</p>
+    <h2 class="tit">Perguntas de quem já está cansado de esperar</h2>
+    <div style="margin-top:28px">
+      <details><summary>Já anuncio com uma imobiliária. Posso anunciar aqui também?</summary>
+        <p>Depende do contrato que você assinou. Se ele prevê exclusividade, confira o prazo e a forma de encerrar antes. Na Moravo não existe exclusividade nenhuma, então nada aqui prende você depois.</p></details>
+      <details><summary>Preciso baixar o preço para vender mais rápido?</summary>
+        <p>Não necessariamente. Antes de mexer no valor, vale testar o que muda quando várias pessoas passam a oferecer o mesmo imóvel, com preço único e documentação conferida. Baixar preço é a última alavanca, não a primeira.</p></details>
+      <details><summary>Quantos corretores vão pegar meu imóvel?</summary>
+        <p>Não dá para garantir um número, depende da região e do perfil do imóvel. O que muda é que aqui nenhum deles precisa pedir sua autorização para começar, então não existe fila nem espera.</p></details>
+      <details><summary>Vou ser incomodado o tempo todo?</summary>
+        <p>Não. Enquanto os corretores trabalham, você não precisa fazer nada. Você só é chamado quando alguém traz uma proposta de verdade, com valor e condições.</p></details>
+      <details><summary>E se eu vender por fora, sem a plataforma?</summary>
+        <p>Sem problema. É só marcar o imóvel como vendido no painel e as propostas em aberto se encerram. Você não deve nada à Moravo.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FECHO ============ -->
+<section class="fecho">
+  <div class="wrap estreito">
+    <h2 class="tit">Cada mês parado tem um preço. Anunciar não tem.</h2>
+    <p class="apoio">Leva alguns minutos para publicar. A partir daí, seu imóvel passa a estar na mão de quem vende imóvel todo dia.</p>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l">Anunciar meu imóvel de graça</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap rod">
+    <span>© 2026 Moravo. A estrutura trabalha para o corretor.</span>
+    <span>
+      <a href="/">Início</a>
+      <a href="/busca">Imóveis</a>
+      <a href="/termos-de-uso">Termos</a>
+      <a href="/politica-de-privacidade">Privacidade</a>
+    </span>
+  </div>
+</footer>
+
+<div class="fixa"><a href="/cadastro?prefill=proprietario" class="btn btn-l">Anunciar meu imóvel de graça</a></div>
+
+<script>
+(function () {
+  var elValor  = document.getElementById('c-valor');
+  var elMensal = document.getElementById('c-mensal');
+  var elMeses  = document.getElementById('c-meses');
+  var elCorr   = document.getElementById('c-corretores');
+  var elTotal  = document.getElementById('c-total');
+  var elNota   = document.getElementById('c-nota');
+
+  function brl(n) {
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  }
+  function numero(el) {
+    var d = (el.value || '').replace(/\D/g, '');
+    return d ? Number(d) / 100 : 0;
+  }
+  function mascarar(el) {
+    el.addEventListener('input', function () {
+      var d = this.value.replace(/\D/g, '');
+      this.value = d ? (Number(d) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '';
+      calcular();
+    });
+  }
+  mascarar(elValor);
+  mascarar(elMensal);
+  elMeses.addEventListener('change', calcular);
+  elCorr.addEventListener('change', calcular);
+
+  function calcular() {
+    var valor  = numero(elValor)  || 500000;
+    var mensal = numero(elMensal) || 900;
+    var meses  = Number(elMeses.value);
+    var corr   = Number(elCorr.value);
+
+    var total = mensal * meses;
+    elTotal.textContent = brl(total);
+
+    var partes = [];
+    var pct = (total / valor) * 100;
+    if (isFinite(pct) && pct > 0) {
+      partes.push('Equivale a <b>' + pct.toFixed(1).replace('.', ',') + '%</b> do valor que você pede pelo imóvel.');
+    }
+    if (corr === 0) {
+      partes.push('E hoje <b>ninguém além de você</b> está oferecendo esse imóvel.');
+    } else if (corr === 1) {
+      partes.push('E hoje ele depende da carteira de compradores de <b>uma equipe só</b>.');
+    } else {
+      partes.push('Mesmo com alguns corretores, o alcance ainda é o de <b>duas ou três carteiras</b>.');
+    }
+    elNota.innerHTML = partes.join(' ');
+  }
+  calcular();
+})();
+</script>
+
+</body>
+</html>
