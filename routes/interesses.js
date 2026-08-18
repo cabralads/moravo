@@ -45,9 +45,11 @@ router.post('/imovel/:imovelId', requireAuth, requireRole('corretor'), async (re
 
     const mensagem = (req.body && req.body.mensagem || '').trim() || null;
 
+    // Entra direto na carteira do corretor: não existe mais espera por aceite.
+    // O proprietário só é acionado quando chega uma proposta de verdade.
     const result = await query(
       `INSERT INTO moravo.interesses (imovel_id, corretor_id, mensagem, status)
-       VALUES ($1, $2, $3, 'pendente')
+       VALUES ($1, $2, $3, 'aceito')
        RETURNING id, created_at`,
       [imovelId, req.user.id, mensagem]
     );
@@ -62,7 +64,7 @@ router.post('/imovel/:imovelId', requireAuth, requireRole('corretor'), async (re
       const corretorNome = corretorNomeRow.rows[0] ? corretorNomeRow.rows[0].nome : null;
       await criarNotificacao({
         usuario_id: imovelCheck.rows[0].dono_id,
-        tipo: 'corretor_interessado',
+        tipo: 'corretor_trabalhando',
         imovel_id: imovelId,
         interesse_id: result.rows[0].id,
         remetente_id: req.user.id,

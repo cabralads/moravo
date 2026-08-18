@@ -13,6 +13,7 @@ const usuariosRouter  = require('./routes/usuarios');
 const authRouter      = require('./routes/auth');
 const imoveisRouter   = require('./routes/imoveis');
 const interessesRouter = require('./routes/interesses');
+const propostasRouter  = require('./routes/propostas');
 const cidadesRouter   = require('./routes/cidades');
 const fotosRouter     = require('./routes/fotos');
 const favoritosRouter = require('./routes/favoritos');
@@ -119,6 +120,7 @@ app.use('/api/usuarios',   usuariosRouter);
 app.use('/api/auth',       authRouter);
 app.use('/api/imoveis',    imoveisRouter);
 app.use('/api/interesses', interessesRouter);
+app.use('/api/propostas',  propostasRouter);
 app.use('/api/cidades',    cidadesRouter);
 app.use('/api/imoveis/:id/fotos', fotosRouter);
 app.use('/api/imoveis/:id/documentos', documentosRouter);
@@ -271,6 +273,41 @@ app.listen(PORT, '0.0.0.0', async () => {
     await migrar('admin_login_logs.indice', `
       CREATE INDEX IF NOT EXISTS idx_admin_login_logs_created
         ON moravo.admin_login_logs (created_at DESC);
+    `);
+
+    // Propostas de compra. É a proposta que dispara o grupo de WhatsApp:
+    // antes dela o corretor trabalha o imóvel sem acionar o proprietário.
+    await migrar('tabela propostas', `
+      CREATE TABLE IF NOT EXISTS moravo.propostas (
+        id              BIGSERIAL PRIMARY KEY,
+        imovel_id       BIGINT NOT NULL REFERENCES moravo.imoveis(id)   ON DELETE CASCADE,
+        corretor_id     BIGINT NOT NULL REFERENCES moravo.usuarios(id)  ON DELETE CASCADE,
+        interesse_id    BIGINT REFERENCES moravo.interesses(id)         ON DELETE SET NULL,
+        valor           NUMERIC(14,2) NOT NULL CHECK (valor >= 0),
+        forma_pagamento TEXT NOT NULL DEFAULT 'a_combinar'
+                        CHECK (forma_pagamento IN ('a_vista','financiado','permuta','a_combinar')),
+        entrada         NUMERIC(14,2),
+        comprador_nome  TEXT,
+        observacoes     TEXT,
+        validade        DATE,
+        status          TEXT NOT NULL DEFAULT 'enviada'
+                        CHECK (status IN ('enviada','aceita','recusada','cancelada')),
+        grupo_criado    BOOLEAN NOT NULL DEFAULT false,
+        resposta_motivo TEXT,
+        respondido_em   TIMESTAMPTZ,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('propostas.indices', `
+      CREATE INDEX IF NOT EXISTS idx_propostas_imovel   ON moravo.propostas (imovel_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_propostas_corretor ON moravo.propostas (corretor_id, created_at DESC);
+    `);
+
+    // Carteira do corretor: candidaturas antigas em 'pendente' passam a valer
+    // como imóvel em carteira, já que o aceite do proprietário deixou de existir.
+    await migrar('interesses.pendente_vira_carteira', `
+      UPDATE moravo.interesses SET status = 'aceito' WHERE status = 'pendente';
     `);
 
     // Configuração da WhatsApp Cloud API (preenchida pelo painel do admin).

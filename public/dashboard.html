@@ -2325,7 +2325,51 @@
       </div>
     </main>
   </div>
-  <div class="modal-bg" id="imovelModal">
+  <!-- ====== Modal: enviar proposta ====== -->
+<div class="modal-bg" id="propostaModal">
+  <div class="modal" style="max-width:520px">
+    <h2>Enviar proposta</h2>
+    <p class="section-sub" id="propostaImovel" style="margin-bottom:18px"></p>
+    <div class="field">
+      <label for="pp-valor">Valor da proposta</label>
+      <input type="text" id="pp-valor" inputmode="numeric" placeholder="R$ 0,00" />
+    </div>
+    <div class="field">
+      <label for="pp-forma">Forma de pagamento</label>
+      <select id="pp-forma">
+        <option value="a_combinar">A combinar</option>
+        <option value="a_vista">À vista</option>
+        <option value="financiado">Financiado</option>
+        <option value="permuta">Permuta</option>
+      </select>
+    </div>
+    <div class="field" id="pp-entrada-wrap" style="display:none">
+      <label for="pp-entrada">Entrada</label>
+      <input type="text" id="pp-entrada" inputmode="numeric" placeholder="R$ 0,00" />
+    </div>
+    <div class="field">
+      <label for="pp-comprador">Nome do comprador <span class="opt">(opcional)</span></label>
+      <input type="text" id="pp-comprador" placeholder="Quem está comprando" />
+    </div>
+    <div class="field">
+      <label for="pp-validade">Proposta válida até <span class="opt">(opcional)</span></label>
+      <input type="date" id="pp-validade" />
+    </div>
+    <div class="field">
+      <label for="pp-obs">Observações <span class="opt">(opcional)</span></label>
+      <textarea id="pp-obs" rows="3" placeholder="Condições, prazos, o que ajudar o proprietário a decidir"></textarea>
+    </div>
+    <p class="section-sub" style="font-size:.86rem; margin-bottom:14px">
+      Ao enviar, criamos um grupo no WhatsApp com você, o proprietário e um atendente da Moravo.
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="propostaCancelar">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="propostaEnviar">Enviar proposta</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="imovelModal">
     <div class="modal">
       <h2 id="imovelModalTitle">Adicionar imóvel</h2>
       <form id="imovelForm" autocomplete="off">
@@ -3016,14 +3060,16 @@
       var TABS = {
         proprietario: [
           { id: 'meus', label: 'Meus imóveis' },
-          { id: 'interessados', label: 'Corretores interessados' },
+          { id: 'propostas', label: 'Propostas recebidas' },
+          { id: 'interessados', label: 'Corretores trabalhando' },
         ],
         comprador: [
           { id: 'meus', label: 'Meus imóveis' },
-          { id: 'interessados', label: 'Corretores interessados' },
+          { id: 'propostas', label: 'Propostas recebidas' },
+          { id: 'interessados', label: 'Corretores trabalhando' },
         ],
         corretor: [
-          { id: 'representados', label: 'Imóveis que represento' },
+          { id: 'representados', label: 'Minha carteira' },
         ],
       };
 
@@ -3037,8 +3083,8 @@
         var secH2 = document.querySelector('#section-meus h2');
         var secSub = document.querySelector('#section-meus .section-sub');
         if (user.perfil === 'corretor') {
-          if (secH2) secH2.textContent = 'Imóveis que represento';
-          if (secSub) secSub.textContent = 'Imóveis em que você foi aceito como corretor intermediador.';
+          if (secH2) secH2.textContent = 'Minha carteira';
+          if (secSub) secSub.textContent = 'Imóveis que você escolheu trabalhar. Envie uma proposta quando tiver comprador.';
           if (tabsBar) tabsBar.style.display = 'none'; // Corretor não precisa de barra de tabs
         } else {
           if (secH2) secH2.textContent = 'Meus imóveis';
@@ -3072,6 +3118,7 @@
         if (tabId === 'representados') return renderImoveisRepresentados(c);
         if (tabId === 'disponiveis') return renderDisponiveis(c);
         if (tabId === 'meus-interesses') return renderMeusInteresses(c);
+        if (tabId === 'propostas') return renderPropostas(c);
         if (tabId === 'interessados') return renderInteressados(c);
         if (tabId === 'feed') return renderFeed(c);
         if (tabId === 'favoritos') return renderFavoritos(c);
@@ -3255,6 +3302,82 @@
           });
       }
 
+      // ---- Proposta: abre o modal a partir do card da carteira
+      var propostaImovelId = null;
+
+      function abrirModalProposta(imovelId, titulo, preco) {
+        propostaImovelId = imovelId;
+        document.getElementById('propostaImovel').textContent =
+          titulo + (preco ? ' · anunciado por ' + money(preco) : '');
+        ['pp-valor', 'pp-entrada', 'pp-comprador', 'pp-validade', 'pp-obs'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('pp-forma').value = 'a_combinar';
+        document.getElementById('pp-entrada-wrap').style.display = 'none';
+        document.getElementById('propostaModal').classList.add('show');
+      }
+
+      // Só dígitos, formatados como moeda enquanto digita
+      function ligarMascaraMoeda(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+          var n = this.value.replace(/\D/g, '');
+          this.value = n ? (Number(n) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '';
+        });
+      }
+      function valorNumerico(id) {
+        var el = document.getElementById(id);
+        if (!el || !el.value) return null;
+        var n = el.value.replace(/\D/g, '');
+        return n ? Number(n) / 100 : null;
+      }
+      ligarMascaraMoeda('pp-valor');
+      ligarMascaraMoeda('pp-entrada');
+
+      document.getElementById('pp-forma').addEventListener('change', function () {
+        document.getElementById('pp-entrada-wrap').style.display =
+          this.value === 'financiado' ? '' : 'none';
+      });
+
+      document.getElementById('propostaCancelar').addEventListener('click', function () {
+        document.getElementById('propostaModal').classList.remove('show');
+      });
+
+      document.getElementById('propostaEnviar').addEventListener('click', function () {
+        var btn = this;
+        var valor = valorNumerico('pp-valor');
+        if (!valor) { toast('Informe o valor da proposta.', 'error'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Enviando…';
+        api('/api/propostas', {
+          method: 'POST',
+          body: JSON.stringify({
+            imovel_id: propostaImovelId,
+            valor: valor,
+            forma_pagamento: document.getElementById('pp-forma').value,
+            entrada: valorNumerico('pp-entrada'),
+            comprador_nome: document.getElementById('pp-comprador').value,
+            validade: document.getElementById('pp-validade').value || null,
+            observacoes: document.getElementById('pp-obs').value
+          })
+        }).then(function (r) {
+          btn.disabled = false;
+          btn.textContent = 'Enviar proposta';
+          if (!r.ok) { toast((r.body && r.body.error) || 'Erro ao enviar a proposta.', 'error'); return; }
+          document.getElementById('propostaModal').classList.remove('show');
+          var link = r.body.grupo && r.body.grupo.grupo_link;
+          if (link) {
+            toast('Proposta enviada. Abrindo o grupo no WhatsApp…', 'success');
+            window.open(link, '_blank', 'noopener');
+          } else {
+            toast('Proposta enviada ao proprietário.', 'success');
+          }
+          renderTab('representados');
+        });
+      });
+
       // ---- TAB: Imóveis que represento (corretor aceito)
       function renderImoveisRepresentados(c) {
         c.innerHTML = '<div id="grid"></div>';
@@ -3266,8 +3389,8 @@
             if (aceitos.length === 0) {
               grid.innerHTML =
                 '<div class="empty">' +
-                '<h3>Você ainda não representa nenhum imóvel</h3>' +
-                '<p>Demonstre interesse em imóveis disponíveis e aguarde a aceitação do proprietário.</p>' +
+                '<h3>Sua carteira está vazia</h3>' +
+                '<p>Encontre um imóvel e clique em "Trabalhar este imóvel" para adicionar aqui. Você começa na hora, sem esperar aprovação.</p>' +
                 '<a href="busca.html" class="btn btn-primary" style="margin-top:16px; display:inline-flex; align-items:center; gap:8px; text-decoration:none; background:#f97316; border-color:#f97316; font-weight:700; padding:12px 24px; border-radius:10px; font-size:0.95rem;">' +
                 '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
                 'Buscar imóvel' +
@@ -3320,6 +3443,13 @@
               } else {
                 acaoVendido = '<span style="font-size:0.85rem; color:#22c55e; font-weight:700; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center; border: 2px solid transparent;">✓ Vendido</span>';
               }
+              var acaoProposta = '';
+              if (im.status !== 'vendido') {
+                acaoProposta = '<button class="btn btn-sm btn-fazer-proposta" data-proposta-imovel="' + im.id +
+                  '" data-proposta-titulo="' + escapeHtml(im.titulo || '') +
+                  '" data-proposta-preco="' + (im.preco || 0) +
+                  '" style="background:var(--emerald); color:#fff; border:2px solid var(--emerald); font-weight:700; cursor:pointer; width:100%; margin-top:2px;">💰 Fazer proposta</button>';
+              }
               if (im.status === 'vendido') {
                 acaoRepresentar = '<button class="btn btn-sm btn-entrar-contato" data-chat-id="' + it.id + '" style="background:#22c55e; color:#fff; border: 2px solid #22c55e; font-weight:700; cursor:pointer; width:100%; margin-top:2px; transition: background .15s, border-color .15s;" onmouseover="this.style.background=\'#1ea34d\'; this.style.borderColor=\'#1ea34d\';" onmouseout="this.style.background=\'#22c55e\'; this.style.borderColor=\'#22c55e\';">💬 Entrar em contato</button>';
               } else {
@@ -3329,7 +3459,7 @@
               return '<article class="card" data-imovel-id="' + im.id + '" onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + im.id + '\')" style="cursor:pointer; display:flex; flex-direction:column;">' +
                 '<div class="photo">' +
                 (imgHtml || '<svg class="house-icon" width="56" height="56" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>') +
-                '<span class="status-tag" style="background:#22c55e; color:#fff; font-weight:700;">Representando</span>' +
+                '<span class="status-tag" style="background:#22c55e; color:#fff; font-weight:700;">Na carteira</span>' +
                 '<span class="price-tag">' + money(im.preco) + '</span>' +
                 '</div>' +
                 '<div class="body" style="display:flex; flex-direction:column; justify-content:space-between; flex:1;">' +
@@ -3345,6 +3475,7 @@
                 '<button class="btn btn-ghost btn-sm" data-preview-id="' + im.id + '" style="flex:1;">Ver anúncio</button>' +
                 acaoVendido +
                 '</div>' +
+                acaoProposta +
                 acaoRepresentar +
                 '</div>' +
                 '</div>' +
@@ -3354,6 +3485,16 @@
 
             // Bind dos botões "Deixar de representar" (mais robusto que onclick inline)
             console.log('[bind] botões data-deixar-id encontrados:', grid.querySelectorAll('[data-deixar-id]').length);
+            grid.querySelectorAll('[data-proposta-imovel]').forEach(function (btn) {
+              btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                abrirModalProposta(
+                  parseInt(btn.getAttribute('data-proposta-imovel'), 10),
+                  btn.getAttribute('data-proposta-titulo'),
+                  Number(btn.getAttribute('data-proposta-preco'))
+                );
+              });
+            });
             grid.querySelectorAll('[data-deixar-id]').forEach(function (btn) {
               btn.addEventListener('click', function (ev) {
                 ev.stopPropagation();
@@ -3394,6 +3535,76 @@
       }
 
       // ---- TAB: Corretores interessados (proprietário)
+      // ---- TAB: Propostas recebidas (proprietário)
+      function renderPropostas(c) {
+        c.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+        var FORMAS = { a_vista: 'À vista', financiado: 'Financiado', permuta: 'Permuta', a_combinar: 'A combinar' };
+        var CORES  = { enviada: '#ff9800', aceita: '#22c55e', recusada: '#ef4444', cancelada: '#9e9e9e' };
+
+        api('/api/propostas').then(function (r) {
+          if (!r.ok) { c.innerHTML = '<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
+          var lista = r.body.propostas || [];
+          if (!lista.length) {
+            c.innerHTML =
+              '<div class="empty">' +
+              '<h3>Nenhuma proposta ainda</h3>' +
+              '<p>Quando um corretor trouxer uma proposta pelo seu imóvel, ela aparece aqui e você recebe um aviso.</p>' +
+              '</div>';
+            return;
+          }
+
+          c.innerHTML = lista.map(function (p) {
+            var pendente = p.status === 'enviada';
+            var detalhes = [FORMAS[p.forma_pagamento] || p.forma_pagamento];
+            if (p.entrada) detalhes.push('entrada de ' + money(p.entrada));
+            if (p.comprador_nome) detalhes.push('comprador: ' + escapeHtml(p.comprador_nome));
+            if (p.validade) detalhes.push('válida até ' + new Date(p.validade).toLocaleDateString('pt-BR'));
+
+            return '<article class="card" style="padding:20px; margin-bottom:14px; display:block; cursor:default">' +
+              '<div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start">' +
+                '<div>' +
+                  '<div style="font-size:1.6rem; font-weight:800; color:var(--emerald); line-height:1.1">' + money(p.valor) + '</div>' +
+                  '<div style="font-size:.9rem; color:var(--ink-soft); margin-top:4px">' + detalhes.join(' · ') + '</div>' +
+                '</div>' +
+                '<span style="background:' + CORES[p.status] + '; color:#fff; font-weight:700; font-size:.78rem; padding:5px 12px; border-radius:100px; text-transform:uppercase; letter-spacing:.03em">' + p.status + '</span>' +
+              '</div>' +
+              '<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--beige); font-size:.92rem">' +
+                '<strong>' + escapeHtml(p.imovel_titulo || 'Imóvel') + '</strong>' +
+                '<div style="color:var(--ink-soft); margin-top:3px">' +
+                  'Corretor: ' + escapeHtml(p.corretor_nome || '-') +
+                  (p.corretor_creci ? ' · CRECI ' + escapeHtml(p.corretor_creci) : '') +
+                '</div>' +
+                (p.observacoes ? '<p style="margin-top:10px; color:var(--ink-soft)">' + escapeHtml(p.observacoes) + '</p>' : '') +
+              '</div>' +
+              (pendente
+                ? '<div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">' +
+                    '<button class="btn btn-sm" data-aceitar="' + p.id + '" style="background:#22c55e; color:#fff; border:2px solid #22c55e; font-weight:700; cursor:pointer; flex:1">Aceitar proposta</button>' +
+                    '<button class="btn btn-sm" data-recusar="' + p.id + '" style="color:#ef4444; background:transparent; border:2px solid #ef4444; font-weight:700; cursor:pointer; flex:1">Recusar</button>' +
+                  '</div>'
+                : '') +
+              (p.grupo_whatsapp_link
+                ? '<a href="' + escapeHtml(p.grupo_whatsapp_link) + '" target="_blank" rel="noopener" class="btn btn-sm" style="display:inline-flex; margin-top:12px; background:#25d366; color:#fff; border:2px solid #25d366; font-weight:700; text-decoration:none">Abrir grupo no WhatsApp</a>'
+                : '') +
+            '</article>';
+          }).join('');
+
+          function responder(id, status) {
+            api('/api/propostas/' + id, { method: 'PATCH', body: JSON.stringify({ status: status }) })
+              .then(function (resp) {
+                if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro ao responder.', 'error'); return; }
+                toast(status === 'aceita' ? 'Proposta aceita. O corretor foi avisado.' : 'Proposta recusada.', 'success');
+                renderPropostas(c);
+              });
+          }
+          c.querySelectorAll('[data-aceitar]').forEach(function (b) {
+            b.onclick = function () { responder(b.getAttribute('data-aceitar'), 'aceita'); };
+          });
+          c.querySelectorAll('[data-recusar]').forEach(function (b) {
+            b.onclick = function () { responder(b.getAttribute('data-recusar'), 'recusada'); };
+          });
+        });
+      }
+
       function renderInteressados(c) {
         c.innerHTML = '<div class="section-head" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
           '<div><h1>Corretores interessados</h1><p>Veja quem quer ajudar a vender seus imóveis.</p></div>' +

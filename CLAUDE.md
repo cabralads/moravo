@@ -106,12 +106,14 @@ lib/jwt.js             sign/verify, fail-fast se faltar JWT_SECRET em produção
 lib/notifications.js   criarNotificacao()
 lib/waha.js            integração WhatsApp (criar grupo, enviar msg, gerar convite)
 lib/whatsapp.js        WhatsApp Cloud API oficial (envio do convite, config cifrada)
+lib/grupo.js           cria/reaproveita o grupo da negociação e dispara os convites
 
 routes/
   auth.js          register, login, me
   admin.js         login auditado + fila de aprovação + logs
   imoveis.js       CRUD, feed, status, clique-interesse do comprador
-  interesses.js    candidatura do corretor, aceite/recusa, grupo de WhatsApp
+interesses.js    carteira do corretor (imóveis que ele escolheu trabalhar)
+propostas.js     proposta de compra: cria o grupo e aciona o proprietário
   favoritos.js     favoritar/desfavoritar
   notificacoes.js  listar, contar não lidas, marcar lidas, apagar
   usuarios.js      listagem pública, editar perfil, foto de perfil
@@ -202,14 +204,45 @@ constraint no banco.
 ## Fluxo principal
 
 ```
-Vendedor cadastra imóvel (+ matrícula / escritura)
+Proprietário cadastra imóvel (+ matrícula / escritura)
   → Admin aprova ou reprova com motivo
-  → Corretores se candidatam a intermediar
-  → Vendedor escolhe o corretor
-  → Grupo de WhatsApp criado (vendedor + corretor + atendente Moravo)
-  → Compradores clicam "Falar com um Corretor"
-  → Marcado como vendido → demais corretores recusados automaticamente
+  → Corretor clica em "Trabalhar este imóvel" e ele entra na CARTEIRA dele, na hora
+  → Corretor trabalha o imóvel (sem acionar o proprietário)
+  → Corretor envia PROPOSTA (valor, forma de pagamento, condições)
+     → grupo de WhatsApp é criado e as duas partes recebem o convite
+     → proprietário é notificado
+  → Proprietário aceita ou recusa a PROPOSTA
+  → Marcado como vendido
 ```
+
+### Não existe mais aceite de corretor (mudado em 2026-08-18)
+
+Antes, o corretor se candidatava e ficava **travado** até o proprietário aprovar. Como o
+proprietário só era avisado dentro do site, candidatura ficava parada por semanas e o imóvel
+não andava.
+
+Agora o corretor entra na carteira **imediatamente**, e o proprietário só é acionado quando
+existe **proposta de verdade** na mesa. A decisão dele mudou de objeto: era sobre *pessoas*,
+passou a ser sobre *propostas*.
+
+Consequências no código:
+
+- `POST /api/interesses/imovel/:id` grava direto com `status = 'aceito'`, que agora significa
+  **"está na carteira"**, não "o dono aprovou". Os valores `pendente` e `recusado` continuam
+  no CHECK por compatibilidade.
+- O grupo de WhatsApp **não nasce mais do aceite**. Nasce em `POST /api/propostas`
+  (`lib/grupo.js`, `garantirGrupo`), e é idempotente.
+- Notificação `corretor_trabalhando` avisa o dono que alguém entrou no imóvel.
+  `proposta_recebida` é a que realmente pede ação dele.
+
+**Ainda não feito, de propósito** (decidido em 2026-08-18: primeiro o básico funcionando):
+
+- **Verificação de CRECI.** Hoje só o formato é validado (`routes/auth.js`), então qualquer
+  cadastro vira corretor com acesso a contato de proprietário. Com o portão aberto, isso
+  deixou de ser desejável e virou necessário.
+- **Bloqueio de corretor pelo proprietário.**
+- O `GET /api/imoveis/:id` devolve `dono_whatsapp` e `dono_email` para qualquer usuário
+  logado, sem checar carteira.
 
 ---
 
@@ -219,13 +252,15 @@ Vendedor cadastra imóvel (+ matrícula / escritura)
 |---|---|
 | `usuarios` | perfil, credenciais, CRECI/região (corretor), tipo_imovel/preço (proprietário) |
 | `imoveis` | anúncio + endereço + `status` (ativo/vendido/pausado) + `status_aprovacao` (pendente/aprovado/reprovado) + matrícula/escritura/condomínio |
-| `interesses` | candidatura do **corretor** ao imóvel: pendente/aceito/recusado + dados do grupo de WhatsApp |
+| `interesses` | **carteira**: imóveis que o corretor escolheu trabalhar + dados do grupo de WhatsApp |
+| `propostas` | proposta de compra do corretor: valor, forma de pagamento, entrada, validade, status |
 | `interesses_compradores` | clique de "Falar com um Corretor" do **comprador** |
 | `favoritos` | usuário ↔ imóvel |
 | `notificacoes` | destinatário, tipo, payload JSONB, lida |
 | `admin_login_logs` | auditoria de acesso ao painel admin |
 
-**Tipos de notificação:** `corretor_interessado`, `corretor_escolhido`, `corretor_recusado`,
+**Tipos de notificação:** `corretor_trabalhando`, `proposta_recebida`, `proposta_aceita`,
+`proposta_recusada`, `envio_whatsapp_falhou`, `corretor_escolhido`, `corretor_recusado`,
 `corretor_recusado_auto`, `corretor_renunciou`, `imovel_vendido`, `documento_reprovado`.
 
 ---
@@ -361,6 +396,12 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-18** — **Fim do aceite de corretor.** O corretor passa a adicionar o imóvel à
+  carteira na hora, e o proprietário só é acionado quando chega uma proposta. Nova tabela
+  `propostas`, nova rota `/api/propostas`, `lib/grupo.js` com a criação do grupo (que agora
+  dispara na proposta, não no aceite). Front: "Minha carteira" para o corretor com botão de
+  proposta, e aba "Propostas recebidas" para o proprietário. Travas de segurança (verificação
+  de CRECI, bloqueio de corretor) ficaram para depois, a pedido: primeiro o básico rodando.
 - **2026-08-17** — Criada a landing do proprietário em `/anuncie`, focada em conversão de
   cadastro. Sem números de catálogo (a home ainda exibe 2.480 imóveis e 1.100+ corretores,
   contra 7 e 9 reais). Argumentos usados são só os que o produto sustenta: anúncio gratuito,

@@ -1343,7 +1343,7 @@
       } else if (loggedUser.perfil === 'corretor') {
         // Se estiver logado e for Corretor, mas o imóvel já possui corretor atribuído → bloqueia
         if (im.meu_interesse_status === 'aceito') {
-          ctaText.textContent = 'Você representa este imóvel';
+          ctaText.textContent = 'Está na sua carteira';
           ctaIcon.innerHTML = '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>';
           ctaBtn.disabled = true;
           ctaBtn.style.background = '#22c55e';
@@ -1354,9 +1354,9 @@
           ctaBtn.style.transform = 'none';
           ctaBtn.style.boxShadow = 'none';
           ctaBtn.onclick = null;
-          if (ctaTitle) ctaTitle.textContent = 'Você já foi aceito para intermediar este imóvel.';
+          if (ctaTitle) ctaTitle.textContent = 'Envie uma proposta pelo seu painel, na carteira.';
         } else if (im.meu_interesse_status === 'pendente') {
-          ctaText.textContent = 'Solicitação pendente';
+          ctaText.textContent = 'Está na sua carteira';
           ctaIcon.innerHTML = '<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>';
           ctaBtn.disabled = true;
           ctaBtn.style.background = '#ff9800';
@@ -1367,7 +1367,7 @@
           ctaBtn.style.transform = 'none';
           ctaBtn.style.boxShadow = 'none';
           ctaBtn.onclick = null;
-          if (ctaTitle) ctaTitle.textContent = 'Aguardando aprovação do proprietário.';
+          if (ctaTitle) ctaTitle.textContent = 'Envie uma proposta pelo seu painel, na carteira.';
         } else if (im.meu_interesse_status === 'recusado') {
           ctaText.textContent = 'Intermediação Recusada';
           ctaIcon.innerHTML = '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 9v4M12 17h.01"/>';
@@ -1383,7 +1383,7 @@
           if (ctaTitle) ctaTitle.textContent = 'O proprietário recusou sua intermediação.';
         } else {
           // Sem corretor atribuído: permite intermediar
-          ctaText.textContent = 'Intermediar este imóvel';
+          ctaText.textContent = 'Trabalhar este imóvel';
           ctaIcon.innerHTML = '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h6"/>';
           ctaBtn.onclick = function() {
             abrirModalInteresseCorretor(im.id);
@@ -1866,7 +1866,7 @@
 
         var token = localStorage.getItem('moravo_token');
         if (!token) {
-          toast('Por favor, faça login como corretor para solicitar a intermediação.', 'error');
+          toast('Por favor, faça login como corretor para trabalhar este imóvel.', 'error');
           window.location.href = 'login.html';
           return;
         }
@@ -1885,7 +1885,7 @@
           submitBtn.textContent = originalText;
           if (r.ok) {
             modal.classList.remove('show');
-            toast('Sua solicitação de intermediação foi enviada ao proprietário! Acompanhe o status em Mensagens.', 'success');
+            toast('Imóvel adicionado à sua carteira. Envie a proposta pelo painel quando tiver comprador.', 'success');
           } else {
             toast(r.body.error || 'Erro ao solicitar intermediação.', 'error');
           }
