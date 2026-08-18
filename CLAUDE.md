@@ -126,6 +126,7 @@ public/
   index.html       landing
   cadastro.html    criar conta (escolhe proprietario ou corretor)
 anuncie.html     landing de conversão do proprietário (URL limpa /anuncie)
+anuncie-2.html   variante da landing para teste A/B (URL limpa /anuncie-2)
   login.html       login normal
   busca.html       busca e filtros
   detalhes.html    página do imóvel + CTA que muda conforme o perfil
@@ -396,6 +397,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-18** — Criada a variante `/anuncie-2` para teste A/B. Ângulo diferente da
+  primeira: `/anuncie` ataca o assédio ("seu telefone vira call center"), `/anuncie-2` ataca a
+  exclusividade ("uma imobiliária tem uma equipe, aqui o mercado inteiro trabalha"). Layout
+  também é outro: hero escuro, tabela comparativa e trilha vertical, contra o hero claro e os
+  cards da primeira. As duas usam os mesmos fatos (R$ 0, 6% do CRECI, sem números inventados).
 - **2026-08-18** — Copy do site inteiro alinhada ao fluxo novo: landing `/anuncie` (10
   trechos), home, Termos de Uso, Política de Privacidade, painel e página do imóvel. Saiu
   "você escolhe com quem trabalhar" e entrou "vários corretores trabalham, você decide a

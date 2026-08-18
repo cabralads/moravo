@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo | Vários corretores vendendo seu imóvel</title>
+<meta name="description" content="Sem exclusividade e sem custo. Vários corretores com CRECI trabalham seu imóvel ao mesmo tempo e você só decide quando aparece uma proposta." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@600&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+:root{
+  --laranja:#FF6A00; --laranja-dk:#E05300;
+  --preto:#141414; --carvao:#1f1f1f;
+  --ink:#141414; --ink-soft:#6d6d6d; --linha:#e6e2de; --papel:#FAF7F4;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);color:var(--ink);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:24px}
+a{color:inherit}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:1rem;padding:16px 30px;border-radius:8px;border:2px solid transparent;text-decoration:none;cursor:pointer;transition:.15s}
+.btn-laranja{background:var(--laranja);color:#fff}
+.btn-laranja:hover{background:var(--laranja-dk)}
+.btn-linha{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.btn-linha:hover{border-color:#fff}
+.btn-escuro{background:var(--preto);color:#fff}
+.btn-peq{padding:11px 20px;font-size:.93rem}
+
+/* topo */
+.topo{position:absolute;top:0;left:0;right:0;z-index:20}
+.topo-in{display:flex;align-items:center;justify-content:space-between;height:80px}
+.marca{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff}
+.marca span{font-family:'Quicksand',sans-serif;font-weight:600;font-size:1.4rem;line-height:1;text-transform:lowercase}
+
+/* hero escuro */
+.hero{background:var(--preto);color:#fff;padding:150px 0 clamp(70px,9vw,120px);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-180px;top:-120px;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,0,.19),transparent 68%)}
+.hero-in{position:relative;z-index:2;max-width:840px}
+.olho{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--laranja);margin-bottom:22px}
+h1{font-family:var(--display);font-size:clamp(2.3rem,6.4vw,4.4rem);font-weight:800;line-height:1.02;letter-spacing:-.03em;margin-bottom:26px}
+h1 .risco{position:relative;white-space:nowrap}
+h1 .risco::after{content:"";position:absolute;left:0;right:0;top:54%;height:5px;background:var(--laranja);border-radius:3px}
+h1 b{color:var(--laranja);font-weight:800}
+.hero p{font-size:clamp(1.05rem,2.1vw,1.3rem);color:rgba(255,255,255,.74);max-width:640px;margin-bottom:36px}
+.hero-acoes{display:flex;flex-wrap:wrap;gap:13px;margin-bottom:34px}
+.marcas{display:flex;flex-wrap:wrap;gap:26px;font-size:.9rem;color:rgba(255,255,255,.55);border-top:1px solid rgba(255,255,255,.13);padding-top:24px}
+.marcas b{color:#fff;font-weight:700;display:block;font-size:1.05rem;margin-bottom:2px}
+
+/* seções */
+section{padding:clamp(60px,8vw,110px) 0}
+.titulo{font-family:var(--display);font-size:clamp(1.7rem,4vw,2.7rem);font-weight:800;line-height:1.12;letter-spacing:-.02em;margin-bottom:16px;max-width:760px}
+.apoio{font-size:1.05rem;color:var(--ink-soft);max-width:620px;margin-bottom:44px}
+.papel{background:var(--papel)}
+
+/* tabela comparativa */
+.tab{width:100%;border-collapse:collapse;font-size:.98rem;background:#fff;border:1px solid var(--linha);border-radius:14px;overflow:hidden}
+.tab th,.tab td{padding:18px 20px;text-align:left;border-bottom:1px solid var(--linha);vertical-align:top}
+.tab thead th{background:var(--preto);color:#fff;font-family:var(--display);font-weight:700;font-size:.95rem}
+.tab thead th:last-child{background:var(--laranja)}
+.tab tbody tr:last-child td{border-bottom:none}
+.tab td:first-child{font-weight:600;width:27%}
+.tab td:nth-child(2){color:var(--ink-soft)}
+.tab td:last-child{font-weight:600}
+.tab td:last-child::before{content:"✓ ";color:var(--laranja);font-weight:800}
+
+/* trilha de passos */
+.trilha{position:relative;padding-left:46px;max-width:760px}
+.trilha::before{content:"";position:absolute;left:15px;top:10px;bottom:10px;width:2px;background:var(--linha)}
+.etapa{position:relative;padding-bottom:38px}
+.etapa:last-child{padding-bottom:0}
+.etapa::before{content:counter(e);counter-increment:e;position:absolute;left:-46px;top:-2px;width:32px;height:32px;border-radius:50%;background:var(--laranja);color:#fff;font-family:var(--display);font-weight:800;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+.trilha{counter-reset:e}
+.etapa h3{font-family:var(--display);font-size:1.2rem;font-weight:800;margin-bottom:7px}
+.etapa p{color:var(--ink-soft)}
+.etapa .destaque{display:inline-block;margin-top:10px;background:#fff;border:1px solid var(--linha);border-left:3px solid var(--laranja);border-radius:0 8px 8px 0;padding:11px 16px;font-size:.92rem}
+
+/* preço */
+.preco-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch}
+.cart{border:1px solid var(--linha);border-radius:16px;padding:34px}
+.cart.forte{background:var(--preto);color:#fff;border-color:var(--preto)}
+.cart .num{font-family:var(--display);font-size:clamp(2.6rem,7vw,3.8rem);font-weight:800;line-height:1;margin-bottom:10px}
+.cart.forte .num{color:var(--laranja)}
+.cart h3{font-family:var(--display);font-size:1.1rem;font-weight:800;margin-bottom:8px}
+.cart p{font-size:.96rem;color:var(--ink-soft)}
+.cart.forte p{color:rgba(255,255,255,.68)}
+
+/* faq */
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:14px 26px}
+.faq div{border-top:2px solid var(--preto);padding-top:16px}
+.faq h4{font-family:var(--display);font-size:1.02rem;font-weight:800;margin-bottom:7px}
+.faq p{font-size:.95rem;color:var(--ink-soft)}
+
+/* fecho */
+.fecho{background:var(--preto);color:#fff;text-align:center}
+.fecho .titulo{color:#fff;margin-inline:auto}
+.fecho p{color:rgba(255,255,255,.7);max-width:560px;margin:0 auto 34px}
+
+footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:34px 0;font-size:.88rem}
+.rodape{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.rodape a{color:rgba(255,255,255,.5);text-decoration:none;margin-left:20px}
+.rodape a:hover{color:#fff}
+
+.fixa{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--linha);padding:11px 16px calc(11px + env(safe-area-inset-bottom));display:none}
+.fixa .btn{width:100%}
+
+@media(max-width:860px){
+  .preco-grid,.faq{grid-template-columns:1fr}
+  .tab thead{display:none}
+  .tab,.tab tbody,.tab tr,.tab td{display:block;width:100%}
+  .tab tr{border-bottom:1px solid var(--linha);padding:14px 4px}
+  .tab tr:last-child{border-bottom:none}
+  .tab td{border:none;padding:5px 16px}
+  .tab td:first-child{width:auto;font-family:var(--display);font-size:1.02rem;padding-bottom:8px}
+  .tab td:nth-child(2)::before{content:"Imobiliária: ";font-weight:600;color:var(--ink)}
+  .tab td:last-child::before{content:"✓ Moravo: ";color:var(--laranja);font-weight:800}
+}
+@media(max-width:680px){
+  .topo .btn{display:none}
+  .fixa{display:block}
+  body{padding-bottom:74px}
+  .hero-acoes .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <a href="/" class="marca">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#FF6A00" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="width:23px;height:23px;display:block" aria-label="moravo">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span>moravo</span>
+    </a>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-laranja btn-peq">Anunciar grátis</a>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <span class="olho">Para quem vai vender</span>
+    <h1>Uma imobiliária tem <span class="risco">uma equipe</span>.<br />Aqui, <b>o mercado inteiro</b> trabalha seu imóvel.</h1>
+    <p>Sem exclusividade, sem contrato que prende, sem custo nenhum. Vários corretores com CRECI colocam seu imóvel na carteira e saem para vender. Você só entra quando aparece uma proposta.</p>
+    <div class="hero-acoes">
+      <a href="/cadastro?prefill=proprietario" class="btn btn-laranja">Anunciar meu imóvel</a>
+      <a href="#comparar" class="btn btn-linha">Comparar com a imobiliária</a>
+    </div>
+    <div class="marcas">
+      <div><b>R$ 0</b>para anunciar</div>
+      <div><b>Sem exclusividade</b>nenhum contrato prende você</div>
+      <div><b>Documentação conferida</b>matrícula e escritura analisadas</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMPARAÇÃO ================= -->
+<section id="comparar" class="papel">
+  <div class="wrap">
+    <h2 class="titulo">O contrato que você não precisa assinar.</h2>
+    <p class="apoio">A imobiliária pede exclusividade porque precisa se proteger da concorrência. Quem paga essa conta é quem está vendendo.</p>
+    <table class="tab">
+      <thead>
+        <tr><th>&nbsp;</th><th>Imobiliária tradicional</th><th>Moravo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Exclusividade</td><td>Contrato que prende por meses</td><td>Nenhuma. Saia quando quiser</td></tr>
+        <tr><td>Quem vende</td><td>A equipe daquela imobiliária</td><td>Vários corretores ao mesmo tempo</td></tr>
+        <tr><td>Quando te procuram</td><td>Toda semana, para dar satisfação</td><td>Só quando existe proposta real</td></tr>
+        <tr><td>Preço anunciado</td><td>Varia conforme o portal</td><td>Um anúncio, um preço só</td></tr>
+        <tr><td>Custo para anunciar</td><td>Depende do contrato</td><td>Zero, hoje e sempre</td></tr>
+        <tr><td>Comissão na venda</td><td>6% da tabela do CRECI</td><td>Os mesmos 6%, sem acréscimo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= COMO FUNCIONA ================= -->
+<section>
+  <div class="wrap">
+    <h2 class="titulo">Do anúncio à proposta, em quatro momentos.</h2>
+    <p class="apoio">Você aparece em dois deles. O resto acontece sem tomar seu tempo.</p>
+    <div class="trilha">
+      <div class="etapa">
+        <h3>Você publica o imóvel</h3>
+        <p>Endereço, fotos e o número da matrícula. Leva alguns minutos e não custa nada.</p>
+      </div>
+      <div class="etapa">
+        <h3>Conferimos a documentação</h3>
+        <p>Matrícula e escritura passam pela nossa análise antes do imóvel ganhar o selo Verificado. Comprador desconfiado é negócio que não fecha.</p>
+      </div>
+      <div class="etapa">
+        <h3>Os corretores assumem daqui</h3>
+        <p>Profissionais com CRECI colocam seu imóvel na carteira e saem para vender, cada um com a própria base de compradores. Você não precisa acompanhar, cobrar nem responder ninguém.</p>
+        <span class="destaque">É aqui que você ganha tempo: nenhum corretor precisa da sua autorização para começar a trabalhar.</span>
+      </div>
+      <div class="etapa">
+        <h3>Chega uma proposta e você decide</h3>
+        <p>Valor, forma de pagamento e condições chegam para você junto com um grupo no WhatsApp com o corretor e um atendente da Moravo. Aceita ou recusa, e a negociação segue por ali.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PREÇO ================= -->
+<section class="papel">
+  <div class="wrap">
+    <h2 class="titulo">Duas contas, e só uma sai do seu bolso.</h2>
+    <p class="apoio">Sem mensalidade, sem taxa de anúncio, sem cobrança escondida no meio do caminho.</p>
+    <div class="preco-grid">
+      <div class="cart forte">
+        <div class="num">R$ 0</div>
+        <h3>O que a Moravo cobra de você</h3>
+        <p>Anunciar, ter corretores trabalhando e receber propostas não custa nada. Quem paga pelo uso da plataforma é o corretor, com uma parte do que ele recebe, e só depois da venda fechada.</p>
+      </div>
+      <div class="cart">
+        <div class="num">6%</div>
+        <h3>A comissão do corretor</h3>
+        <p>É a comissão de corretagem da tabela do CRECI, a mesma que se paga em qualquer imobiliária. A Moravo não acrescenta nada a esse valor.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section>
+  <div class="wrap">
+    <h2 class="titulo">O que perguntam antes de anunciar.</h2>
+    <div class="faq" style="margin-top:40px">
+      <div>
+        <h4>Vários corretores não vai virar bagunça?</h4>
+        <p>Não, porque o anúncio é um só, com um preço só. O que muda é quanta gente está oferecendo seu imóvel. E você não fala com todos: só com quem trouxer proposta.</p>
+      </div>
+      <div>
+        <h4>Preciso assinar alguma coisa?</h4>
+        <p>Para anunciar, não. Você cria a conta, publica e pronto. A comissão é acertada na venda, entre você e o corretor que fechou o negócio.</p>
+      </div>
+      <div>
+        <h4>Como sei quem está com meu imóvel?</h4>
+        <p>Pelo painel. Aparece a lista de quem está trabalhando, com nome, CRECI e região de atuação de cada corretor.</p>
+      </div>
+      <div>
+        <h4>E se eu não gostar da proposta?</h4>
+        <p>Você recusa. A proposta é uma oferta, não um compromisso, e recusar não tira seu imóvel do ar nem afasta os outros corretores.</p>
+      </div>
+      <div>
+        <h4>Posso tirar o anúncio depois?</h4>
+        <p>A qualquer momento, direto no painel. Dá para pausar, editar, marcar como vendido ou excluir, sem precisar falar com ninguém.</p>
+      </div>
+      <div>
+        <h4>Meus documentos ficam públicos?</h4>
+        <p>Não. Matrícula e escritura ficam restritas à equipe que faz a conferência. Os detalhes estão na <a href="/politica-de-privacidade" style="color:var(--laranja-dk);font-weight:600">Política de Privacidade</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FECHO ================= -->
+<section class="fecho">
+  <div class="wrap">
+    <h2 class="titulo">Publique hoje. Deixe o mercado trabalhar.</h2>
+    <p>Alguns minutos para cadastrar, e a partir daí seu imóvel passa a estar na carteira de quem vende imóvel todo dia.</p>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-laranja">Anunciar meu imóvel de graça</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap rodape">
+    <span>© 2026 Moravo. A estrutura trabalha para o corretor.</span>
+    <span>
+      <a href="/">Início</a>
+      <a href="/busca">Imóveis</a>
+      <a href="/termos-de-uso">Termos</a>
+      <a href="/politica-de-privacidade">Privacidade</a>
+    </span>
+  </div>
+</footer>
+
+<div class="fixa"><a href="/cadastro?prefill=proprietario" class="btn btn-laranja">Anunciar meu imóvel de graça</a></div>
+
+</body>
+</html>
