@@ -128,6 +128,7 @@ public/
 anuncie.html     landing de conversão do proprietário (URL limpa /anuncie)
 anuncie-2.html   variante da landing para teste A/B (URL limpa /anuncie-2)
 anuncie-3.html   terceira variante, com calculadora do custo de esperar (/anuncie-3)
+anuncie-4.html   quarta variante, ângulo de facilidade de anunciar (/anuncie-4)
   login.html       login normal
   busca.html       busca e filtros
   detalhes.html    página do imóvel + CTA que muda conforme o perfil
@@ -398,6 +399,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-18** — Quarta variante em `/anuncie-4`, ângulo de **facilidade**. Mostra as três
+  telas reais do cadastro em mockup, lista o que o proprietário **não** precisa fazer (visita
+  de avaliação, contrato, sessão de fotos, pagamento, aprovar corretor, sair de casa) e o que
+  ele precisa ter em mãos. Todos os campos exibidos batem com o formulário real.
 - **2026-08-18** — Terceira variante da landing em `/anuncie-3`, ângulo de **tempo**. Traz uma
   calculadora que soma o custo mensal informado pelo próprio proprietário pelos meses de
   espera. Nenhum número é inventado: a conta usa só o que a pessoa digita, e a página diz de

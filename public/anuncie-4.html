@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo | Anuncie seu imóvel em três telas</title>
+<meta name="description" content="Sem visita de avaliação, sem contrato para assinar e sem custo. Você publica seu imóvel do celular em três telas e os corretores assumem daí." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@600&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+:root{
+  --laranja:#FF6A00; --laranja-dk:#E05300; --laranja-luz:#FFF4EC;
+  --verde:#12855A; --verde-luz:#E8F6EF;
+  --ink:#16181d; --ink-soft:#666c78; --linha:#e3e6ea; --neve:#F6F8FA;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);color:var(--ink);background:#fff;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:24px}
+.estreito{max-width:720px}
+a{color:inherit}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:1.02rem;padding:16px 30px;border-radius:12px;border:2px solid transparent;text-decoration:none;cursor:pointer;transition:.15s}
+.btn-l{background:var(--laranja);color:#fff;box-shadow:0 8px 22px rgba(255,106,0,.25)}
+.btn-l:hover{background:var(--laranja-dk)}
+.btn-v{background:#fff;color:var(--ink);border-color:var(--linha)}
+.btn-v:hover{border-color:var(--ink)}
+.btn-p{padding:11px 20px;font-size:.93rem}
+
+.topo{border-bottom:1px solid var(--linha);position:sticky;top:0;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);z-index:40}
+.topo-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+.marca{display:flex;align-items:center;gap:9px;text-decoration:none}
+.marca span{font-family:'Quicksand',sans-serif;font-weight:600;font-size:1.4rem;line-height:1;text-transform:lowercase}
+
+/* hero */
+.hero{padding:clamp(46px,6vw,78px) 0 clamp(30px,4vw,50px);text-align:center}
+.rapido{display:inline-flex;align-items:center;gap:9px;background:var(--verde-luz);color:var(--verde);font-weight:700;font-size:.85rem;padding:8px 16px;border-radius:100px;margin-bottom:22px}
+h1{font-family:var(--display);font-size:clamp(2rem,5.2vw,3.4rem);font-weight:800;line-height:1.06;letter-spacing:-.025em;margin-bottom:18px}
+h1 em{font-style:normal;color:var(--laranja)}
+.hero .sub{font-size:clamp(1.02rem,2vw,1.18rem);color:var(--ink-soft);max-width:610px;margin:0 auto 30px}
+.hero .acao{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+
+/* telas */
+.telas{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:clamp(34px,5vw,58px)}
+.tela{background:#fff;border:1px solid var(--linha);border-radius:18px;overflow:hidden;box-shadow:0 12px 34px rgba(20,24,31,.07);text-align:left;display:flex;flex-direction:column}
+.tela-topo{background:var(--neve);border-bottom:1px solid var(--linha);padding:12px 16px;display:flex;align-items:center;gap:9px;font-size:.78rem;font-weight:700;color:var(--ink-soft)}
+.bolinha{width:9px;height:9px;border-radius:50%;background:var(--laranja);flex-shrink:0}
+.tela-corpo{padding:16px;flex:1}
+.linha-falsa{margin-bottom:11px}
+.linha-falsa .rot{font-size:.72rem;font-weight:700;color:var(--ink-soft);margin-bottom:4px}
+.linha-falsa .cx{border:1.5px solid var(--linha);border-radius:8px;padding:9px 11px;font-size:.86rem;color:var(--ink);background:#fff}
+.linha-falsa .cx.cinza{color:#a9aeb7}
+.fotos-falsas{display:flex;gap:6px}
+.fotos-falsas div{flex:1;height:42px;border-radius:7px;background:linear-gradient(135deg,#ffd6b8,#ffb078)}
+.fotos-falsas div:nth-child(2){background:linear-gradient(135deg,#cfe3f5,#a8c9e8)}
+.fotos-falsas div:nth-child(3){background:linear-gradient(135deg,#d8ecdd,#aed6bc)}
+.tela-pe{border-top:1px solid var(--linha);padding:11px 16px;font-size:.8rem;font-weight:700;color:var(--verde);background:var(--verde-luz)}
+.tela h3{font-family:var(--display);font-size:1.02rem;font-weight:800;padding:14px 16px 0}
+.tela p.desc{font-size:.88rem;color:var(--ink-soft);padding:4px 16px 14px}
+
+section{padding:clamp(54px,7vw,92px) 0}
+.neve{background:var(--neve);border-block:1px solid var(--linha)}
+.kicker{font-size:.79rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--laranja);margin-bottom:12px}
+h2.tit{font-family:var(--display);font-size:clamp(1.6rem,3.8vw,2.4rem);font-weight:800;line-height:1.14;letter-spacing:-.02em;margin-bottom:14px}
+.apoio{color:var(--ink-soft);font-size:1.03rem;margin-bottom:38px;max-width:620px}
+
+/* nao precisa */
+.nao{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.nao div{display:flex;gap:13px;align-items:flex-start;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:17px 18px}
+.nao .x{width:24px;height:24px;border-radius:50%;background:#fdecea;color:#c0392b;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
+.nao b{display:block;font-size:.98rem;margin-bottom:2px}
+.nao span.txt{font-size:.9rem;color:var(--ink-soft)}
+
+/* precisa */
+.precisa{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px}
+.precisa span{background:#fff;border:1px solid var(--linha);border-radius:100px;padding:11px 20px;font-weight:600;font-size:.95rem;display:inline-flex;align-items:center;gap:9px}
+.precisa svg{color:var(--verde)}
+
+/* depois */
+.depois{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,50px);align-items:center}
+.lista-depois li{list-style:none;display:flex;gap:13px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--linha);font-size:.99rem}
+.lista-depois li:last-child{border-bottom:none}
+.lista-depois svg{color:var(--laranja);flex-shrink:0;margin-top:3px}
+.painel-falso{background:var(--ink);border-radius:18px;padding:22px;color:#fff}
+.painel-falso .cab{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:14px}
+.aviso{background:rgba(255,255,255,.07);border-left:3px solid var(--laranja);border-radius:0 10px 10px 0;padding:13px 15px;margin-bottom:10px}
+.aviso b{display:block;font-size:.92rem;margin-bottom:3px}
+.aviso span{font-size:.84rem;color:rgba(255,255,255,.6)}
+
+/* preco */
+.preco{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:26px}
+.preco span{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 22px;display:flex;align-items:baseline;gap:9px;font-weight:600}
+.preco b{font-family:var(--display);font-size:1.45rem;color:var(--laranja)}
+.preco i{font-style:normal;font-size:.92rem;color:var(--ink-soft)}
+
+details{border-bottom:1px solid var(--linha)}
+summary{padding:17px 0;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--laranja);font-size:1.35rem;line-height:1}
+details[open] summary::after{content:"−"}
+details p{padding-bottom:17px;color:var(--ink-soft);font-size:.96rem}
+
+.fecho{background:var(--laranja-luz);text-align:center;border-top:1px solid var(--linha)}
+.fecho h2.tit{margin-inline:auto;max-width:600px}
+.fecho .apoio{margin:0 auto 28px;text-align:center}
+
+footer{background:var(--ink);color:rgba(255,255,255,.5);padding:32px 0;font-size:.88rem}
+.rod{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.rod a{color:rgba(255,255,255,.5);text-decoration:none;margin-left:18px}
+.rod a:hover{color:#fff}
+
+.fixa{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--linha);padding:11px 16px calc(11px + env(safe-area-inset-bottom));display:none}
+.fixa .btn{width:100%}
+
+@media(max-width:900px){
+  .telas{grid-template-columns:1fr;max-width:420px;margin-inline:auto}
+  .depois{grid-template-columns:1fr}
+  .nao{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .topo .btn{display:none}
+  .fixa{display:block}
+  body{padding-bottom:74px}
+  .hero .acao .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <a href="/" class="marca">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="width:23px;height:23px;display:block" aria-label="moravo">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span>moravo</span>
+    </a>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l btn-p">Anunciar grátis</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <span class="rapido">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h8l-1 8 10-12h-8z"/></svg>
+      Do celular, agora, sem falar com ninguém
+    </span>
+    <h1>Seu imóvel no ar em <em>três telas</em>.</h1>
+    <p class="sub">Sem visita de avaliação para agendar, sem contrato para assinar, sem nada para pagar. Você preenche, publica, e os corretores assumem a partir daí.</p>
+    <div class="acao">
+      <a href="/cadastro?prefill=proprietario" class="btn btn-l">Começar meu anúncio</a>
+      <a href="#telas" class="btn btn-v">Ver as três telas</a>
+    </div>
+
+    <div class="telas" id="telas">
+      <article class="tela">
+        <div class="tela-topo"><span class="bolinha"></span>Tela 1 de 3</div>
+        <div class="tela-corpo">
+          <div class="linha-falsa"><div class="rot">TÍTULO DO ANÚNCIO</div><div class="cx">Apartamento 3 dorm no Centro</div></div>
+          <div class="linha-falsa"><div class="rot">PREÇO</div><div class="cx">R$ 890.000,00</div></div>
+          <div class="linha-falsa"><div class="rot">CEP</div><div class="cx">89201-000</div></div>
+          <div class="linha-falsa" style="margin-bottom:0"><div class="rot">RUA E NÚMERO</div><div class="cx cinza">preenchido pelo CEP</div></div>
+        </div>
+        <div class="tela-pe">O endereço se completa sozinho</div>
+        <h3>O básico do imóvel</h3>
+        <p class="desc">Título, tipo, preço e endereço. O CEP puxa rua, bairro e cidade, e o mapa se posiciona sozinho.</p>
+      </article>
+
+      <article class="tela">
+        <div class="tela-topo"><span class="bolinha"></span>Tela 2 de 3</div>
+        <div class="tela-corpo">
+          <div class="linha-falsa"><div class="rot">FOTOS (ATÉ 5)</div>
+            <div class="fotos-falsas"><div></div><div></div><div></div></div>
+          </div>
+          <div class="linha-falsa"><div class="rot">QUARTOS / BANHEIROS / VAGAS</div><div class="cx">3 · 2 · 2</div></div>
+          <div class="linha-falsa" style="margin-bottom:0"><div class="rot">DESCRIÇÃO</div><div class="cx cinza">opcional</div></div>
+        </div>
+        <div class="tela-pe">Fotos direto da galeria do celular</div>
+        <h3>Fotos e características</h3>
+        <p class="desc">Até cinco fotos, tiradas por você mesmo. Não precisa de fotógrafo nem de agendar sessão.</p>
+      </article>
+
+      <article class="tela">
+        <div class="tela-topo"><span class="bolinha"></span>Tela 3 de 3</div>
+        <div class="tela-corpo">
+          <div class="linha-falsa"><div class="rot">MATRÍCULA DO IMÓVEL</div><div class="cx">98.765</div></div>
+          <div class="linha-falsa"><div class="rot">ESCRITURA</div><div class="cx cinza">enviar PDF ou foto</div></div>
+          <div class="linha-falsa" style="margin-bottom:0"><div class="rot">TEM CONDOMÍNIO?</div><div class="cx">Sim · R$ 650,00</div></div>
+        </div>
+        <div class="tela-pe">É o que libera o selo Verificado</div>
+        <h3>A documentação</h3>
+        <p class="desc">O número da matrícula e, se tiver em mãos, a escritura. É o que dá segurança a quem vai comprar.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ O QUE VOCÊ NÃO PRECISA ============ -->
+<section class="neve">
+  <div class="wrap">
+    <p class="kicker">O que some do caminho</p>
+    <h2 class="tit">A parte demorada de anunciar não existe aqui.</h2>
+    <p class="apoio">Quase tudo que faz alguém adiar o anúncio por semanas está nesta lista. Nada disso é pedido.</p>
+    <div class="nao">
+      <div><span class="x">✕</span><span><b>Visita de avaliação</b><span class="txt">Você não espera corretor ir até o imóvel para dizer quanto vale. O preço é seu.</span></span></div>
+      <div><span class="x">✕</span><span><b>Contrato de exclusividade</b><span class="txt">Nada para ler, assinar ou reconhecer firma. Você entra e sai quando quiser.</span></span></div>
+      <div><span class="x">✕</span><span><b>Sessão de fotos agendada</b><span class="txt">As fotos do seu celular servem. Dá para trocar depois, quando quiser.</span></span></div>
+      <div><span class="x">✕</span><span><b>Pagamento de qualquer tipo</b><span class="txt">Não tem taxa de anúncio, mensalidade nem plano destaque.</span></span></div>
+      <div><span class="x">✕</span><span><b>Escolher corretor um a um</b><span class="txt">Quem quiser trabalhar seu imóvel começa sozinho. Você não aprova ninguém.</span></span></div>
+      <div><span class="x">✕</span><span><b>Ir a algum lugar</b><span class="txt">Tudo acontece pelo celular. Nenhuma etapa exige presença.</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ O QUE PRECISA ============ -->
+<section>
+  <div class="wrap estreito">
+    <p class="kicker">O que separar antes</p>
+    <h2 class="tit">Quatro coisas, e você já tem três delas.</h2>
+    <p class="apoio">A única que costuma dar trabalho é a matrícula, que fica na escritura do imóvel.</p>
+    <div class="precisa">
+      <span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Endereço com CEP</span>
+      <span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Preço que você quer pedir</span>
+      <span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Fotos no celular</span>
+      <span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Número da matrícula</span>
+    </div>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l">Tenho isso, quero anunciar</a>
+  </div>
+</section>
+
+<!-- ============ DEPOIS DE PUBLICAR ============ -->
+<section class="neve">
+  <div class="wrap">
+    <p class="kicker">Publicou. E agora?</p>
+    <h2 class="tit">Agora acaba o seu trabalho.</h2>
+    <p class="apoio">A parte que costuma consumir meses de energia do proprietário deixa de ser problema seu.</p>
+    <div class="depois">
+      <ul class="lista-depois">
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 6L9 17l-5-5"/></svg><span>Corretores com CRECI colocam seu imóvel na carteira e saem para vender, sem pedir nada a você.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 6L9 17l-5-5"/></svg><span>Você não atende ligação, não agenda visita e não dá satisfação para ninguém.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 6L9 17l-5-5"/></svg><span>Quando aparece uma proposta, ela chega com valor e condições, e um grupo no WhatsApp é aberto.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 6L9 17l-5-5"/></svg><span>Pausar, editar, marcar como vendido ou tirar do ar leva um clique, a qualquer hora.</span></li>
+      </ul>
+      <div class="painel-falso">
+        <div class="cab">Seu painel</div>
+        <div class="aviso"><b>2 corretores trabalhando</b><span>Bruno Corretor e Carla Corretora</span></div>
+        <div class="aviso"><b>Proposta de R$ 850.000</b><span>financiado, entrada de R$ 200.000</span></div>
+        <div style="font-size:.84rem;color:rgba(255,255,255,.45);margin-top:14px">Você só precisa responder a segunda.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PREÇO ============ -->
+<section>
+  <div class="wrap estreito" style="text-align:center">
+    <p class="kicker">O custo de tudo isso</p>
+    <h2 class="tit" style="margin-inline:auto">Zero para anunciar. Zero para manter.</h2>
+    <div class="preco">
+      <span><b>R$ 0</b><i>para publicar</i></span>
+      <span><b>R$ 0</b><i>por mês</i></span>
+      <span><b>6%</b><i>comissão do CRECI, só na venda</i></span>
+    </div>
+    <p class="apoio" style="margin:0 auto 28px;text-align:center">Os 6% são a comissão de corretagem que se paga em qualquer imobiliária. A Moravo não acrescenta nada: quem paga pelo uso da plataforma é o corretor, com uma parte do que ele recebe.</p>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l">Publicar meu imóvel</a>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="neve">
+  <div class="wrap estreito">
+    <p class="kicker">Dúvidas rápidas</p>
+    <h2 class="tit">O que costumam perguntar antes de começar</h2>
+    <div style="margin-top:26px">
+      <details><summary>Não sei o número da matrícula. E agora?</summary>
+        <p>Ele fica na escritura do imóvel, geralmente na primeira página, e também aparece no carnê de IPTU de algumas cidades. Se não achar, dá para pedir uma certidão no cartório de registro de imóveis da região.</p></details>
+      <details><summary>Preciso enviar a escritura?</summary>
+        <p>O número da matrícula é obrigatório. O arquivo da escritura é opcional, mas ajuda: é o que a nossa equipe analisa para liberar o selo Verificado, que dá mais confiança a quem está procurando.</p></details>
+      <details><summary>Minhas fotos são de celular. Serve?</summary>
+        <p>Serve. Fotos com boa luz, tiradas de dia e com o ambiente organizado, funcionam bem. Você pode trocar quando quiser, sem refazer o anúncio.</p></details>
+      <details><summary>Consigo editar depois de publicar?</summary>
+        <p>Sim. Preço, descrição, fotos e características podem ser alterados a qualquer momento pelo painel, sem precisar publicar de novo.</p></details>
+      <details><summary>O anúncio entra no ar na hora?</summary>
+        <p>Entra. A conferência da documentação acontece em seguida e é o que libera o selo Verificado, mas seu imóvel já fica visível antes disso.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FECHO ============ -->
+<section class="fecho">
+  <div class="wrap estreito">
+    <h2 class="tit">Três telas separam seu imóvel de quem vende imóvel todo dia.</h2>
+    <p class="apoio">Comece agora pelo celular. Se faltar alguma informação, dá para salvar e voltar depois.</p>
+    <a href="/cadastro?prefill=proprietario" class="btn btn-l">Anunciar meu imóvel de graça</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap rod">
+    <span>© 2026 Moravo. A estrutura trabalha para o corretor.</span>
+    <span>
+      <a href="/">Início</a>
+      <a href="/busca">Imóveis</a>
+      <a href="/termos-de-uso">Termos</a>
+      <a href="/politica-de-privacidade">Privacidade</a>
+    </span>
+  </div>
+</footer>
+
+<div class="fixa"><a href="/cadastro?prefill=proprietario" class="btn btn-l">Anunciar meu imóvel de graça</a></div>
+
+</body>
+</html>
