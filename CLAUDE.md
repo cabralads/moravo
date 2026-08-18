@@ -396,6 +396,13 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-18** — Copy do site inteiro alinhada ao fluxo novo: landing `/anuncie` (10
+  trechos), home, Termos de Uso, Política de Privacidade, painel e página do imóvel. Saiu
+  "você escolhe com quem trabalhar" e entrou "vários corretores trabalham, você decide a
+  proposta". Notificações `proposta_recebida`, `proposta_aceita`, `proposta_recusada`,
+  `corretor_trabalhando` e `envio_whatsapp_falhou` ganharam texto no painel. Os textos de
+  `corretor_escolhido`/`corretor_recusado` e os balões de chat de "aguardando o proprietário"
+  ficaram no código para renderizar registros antigos, mas são inalcançáveis para dados novos.
 - **2026-08-18** — **Fim do aceite de corretor.** O corretor passa a adicionar o imóvel à
   carteira na hora, e o proprietário só é acionado quando chega uma proposta. Nova tabela
   `propostas`, nova rota `/api/propostas`, `lib/grupo.js` com a criação do grupo (que agora

@@ -2555,7 +2555,7 @@
   <!-- Modal Customizado de Envio de Mensagem (Interesse) -->
   <div class="modal-bg" id="interesseModal">
     <div class="modal" style="max-width: 480px;">
-      <h2>Demonstrar Interesse</h2>
+      <h2>Trabalhar este imóvel</h2>
       <p style="color: var(--ink-soft); font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;">
         Envie uma mensagem para o proprietário apresentando o seu interesse.
       </p>
@@ -3607,7 +3607,7 @@
 
       function renderInteressados(c) {
         c.innerHTML = '<div class="section-head" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
-          '<div><h1>Corretores interessados</h1><p>Veja quem quer ajudar a vender seus imóveis.</p></div>' +
+          '<div><h1>Corretores trabalhando</h1><p>Profissionais que colocaram seus imóveis na carteira. Eles avisam quando tiverem proposta.</p></div>' +
           '<button class="btn btn-primary" id="btnAceitarTodos" style="display:none; padding:10px 20px; font-size:0.9rem;">Aceitar todos</button>' +
           '</div><div id="grid"></div>';
         var grid = c.querySelector('#grid');
@@ -3628,7 +3628,7 @@
                   if (r.ok) r.body.interesses.forEach(function (it) { all.push(it); });
                 });
                 if (all.length === 0) {
-                  grid.innerHTML = '<div class="empty"><h3>Nenhum corretor interessado ainda</h3><p>Quando um corretor demonstrar interesse, vai aparecer aqui.</p></div>';
+                  grid.innerHTML = '<div class="empty"><h3>Nenhum corretor trabalhando ainda</h3><p>Quando um corretor colocar seu imóvel na carteira, ele aparece aqui.</p></div>';
                   return;
                 }
                 
@@ -5202,12 +5202,34 @@
             return '<strong>' + escapeHtml(nomeCor2) +
               '</strong> renunciou à intermediação do seu <strong>Anúncio: ' +
               escapeHtml(titulo2) + '</strong>. O imóvel está disponível para outros corretores assumirem.';
+          case 'corretor_trabalhando':
           case 'corretor_interessado':
             var nomeCor = (n.remetente_nome || (n.payload && n.payload.corretor_nome) || 'Um corretor');
             var titulo = n.imovel_titulo || ('Imóvel #' + (n.imovel_id || ''));
             return '<strong>' + escapeHtml(nomeCor) +
-              '</strong> gostaria de intermediar a venda de seu <strong>Anúncio: ' +
-              escapeHtml(titulo) + '</strong>';
+              '</strong> começou a trabalhar seu <strong>Anúncio: ' +
+              escapeHtml(titulo) + '</strong>. Avisamos você quando houver proposta.';
+          case 'proposta_recebida':
+            var quemProp = (n.remetente_nome || (n.payload && n.payload.corretor_nome) || 'Um corretor');
+            var valorProp = (n.payload && n.payload.valor) ? money(n.payload.valor) : '';
+            return '<strong>' + escapeHtml(quemProp) + '</strong> enviou uma proposta' +
+              (valorProp ? ' de <strong>' + valorProp + '</strong>' : '') +
+              ' pelo seu <strong>Anúncio: ' + escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) +
+              '</strong>. Responda em Propostas recebidas.';
+          case 'proposta_aceita':
+            var valorAc = (n.payload && n.payload.valor) ? money(n.payload.valor) : '';
+            return 'Sua proposta' + (valorAc ? ' de <strong>' + valorAc + '</strong>' : '') +
+              ' para o imóvel <strong>' + escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) +
+              '</strong> foi <strong>aceita</strong> pelo proprietário.';
+          case 'proposta_recusada':
+            var motivoProp = (n.payload && n.payload.motivo) || '';
+            return 'Sua proposta para o imóvel <strong>' +
+              escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) + '</strong> foi recusada.' +
+              (motivoProp ? '<br><span style="color:#d32f2f; font-size:0.85rem;">Motivo: ' + escapeHtml(motivoProp) + '</span>' : '');
+          case 'envio_whatsapp_falhou':
+            return 'Falha ao enviar o convite do grupo por WhatsApp no imóvel <strong>' +
+              escapeHtml((n.payload && n.payload.imovel_titulo) || ('#' + n.imovel_id)) +
+              '</strong>. Veja em Envios WhatsApp no painel administrativo.';
           case 'corretor_escolhido':
             return 'Você foi aprovado para intermediar o imóvel <strong>' +
               escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) + '</strong>. Entre em contato com o proprietário para iniciar a negociação.';
