@@ -19,6 +19,8 @@ const fotosRouter     = require('./routes/fotos');
 const favoritosRouter = require('./routes/favoritos');
 const notificacoesRouter = require('./routes/notificacoes');
 const path            = require('path');
+const fs              = require('fs');
+const siteConfig      = require('./lib/site-config');
 
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
@@ -127,6 +129,38 @@ app.use('/api/imoveis/:id/documentos', documentosRouter);
 app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
+
+// ---- Injeção dos scripts de terceiros (Tag Manager e afins)
+// Precisa vir ANTES do express.static: intercepta só as páginas HTML, insere o
+// que o admin configurou e devolve. Qualquer outro arquivo segue o caminho normal.
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+app.get('*', async (req, res, next) => {
+  try {
+    if (req.path.startsWith('/uploads') || req.path.startsWith('/api')) return next();
+
+    // Resolve a URL para um arquivo .html dentro de public/ (inclui URL limpa)
+    let relativo = req.path === '/' ? 'index.html' : decodeURIComponent(req.path).replace(/^\/+/, '');
+    if (!path.extname(relativo)) relativo += '.html';
+    if (path.extname(relativo).toLowerCase() !== '.html') return next();
+
+    const arquivo = path.join(PUBLIC_DIR, relativo);
+    if (!arquivo.startsWith(PUBLIC_DIR + path.sep)) return next(); // barra path traversal
+    if (!fs.existsSync(arquivo)) return next();
+
+    // O painel do admin fica de fora: não faz sentido rastrear uso interno
+    if (relativo === 'admin.html') return next();
+
+    const scripts = await siteConfig.getScripts();
+    if (!scripts.head_html && !scripts.body_html) return next();
+
+    const html = siteConfig.injetar(fs.readFileSync(arquivo, 'utf8'), scripts);
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('[scripts] falha ao injetar, servindo a página original:', err.message);
+    next();
+  }
+});
 
 // Servir o front-end estático (HTML, CSS, JS, img, etc.) com suporte a URLs Limpas
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
@@ -308,6 +342,21 @@ app.listen(PORT, '0.0.0.0', async () => {
     // como imóvel em carteira, já que o aceite do proprietário deixou de existir.
     await migrar('interesses.pendente_vira_carteira', `
       UPDATE moravo.interesses SET status = 'aceito' WHERE status = 'pendente';
+    `);
+
+    // Scripts de terceiros (Tag Manager, pixels) injetados nas páginas públicas.
+    // Linha única (id = 1), editada em /admin -> Configurações.
+    await migrar('tabela config_site', `
+      CREATE TABLE IF NOT EXISTS moravo.config_site (
+        id             SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        head_html      TEXT,
+        body_html      TEXT,
+        atualizado_por BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        atualizado_em  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('config_site.linha_inicial', `
+      INSERT INTO moravo.config_site (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
     `);
 
     // Configuração da WhatsApp Cloud API (preenchida pelo painel do admin).

@@ -107,6 +107,7 @@ lib/notifications.js   criarNotificacao()
 lib/waha.js            integração WhatsApp (criar grupo, enviar msg, gerar convite)
 lib/whatsapp.js        WhatsApp Cloud API oficial (envio do convite, config cifrada)
 lib/grupo.js           cria/reaproveita o grupo da negociação e dispara os convites
+lib/site-config.js     scripts de terceiros do admin e a injeção deles no HTML
 
 routes/
   auth.js          register, login, me
@@ -139,6 +140,31 @@ anuncie-4.html   quarta variante, ângulo de facilidade de anunciar (/anuncie-4)
   _legal-shell.css               estilo compartilhado das duas páginas legais
   config.js        define window.MORAVO_API
 ```
+
+---
+
+## Scripts de terceiros (Tag Manager, pixels)
+
+O admin cola o código em `/admin` → **Configurações**, em dois campos: um para o `<head>` e
+outro para o `<body>`. Fica gravado em `moravo.config_site` (linha única).
+
+**A injeção acontece na entrega da página**, num middleware do `server.js` que roda **antes**
+do `express.static`: ele resolve a URL para o arquivo `.html` em `public/`, insere o código e
+devolve. Nenhum arquivo do repositório é alterado, e não precisa de deploy para valer.
+
+Detalhes que importam:
+
+- O `head` entra antes de `</head>`; o `body` logo **depois** da tag `<body>`, que é onde o
+  Tag Manager pede o `<noscript>`.
+- **`/admin` fica de fora de propósito**: uso interno não deve virar métrica.
+- O `replace` usa função em vez de string, senão `$&` e `$1` dentro do código colado seriam
+  interpretados pelo Node e o script chegaria corrompido.
+- Cache de 30s (`lib/site-config.js`). Salvar pelo painel limpa o cache na hora.
+- Se a leitura falhar, a página original é servida sem os scripts: medição nunca derruba site.
+- A rota recusa `</head>`, `</body>` e `</html>` no conteúdo, para não quebrar o HTML.
+
+⚠️ Quem tem acesso ao painel do admin pode injetar JavaScript em todas as páginas públicas.
+É o que torna o campo útil, e também o que exige cuidado com quem recebe perfil `admin`.
 
 ---
 
@@ -399,6 +425,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-18** — Nova aba **Configurações** no painel do admin, com campos de script para
+  `<head>` e `<body>` (Tag Manager, pixels). Tabela `config_site`, `lib/site-config.js` e um
+  middleware no `server.js` que injeta o código ao servir cada página HTML. O painel do admin
+  é excluído da injeção.
 - **2026-08-18** — Quarta variante em `/anuncie-4`, ângulo de **facilidade**. Mostra as três
   telas reais do cadastro em mockup, lista o que o proprietário **não** precisa fazer (visita
   de avaliação, contrato, sessão de fotos, pagamento, aprovar corretor, sair de casa) e o que

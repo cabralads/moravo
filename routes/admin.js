@@ -8,6 +8,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { sign: signJwt } = require('../lib/jwt');
 const { criarNotificacao } = require('../lib/notifications');
 const wa = require('../lib/whatsapp');
+const siteConfig = require('../lib/site-config');
 
 const router = express.Router();
 
@@ -393,6 +394,55 @@ router.post('/whatsapp/envios/:id/reenviar', async (req, res) => {
     }
   } catch (err) {
     console.error('[admin/whatsapp/reenviar] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// =========================================================================
+// Configurações do site: scripts de terceiros (Tag Manager, pixels)
+// =========================================================================
+
+// ---- GET /api/admin/config/scripts
+router.get('/config/scripts', async (req, res) => {
+  try {
+    const c = await siteConfig.getScripts({ semCache: true });
+    return res.json({ ok: true, scripts: c });
+  } catch (err) {
+    console.error('[admin/config/scripts GET] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- PUT /api/admin/config/scripts  { head_html, body_html }
+router.put('/config/scripts', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const head = typeof b.head_html === 'string' ? b.head_html.trim() : '';
+    const body = typeof b.body_html === 'string' ? b.body_html.trim() : '';
+
+    const LIMITE = 20000;
+    if (head.length > LIMITE || body.length > LIMITE) {
+      return res.status(400).json({ ok: false, error: `Cada campo aceita no máximo ${LIMITE} caracteres.` });
+    }
+    // Evita quebrar o HTML das páginas com uma tag mal fechada
+    if (/<\/(head|body|html)\s*>/i.test(head) || /<\/(head|body|html)\s*>/i.test(body)) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Cole apenas o trecho do script. Não inclua as tags </head>, </body> ou </html>.',
+      });
+    }
+
+    await query(
+      `UPDATE moravo.config_site
+          SET head_html = $1, body_html = $2, atualizado_por = $3, atualizado_em = NOW()
+        WHERE id = 1`,
+      [head || null, body || null, req.user.id]
+    );
+    siteConfig.limparCache();
+
+    return res.json({ ok: true, ativo: !!(head || body) });
+  } catch (err) {
+    console.error('[admin/config/scripts PUT] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
   }
 });

@@ -780,6 +780,7 @@ body {
       <button class="admin-nav-item" data-view="logs">Logins</button>
       <button class="admin-nav-item" data-view="envios">Envios WhatsApp <span class="admin-nav-badge" id="cntFalhas">0</span></button>
       <button class="admin-nav-item" data-view="whatsapp">Config. WhatsApp</button>
+      <button class="admin-nav-item" data-view="config">Configurações</button>
     </nav>
     <button class="btn btn-ghost" id="adminSairBtn">Sair</button>
   </aside>
@@ -979,7 +980,8 @@ body {
       reprovados: 'Reprovados',
       logs: 'Logins de admin',
       envios: 'Envios de convite pelo WhatsApp',
-      whatsapp: 'Configuração da WhatsApp Cloud API'
+      whatsapp: 'Configuração da WhatsApp Cloud API',
+      config: 'Configurações do site'
     };
     $('adminSectionTitle').textContent = titleMap[view] || view;
 
@@ -989,6 +991,8 @@ body {
       renderEnvios();
     } else if (view === 'whatsapp') {
       renderWhatsappConfig();
+    } else if (view === 'config') {
+      renderConfigSite();
     } else {
       // 'pendentes' → 'pendente' (a sidebar usa plural para ficar natural em PT-BR;
       // o backend espera o valor singular do CHECK constraint).
@@ -1160,6 +1164,79 @@ body {
     }).catch(function (err) {
       $('adminContent').innerHTML = '<div class="admin-empty">Erro de rede.</div>';
       console.error(err);
+    });
+  }
+
+  // ---- Configurações do site: scripts de terceiros
+  function renderConfigSite() {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/config/scripts').then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var c = r.body.scripts || {};
+      var ativo = !!(c.head_html || c.body_html);
+
+      box.innerHTML =
+        '<div class="admin-card" style="max-width:820px">' +
+          '<h3 style="margin-bottom:6px">Scripts de terceiros</h3>' +
+          '<p class="muted" style="margin-bottom:6px">Cole aqui o código do Google Tag Manager, do Meta Pixel ou de qualquer outra ferramenta de medição. ' +
+          'O conteúdo é inserido em todas as páginas públicas do site automaticamente, sem precisar publicar nada.</p>' +
+          '<p class="muted" style="margin-bottom:20px;font-size:.86rem">O painel administrativo fica de fora de propósito: uso interno não deve virar métrica.</p>' +
+
+          '<div style="background:' + (ativo ? '#e8f6ef' : '#f7f7f7') + '; border-radius:8px; padding:11px 15px; margin-bottom:22px; font-size:.9rem; font-weight:600; color:' + (ativo ? '#12855A' : '#717171') + '">' +
+            (ativo ? '● Scripts ativos nas páginas públicas' : '○ Nenhum script configurado no momento') +
+          '</div>' +
+
+          '<div class="field">' +
+            '<label for="cfgHead">Código no &lt;head&gt;</label>' +
+            '<p class="muted" style="font-size:.85rem;margin:-4px 0 8px">Entra logo antes do fechamento do head. É onde vai o trecho principal do Tag Manager.</p>' +
+            '<textarea id="cfgHead" rows="9" spellcheck="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.5" ' +
+              'placeholder="&lt;!-- Google Tag Manager --&gt;&#10;&lt;script&gt;…&lt;/script&gt;">' + escapeHtml(c.head_html || '') + '</textarea>' +
+          '</div>' +
+
+          '<div class="field">' +
+            '<label for="cfgBody">Código no &lt;body&gt;</label>' +
+            '<p class="muted" style="font-size:.85rem;margin:-4px 0 8px">Entra logo depois da abertura do body. É onde vai o &lt;noscript&gt; do Tag Manager.</p>' +
+            '<textarea id="cfgBody" rows="6" spellcheck="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.5" ' +
+              'placeholder="&lt;!-- Google Tag Manager (noscript) --&gt;&#10;&lt;noscript&gt;…&lt;/noscript&gt;">' + escapeHtml(c.body_html || '') + '</textarea>' +
+          '</div>' +
+
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">' +
+            '<button class="btn btn-primary" id="cfgSalvar">Salvar e publicar</button>' +
+            '<button class="btn btn-ghost" id="cfgLimpar">Remover tudo</button>' +
+          '</div>' +
+          (c.atualizado_em ? '<p class="muted" style="margin-top:14px;font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</p>' : '') +
+        '</div>' +
+
+        '<div class="admin-card" style="max-width:820px;margin-top:18px">' +
+          '<h3 style="margin-bottom:8px">Como conferir se funcionou</h3>' +
+          '<p class="muted">Depois de salvar, abra o site numa aba anônima, clique com o botão direito e escolha "Exibir código-fonte da página". ' +
+          'O trecho colado aqui deve aparecer no HTML. No Tag Manager, o modo de visualização (Preview) também passa a conectar.</p>' +
+        '</div>';
+
+      function salvar(head, body, msg) {
+        var btn = $('cfgSalvar');
+        btn.disabled = true; btn.textContent = 'Salvando…';
+        api('/api/admin/config/scripts', { method: 'PUT', body: { head_html: head, body_html: body } })
+          .then(function (resp) {
+            btn.disabled = false; btn.textContent = 'Salvar e publicar';
+            if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro ao salvar.', 'error'); return; }
+            toast(msg, 'success');
+            renderConfigSite();
+          });
+      }
+
+      $('cfgSalvar').onclick = function () {
+        salvar($('cfgHead').value, $('cfgBody').value, 'Salvo. Já está valendo nas páginas do site.');
+      };
+      $('cfgLimpar').onclick = function () {
+        adminConfirm('Remover os scripts de todas as páginas do site?', {
+          title: 'Remover scripts',
+          okText: 'Remover',
+          kind: 'danger',
+          onConfirm: function () { salvar('', '', 'Scripts removidos.'); }
+        });
+      };
     });
   }
 
