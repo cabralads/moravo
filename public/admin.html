@@ -228,6 +228,41 @@ body {
   text-align: center;
   color: var(--ink-soft);
 }
+/* Painel de formulário (Configurações e Config. WhatsApp).
+   Não reaproveita .admin-card de propósito: aquele é um grid de duas colunas
+   feito para o card de imóvel, com capa à esquerda. Usado aqui, ele espalha
+   label, campo e botão em células diferentes. */
+.admin-panel {
+  background: #fff;
+  border: 1px solid var(--beige);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  margin-bottom: 18px;
+}
+.admin-panel > h3 { font-size: 1.08rem; font-weight: 800; margin-bottom: 6px; }
+.admin-panel .muted { font-size: 0.9rem; line-height: 1.55; }
+.admin-panel .field { margin-bottom: 18px; }
+.admin-panel .field label { font-size: 0.88rem; font-weight: 700; }
+.admin-panel .field select {
+  font-family: var(--font-body); font-size: 0.95rem; padding: 10px 13px;
+  border: 1.5px solid var(--beige); border-radius: 8px; background: #fff; width: 100%;
+}
+.admin-panel textarea.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84rem; line-height: 1.6;
+  white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 2;
+  background: #fbfaf9; resize: vertical; min-height: 150px;
+}
+.admin-panel .acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.painel-status {
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 8px; padding: 10px 15px; font-size: 0.9rem; font-weight: 600; margin-bottom: 20px;
+}
+.painel-status.on  { background: #e8f6ef; color: #12855A; }
+.painel-status.off { background: #f5f5f5; color: #717171; }
+.painel-dica { font-size: 0.85rem; color: var(--ink-soft); margin: -12px 0 10px; line-height: 1.5; }
+@media (max-width: 720px) { .admin-panel { padding: 20px 18px; } }
+
 .admin-card {
   background: #fff;
   border: 1px solid var(--beige);
@@ -1177,41 +1212,42 @@ body {
       var ativo = !!(c.head_html || c.body_html);
 
       box.innerHTML =
-        '<div class="admin-card" style="max-width:820px">' +
-          '<h3 style="margin-bottom:6px">Scripts de terceiros</h3>' +
-          '<p class="muted" style="margin-bottom:6px">Cole aqui o código do Google Tag Manager, do Meta Pixel ou de qualquer outra ferramenta de medição. ' +
-          'O conteúdo é inserido em todas as páginas públicas do site automaticamente, sem precisar publicar nada.</p>' +
-          '<p class="muted" style="margin-bottom:20px;font-size:.86rem">O painel administrativo fica de fora de propósito: uso interno não deve virar métrica.</p>' +
+        '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Scripts de terceiros</h3>' +
+          '<p class="muted" style="margin-bottom:18px">Cole aqui o código do Google Tag Manager, do Meta Pixel ou de outra ferramenta de medição. ' +
+          'O conteúdo entra em todas as páginas públicas automaticamente, sem precisar publicar nada. ' +
+          'O painel administrativo fica de fora de propósito: uso interno não deve virar métrica.</p>' +
 
-          '<div style="background:' + (ativo ? '#e8f6ef' : '#f7f7f7') + '; border-radius:8px; padding:11px 15px; margin-bottom:22px; font-size:.9rem; font-weight:600; color:' + (ativo ? '#12855A' : '#717171') + '">' +
+          '<div class="painel-status ' + (ativo ? 'on' : 'off') + '">' +
             (ativo ? '● Scripts ativos nas páginas públicas' : '○ Nenhum script configurado no momento') +
           '</div>' +
 
           '<div class="field">' +
             '<label for="cfgHead">Código no &lt;head&gt;</label>' +
-            '<p class="muted" style="font-size:.85rem;margin:-4px 0 8px">Entra logo antes do fechamento do head. É onde vai o trecho principal do Tag Manager.</p>' +
-            '<textarea id="cfgHead" rows="9" spellcheck="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.5" ' +
-              'placeholder="&lt;!-- Google Tag Manager --&gt;&#10;&lt;script&gt;…&lt;/script&gt;">' + escapeHtml(c.head_html || '') + '</textarea>' +
+            '<p class="painel-dica">Entra logo antes do fechamento do head. É onde vai o trecho principal do Tag Manager.</p>' +
+            '<textarea id="cfgHead" class="code" rows="8" spellcheck="false" ' +
+              'placeholder="&lt;!-- Google Tag Manager --&gt;">' + escapeHtml(c.head_html || '') + '</textarea>' +
           '</div>' +
 
           '<div class="field">' +
             '<label for="cfgBody">Código no &lt;body&gt;</label>' +
-            '<p class="muted" style="font-size:.85rem;margin:-4px 0 8px">Entra logo depois da abertura do body. É onde vai o &lt;noscript&gt; do Tag Manager.</p>' +
-            '<textarea id="cfgBody" rows="6" spellcheck="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.5" ' +
-              'placeholder="&lt;!-- Google Tag Manager (noscript) --&gt;&#10;&lt;noscript&gt;…&lt;/noscript&gt;">' + escapeHtml(c.body_html || '') + '</textarea>' +
+            '<p class="painel-dica">Entra logo depois da abertura do body. É onde vai o &lt;noscript&gt; do Tag Manager.</p>' +
+            '<textarea id="cfgBody" class="code" rows="6" spellcheck="false" ' +
+              'placeholder="&lt;!-- Google Tag Manager (noscript) --&gt;">' + escapeHtml(c.body_html || '') + '</textarea>' +
           '</div>' +
 
-          '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">' +
+          '<div class="acoes">' +
             '<button class="btn btn-primary" id="cfgSalvar">Salvar e publicar</button>' +
             '<button class="btn btn-ghost" id="cfgLimpar">Remover tudo</button>' +
+            (c.atualizado_em ? '<span class="muted" style="font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</span>' : '') +
           '</div>' +
-          (c.atualizado_em ? '<p class="muted" style="margin-top:14px;font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</p>' : '') +
         '</div>' +
 
-        '<div class="admin-card" style="max-width:820px;margin-top:18px">' +
-          '<h3 style="margin-bottom:8px">Como conferir se funcionou</h3>' +
-          '<p class="muted">Depois de salvar, abra o site numa aba anônima, clique com o botão direito e escolha "Exibir código-fonte da página". ' +
-          'O trecho colado aqui deve aparecer no HTML. No Tag Manager, o modo de visualização (Preview) também passa a conectar.</p>' +
+        '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Como conferir se funcionou</h3>' +
+          '<p class="muted">Depois de salvar, abra o site numa aba anônima, clique com o botão direito e escolha ' +
+          '"Exibir código-fonte da página". O trecho colado aqui deve aparecer no HTML. ' +
+          'No Tag Manager, o modo de visualização (Preview) também passa a conectar.</p>' +
         '</div>';
 
       function salvar(head, body, msg) {
@@ -1248,7 +1284,7 @@ body {
       if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
       var c = r.body.config;
       box.innerHTML =
-        '<div class="admin-card" style="max-width:720px">' +
+        '<div class="admin-panel" style="max-width:780px">' +
           '<p class="muted" style="margin-bottom:18px">Dados do app no Meta Developers, em WhatsApp → Configuração da API. ' +
           'O token é gravado cifrado e não volta para esta tela: para trocá-lo, digite o novo; deixando em branco, o atual é mantido.</p>' +
 
@@ -1283,7 +1319,7 @@ body {
           (c.atualizado_em ? '<p class="muted" style="margin-top:12px;font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</p>' : '') +
         '</div>' +
 
-        '<div class="admin-card" style="max-width:720px;margin-top:18px">' +
+        '<div class="admin-panel" style="max-width:780px">' +
           '<h3 style="margin-bottom:6px">Enviar teste</h3>' +
           '<p class="muted" style="margin-bottom:14px">Dispara o template para um número, sem depender de negociação. ' +
           'Use um número que já tenha conversado com a conta ou que esteja na lista de testes do app.</p>' +
