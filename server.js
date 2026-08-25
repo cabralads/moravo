@@ -145,48 +145,81 @@ app.use('/api/notificacoes', notificacoesRouter);
 // =========================================================================
 const paginaGrupo = require('./lib/pagina-grupo');
 
-async function resolverGrupo(id) {
-  if (!id) return null;
+// Resolve o que veio na URL. Ordem de preferência:
+//   1. token nominal (o caminho normal, emitido por convite)
+//   2. id do interesse (uso interno)
+//   3. código do convite (compatibilidade com links antigos)
+async function resolverGrupo(valor, ip) {
+  if (!valor) return null;
+
+  // 1. Token nominal: identifica a pessoa e registra a abertura
   try {
-    if (/^\d+$/.test(id)) {
-      const r = await query(
-        `SELECT i.grupo_whatsapp_link AS link, im.titulo, im.id AS imovel_id
-           FROM moravo.interesses i JOIN moravo.imoveis im ON im.id = i.imovel_id
-          WHERE i.id = $1`, [id]);
-      if (r.rowCount) return r.rows[0];
-    }
     const r = await query(
-      `SELECT i.grupo_whatsapp_link AS link, im.titulo, im.id AS imovel_id
-         FROM moravo.interesses i JOIN moravo.imoveis im ON im.id = i.imovel_id
-        WHERE i.grupo_whatsapp_link LIKE $1 LIMIT 1`, ['%' + id]);
-    if (r.rowCount) return r.rows[0];
+      `SELECT c.id, c.papel, c.revogado,
+              i.grupo_whatsapp_link AS link,
+              im.titulo, im.id AS imovel_id,
+              u.nome AS pessoa
+         FROM moravo.convites_grupo c
+         JOIN moravo.interesses i ON i.id = c.interesse_id
+         JOIN moravo.imoveis   im ON im.id = i.imovel_id
+         JOIN moravo.usuarios   u ON u.id = c.usuario_id
+        WHERE c.token = $1`,
+      [valor]
+    );
+    if (r.rowCount) {
+      const c = r.rows[0];
+      if (c.revogado) return { revogado: true };
+      await query(
+        `UPDATE moravo.convites_grupo
+            SET aberturas = aberturas + 1, aberto_em = NOW(), ultimo_ip = $2
+          WHERE id = $1`,
+        [c.id, ip || null]
+      ).catch(function () {});
+      return c;
+    }
   } catch (err) {
-    console.warn('[linkgrupo] não consegui consultar o banco:', err.message);
+    console.warn('[linkgrupo] falha ao consultar token:', err.message);
   }
+
+  // Só token vale. Não existe atalho por id do interesse nem por código do
+  // grupo: os dois seriam enumeráveis, e foi exatamente esse o risco levantado.
+  // Nenhum link antigo ficou órfão porque o envio nunca chegou a funcionar.
   return null;
 }
 
-async function entregarPaginaGrupo(req, res, id) {
-  const codigo = String(id || '').trim();
-  if (!/^[A-Za-z0-9_-]{4,60}$/.test(codigo)) {
+async function entregarPaginaGrupo(req, res, valor) {
+  const chave = String(valor || '').trim();
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(chave)) {
     return res.status(400).type('html').send(paginaGrupo.paginaErro('Este link de convite não é válido.'));
   }
 
-  const achado = await resolverGrupo(codigo);
-  const destino = paginaGrupo.destinoSeguro(achado && achado.link) ||
-                  paginaGrupo.destinoSeguro('https://chat.whatsapp.com/' + codigo);
+  const achado = await resolverGrupo(chave, req.ip);
 
-  if (!destino) {
-    return res.status(404).type('html').send(paginaGrupo.paginaErro('Não encontramos o grupo deste convite.'));
+  if (achado && achado.revogado) {
+    return res.status(410).type('html').send(
+      paginaGrupo.paginaErro('Este convite foi cancelado. Entre no painel para ver a negociação.'));
   }
 
-  const nome  = req.query.corretor || req.query.nome || req.query.proprietario || '';
-  const papel = req.query.corretor ? 'corretor' : (req.query.proprietario ? 'proprietario' : '');
-  const imovel = achado && achado.titulo
-    ? achado.titulo + (achado.imovel_id ? ' (imóvel ' + achado.imovel_id + ')' : '')
-    : (req.query.imovel || '');
+  // O destino vem sempre do banco. Valor desconhecido não vira link nenhum:
+  // sem isso, qualquer pessoa usaria o nosso domínio para dar aparência de
+  // Moravo a um convite de grupo qualquer.
+  const destino = paginaGrupo.destinoSeguro(achado && achado.link);
 
-  console.log('[linkgrupo] convite ' + codigo + (nome ? ' para ' + nome : '') + ' -> ' + destino);
+  if (!destino) {
+    return res.status(404).type('html').send(
+      paginaGrupo.paginaErro('Este convite não existe ou o grupo foi refeito.'));
+  }
+
+  // Nome e imóvel vêm do banco, nunca da URL: assim não dá para forjar a página
+  // nem descobrir de quem é o convite mexendo nos parâmetros.
+  const nome = achado.pessoa || '';
+  const papel = achado.papel || '';
+  const imovel = achado.titulo
+    ? achado.titulo + (achado.imovel_id ? ' (imóvel ' + achado.imovel_id + ')' : '')
+    : '';
+
+  console.log('[linkgrupo] ' + (achado && achado.papel ? achado.papel : 'convite') +
+              (nome ? ' ' + nome : '') + ' abriu o grupo');
   return res.type('html').send(paginaGrupo.render({
     destino: destino,
     nome: String(nome).slice(0, 60),
@@ -195,7 +228,7 @@ async function entregarPaginaGrupo(req, res, id) {
   }));
 }
 
-app.get('/linkgrupo', (req, res) => entregarPaginaGrupo(req, res, req.query.id));
+app.get('/linkgrupo', (req, res) => entregarPaginaGrupo(req, res, req.query.t || req.query.id));
 app.get('/linkgrupo/:codigo', (req, res) => entregarPaginaGrupo(req, res, req.params.codigo));
 
 // ---- Injeção dos scripts de terceiros (Tag Manager e afins)
@@ -375,6 +408,29 @@ app.listen(PORT, '0.0.0.0', async () => {
     await migrar('admin_login_logs.indice', `
       CREATE INDEX IF NOT EXISTS idx_admin_login_logs_created
         ON moravo.admin_login_logs (created_at DESC);
+    `);
+
+    // Convites nominais para o grupo. Cada destinatário recebe um token
+    // aleatório e próprio, em vez do código do convite do WhatsApp. Assim o
+    // link não é adivinhável, sabemos quem abriu e dá para revogar um sem
+    // afetar o outro.
+    await migrar('tabela convites_grupo', `
+      CREATE TABLE IF NOT EXISTS moravo.convites_grupo (
+        id           BIGSERIAL PRIMARY KEY,
+        token        TEXT NOT NULL UNIQUE,
+        interesse_id BIGINT NOT NULL REFERENCES moravo.interesses(id) ON DELETE CASCADE,
+        usuario_id   BIGINT NOT NULL REFERENCES moravo.usuarios(id)   ON DELETE CASCADE,
+        papel        TEXT NOT NULL CHECK (papel IN ('proprietario','corretor')),
+        revogado     BOOLEAN NOT NULL DEFAULT false,
+        aberturas    INT NOT NULL DEFAULT 0,
+        aberto_em    TIMESTAMPTZ,
+        ultimo_ip    INET,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uk_convite_por_pessoa UNIQUE (interesse_id, usuario_id)
+      );
+    `);
+    await migrar('convites_grupo.indice', `
+      CREATE INDEX IF NOT EXISTS idx_convites_grupo_token ON moravo.convites_grupo (token);
     `);
 
     // Propostas de compra. É a proposta que dispara o grupo de WhatsApp:

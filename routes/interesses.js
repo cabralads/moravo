@@ -8,6 +8,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { criarNotificacao } = require('../lib/notifications');
 const { criarGrupo, enviarMensagem, montarLinkGrupo, extrairIdGrupo, gerarInviteGrupo } = require('../lib/waha');
 const wa = require('../lib/whatsapp');
+const { garantirGrupo } = require('../lib/grupo');
 
 const STATUS_VALIDOS = ['pendente', 'aceito', 'recusado'];
 
@@ -77,7 +78,22 @@ router.post('/imovel/:imovelId', requireAuth, requireRole('corretor'), async (re
       console.warn('[interesses POST] falha ao notificar dono:', notifErr.message);
     }
 
-    return res.status(201).json({ ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at });
+    // O grupo nasce aqui: o corretor precisa falar com o dono para trabalhar o
+    // imóvel (visita, chaves, detalhes). Esperar a proposta seria pedir que ele
+    // vendesse às cegas. Falha no WhatsApp não desfaz a entrada na carteira.
+    let grupo = null;
+    try {
+      grupo = await garantirGrupo(result.rows[0].id);
+    } catch (grupoErr) {
+      console.error('[interesses POST] falha ao criar o grupo:', grupoErr.message);
+    }
+
+    return res.status(201).json({
+      ok: true,
+      id: result.rows[0].id,
+      created_at: result.rows[0].created_at,
+      grupo: grupo,
+    });
   } catch (err) {
     if (err.code === '23503') {
       return res.status(400).json({ ok: false, error: 'Imóvel ou corretor não existe.' });

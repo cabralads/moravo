@@ -96,8 +96,9 @@ router.post('/', requireAuth, requireRole('corretor'), async (req, res) => {
       console.warn('[propostas POST] falha ao notificar proprietário:', e.message);
     }
 
-    // Agora sim: cria o grupo e convida as duas partes.
-    // Se o WhatsApp falhar, a proposta continua registrada.
+    // O grupo já existe desde que o imóvel entrou na carteira. garantirGrupo é
+    // idempotente: aqui ele só devolve o link e reenvia o convite a quem
+    // ainda não entrou. Se o WhatsApp falhar, a proposta continua registrada.
     let grupo = null;
     try {
       grupo = await garantirGrupo(ctx.interesse_id);

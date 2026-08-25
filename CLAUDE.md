@@ -317,30 +317,27 @@ para criar o grupo, informe um segundo número interno em `WAHA_PARTICIPANTES_EX
 | Corpo | `{{1}}` | **primeiro nome** de quem recebe |
 | Botão de URL | `{{1}}` | **código do convite**, anexado à base fixa |
 
-A base do botão é `https://moravo.com.br/linkgrupo/`, e não o domínio do WhatsApp. O
-`server.js` atende **dois formatos**, porque a URL dinâmica da Meta pode ser cadastrada de
-qualquer um dos dois jeitos:
+A base do botão é `https://moravo.com.br/linkgrupo/`, e o sufixo é um **token nominal**, não
+o código do grupo.
 
-```
-/linkgrupo/<codigo>
-/linkgrupo/?id=<codigo|interesse_id>&corretor=<nome>&imovel=<titulo>
-```
+### Por que token e não o código do convite
 
-Em vez de um 302 seco, a rota entrega uma **página de confirmação** (`lib/pagina-grupo.js`):
-mostra em qual imóvel a pessoa está entrando, quem mais está no grupo, e leva ao WhatsApp em
-4 segundos, com botão manual como reserva. Passar pelo domínio próprio mantém o link estável
-(dá para trocar o convite sem invalidar o que já foi enviado) e permite medir quem abriu.
+O código do convite é a chave do grupo: quem o tiver entra, venha de onde vier. Se ele
+aparece na URL, basta repassar o link para qualquer pessoa entrar. E id de imóvel ou de
+interesse seria pior ainda, porque são sequenciais e adivinháveis.
 
-Três cuidados no código, todos com teste:
+Por isso cada destinatário recebe um **token aleatório de 32 caracteres**, gravado em
+`moravo.convites_grupo` e amarrado a (interesse, pessoa, papel). O que isso dá:
 
-- **Tudo que vem da query string é escapado.** O nome do corretor entra no HTML e seria um
-  vetor de XSS.
-- **Só redireciona para `chat.whatsapp.com`.** Sem isso a rota viraria redirecionador aberto.
-- O `id` é resolvido primeiro no banco (para pegar título do imóvel e o convite atual) e, se
-  não achar, cai no código do convite direto. Banco fora do ar não derruba o link.
+- **Não é adivinhável.** Token desconhecido devolve 404, sem exceção.
+- **Sabe-se quem abriu.** A tabela guarda `aberturas`, `aberto_em` e `ultimo_ip`.
+- **Dá para revogar um sem afetar o outro** (`revogado = true` devolve 410).
+- **O convite do grupo pode ser refeito** sem invalidar os links já enviados.
+- **Nome e imóvel na página vêm do banco**, nunca da query string: não dá para forjar.
 
-⚠️ Mandar só a variável do botão faz a Meta recusar com *"number of parameters does not
-match"*. As duas precisam ir juntas.
+⚠️ Regra que não pode ser afrouxada: `/linkgrupo` **só resolve por token**. Não existe atalho
+por id de interesse nem por código de grupo solto. Sem isso, qualquer pessoa usaria o domínio
+da Moravo para dar aparência oficial a um convite de grupo qualquer.
 
 **A configuração fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
 `moravo.config_whatsapp` (linha única). O **token é cifrado com AES-256-GCM** usando
@@ -355,8 +352,10 @@ WhatsApp, com botão de reenviar. Envio por SMS como alternativa fica para um se
 **Telefones**: no banco há números com e sem o DDI 55. A normalização acontece no envio
 (`lib/whatsapp.js`, `normalizarTelefone`). É a causa clássica de mensagem que não chega.
 
-Criar o grupo só é permitido com o interesse em `aceito`, e é idempotente: se o grupo já
-existe, o link é devolvido e o convite reenviado.
+**O grupo nasce quando o corretor coloca o imóvel na carteira**, não na proposta. O corretor
+precisa falar com o dono para trabalhar (visita, chaves, detalhes); esperar a proposta seria
+pedir que ele vendesse às cegas. `garantirGrupo` é idempotente, então a proposta apenas
+reaproveita o grupo existente. Falha no WhatsApp não desfaz a entrada na carteira.
 
 **Geocoding** — `GET /api/geocode` tenta ArcGIS e cai pra Nominatim.
 
@@ -455,6 +454,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-25** — Convite do grupo passa a usar **token nominal** (`convites_grupo`) em vez do
+  código do WhatsApp na URL, com registro de quem abriu e revogação individual. `/linkgrupo`
+  só resolve por token: id de imóvel e código de grupo solto foram removidos por serem
+  adivinháveis. O grupo passou a nascer no clique de "Trabalhar este imóvel", não na proposta.
 - **2026-08-25** — `/linkgrupo` deixou de ser um 302 seco e virou página de confirmação, com
   o imóvel, quem está no grupo e botão manual. Aceita `?id=&corretor=` além do sufixo no
   caminho. Query string escapada e destino restrito ao domínio do WhatsApp.
