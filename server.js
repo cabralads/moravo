@@ -130,19 +130,73 @@ app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 
-// ---- GET /linkgrupo/:codigo
-// O botão do template link_grupo_convite tem base fixa
-// https://moravo.com.br/linkgrupo/ e recebe o código do convite como sufixo.
-// Esta rota traduz esse código no convite real do WhatsApp. Passar pelo nosso
-// domínio mantém o link estável e permite medir quem abriu.
-app.get('/linkgrupo/:codigo', (req, res) => {
-  const codigo = String(req.params.codigo || '').trim();
-  if (!/^[A-Za-z0-9_-]{4,60}$/.test(codigo)) {
-    return res.status(400).send('Link de convite inválido.');
+// =========================================================================
+// Página de entrada no grupo de WhatsApp
+// =========================================================================
+// Aceita os dois formatos, porque o botão do template pode mandar qualquer
+// um dos dois dependendo de como a URL dinâmica foi cadastrada na Meta:
+//
+//   /linkgrupo/<codigo>                          (sufixo no caminho)
+//   /linkgrupo/?id=<codigo|interesse>&corretor=  (query string)
+//
+// O id é resolvido primeiro no banco, para pegar o título do imóvel e o
+// convite atual. Se não achar, cai no código do convite direto, para o
+// link continuar funcionando mesmo com o banco fora do ar.
+// =========================================================================
+const paginaGrupo = require('./lib/pagina-grupo');
+
+async function resolverGrupo(id) {
+  if (!id) return null;
+  try {
+    if (/^\d+$/.test(id)) {
+      const r = await query(
+        `SELECT i.grupo_whatsapp_link AS link, im.titulo, im.id AS imovel_id
+           FROM moravo.interesses i JOIN moravo.imoveis im ON im.id = i.imovel_id
+          WHERE i.id = $1`, [id]);
+      if (r.rowCount) return r.rows[0];
+    }
+    const r = await query(
+      `SELECT i.grupo_whatsapp_link AS link, im.titulo, im.id AS imovel_id
+         FROM moravo.interesses i JOIN moravo.imoveis im ON im.id = i.imovel_id
+        WHERE i.grupo_whatsapp_link LIKE $1 LIMIT 1`, ['%' + id]);
+    if (r.rowCount) return r.rows[0];
+  } catch (err) {
+    console.warn('[linkgrupo] não consegui consultar o banco:', err.message);
   }
-  console.log('[linkgrupo] redirecionando convite', codigo);
-  return res.redirect(302, 'https://chat.whatsapp.com/' + codigo);
-});
+  return null;
+}
+
+async function entregarPaginaGrupo(req, res, id) {
+  const codigo = String(id || '').trim();
+  if (!/^[A-Za-z0-9_-]{4,60}$/.test(codigo)) {
+    return res.status(400).type('html').send(paginaGrupo.paginaErro('Este link de convite não é válido.'));
+  }
+
+  const achado = await resolverGrupo(codigo);
+  const destino = paginaGrupo.destinoSeguro(achado && achado.link) ||
+                  paginaGrupo.destinoSeguro('https://chat.whatsapp.com/' + codigo);
+
+  if (!destino) {
+    return res.status(404).type('html').send(paginaGrupo.paginaErro('Não encontramos o grupo deste convite.'));
+  }
+
+  const nome  = req.query.corretor || req.query.nome || req.query.proprietario || '';
+  const papel = req.query.corretor ? 'corretor' : (req.query.proprietario ? 'proprietario' : '');
+  const imovel = achado && achado.titulo
+    ? achado.titulo + (achado.imovel_id ? ' (imóvel ' + achado.imovel_id + ')' : '')
+    : (req.query.imovel || '');
+
+  console.log('[linkgrupo] convite ' + codigo + (nome ? ' para ' + nome : '') + ' -> ' + destino);
+  return res.type('html').send(paginaGrupo.render({
+    destino: destino,
+    nome: String(nome).slice(0, 60),
+    imovel: String(imovel).slice(0, 120),
+    papel: papel,
+  }));
+}
+
+app.get('/linkgrupo', (req, res) => entregarPaginaGrupo(req, res, req.query.id));
+app.get('/linkgrupo/:codigo', (req, res) => entregarPaginaGrupo(req, res, req.params.codigo));
 
 // ---- Injeção dos scripts de terceiros (Tag Manager e afins)
 // Precisa vir ANTES do express.static: intercepta só as páginas HTML, insere o

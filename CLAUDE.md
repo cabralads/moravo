@@ -108,6 +108,7 @@ lib/waha.js            integração WhatsApp (criar grupo, enviar msg, gerar con
 lib/whatsapp.js        WhatsApp Cloud API oficial (envio do convite, config cifrada)
 lib/grupo.js           cria/reaproveita o grupo da negociação e dispara os convites
 lib/site-config.js     scripts de terceiros do admin e a injeção deles no HTML
+lib/pagina-grupo.js    página de entrada no grupo de WhatsApp (escapa a query string)
 
 routes/
   auth.js          register, login, me
@@ -316,10 +317,27 @@ para criar o grupo, informe um segundo número interno em `WAHA_PARTICIPANTES_EX
 | Corpo | `{{1}}` | **primeiro nome** de quem recebe |
 | Botão de URL | `{{1}}` | **código do convite**, anexado à base fixa |
 
-A base do botão é `https://moravo.com.br/linkgrupo/`, e não o domínio do WhatsApp. Por isso
-existe a rota **`GET /linkgrupo/:codigo`** no `server.js`, que redireciona (302) para
-`https://chat.whatsapp.com/<codigo>`. Passar pelo domínio próprio mantém o link estável e
-permite medir quem abriu.
+A base do botão é `https://moravo.com.br/linkgrupo/`, e não o domínio do WhatsApp. O
+`server.js` atende **dois formatos**, porque a URL dinâmica da Meta pode ser cadastrada de
+qualquer um dos dois jeitos:
+
+```
+/linkgrupo/<codigo>
+/linkgrupo/?id=<codigo|interesse_id>&corretor=<nome>&imovel=<titulo>
+```
+
+Em vez de um 302 seco, a rota entrega uma **página de confirmação** (`lib/pagina-grupo.js`):
+mostra em qual imóvel a pessoa está entrando, quem mais está no grupo, e leva ao WhatsApp em
+4 segundos, com botão manual como reserva. Passar pelo domínio próprio mantém o link estável
+(dá para trocar o convite sem invalidar o que já foi enviado) e permite medir quem abriu.
+
+Três cuidados no código, todos com teste:
+
+- **Tudo que vem da query string é escapado.** O nome do corretor entra no HTML e seria um
+  vetor de XSS.
+- **Só redireciona para `chat.whatsapp.com`.** Sem isso a rota viraria redirecionador aberto.
+- O `id` é resolvido primeiro no banco (para pegar título do imóvel e o convite atual) e, se
+  não achar, cai no código do convite direto. Banco fora do ar não derruba o link.
 
 ⚠️ Mandar só a variável do botão faz a Meta recusar com *"number of parameters does not
 match"*. As duas precisam ir juntas.
@@ -437,6 +455,9 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-25** — `/linkgrupo` deixou de ser um 302 seco e virou página de confirmação, com
+  o imóvel, quem está no grupo e botão manual. Aceita `?id=&corretor=` além do sufixo no
+  caminho. Query string escapada e destino restrito ao domínio do WhatsApp.
 - **2026-08-25** — Template de WhatsApp acertado com o que foi cadastrado na Meta: o corpo
   tem `{{1}}` com o primeiro nome e o botão usa base `https://moravo.com.br/linkgrupo/`.
   Criada a rota `GET /linkgrupo/:codigo` que redireciona para o convite real. Erros da Meta
