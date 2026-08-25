@@ -130,6 +130,20 @@ app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 
+// ---- GET /linkgrupo/:codigo
+// O botão do template link_grupo_convite tem base fixa
+// https://moravo.com.br/linkgrupo/ e recebe o código do convite como sufixo.
+// Esta rota traduz esse código no convite real do WhatsApp. Passar pelo nosso
+// domínio mantém o link estável e permite medir quem abriu.
+app.get('/linkgrupo/:codigo', (req, res) => {
+  const codigo = String(req.params.codigo || '').trim();
+  if (!/^[A-Za-z0-9_-]{4,60}$/.test(codigo)) {
+    return res.status(400).send('Link de convite inválido.');
+  }
+  console.log('[linkgrupo] redirecionando convite', codigo);
+  return res.redirect(302, 'https://chat.whatsapp.com/' + codigo);
+});
+
 // ---- Injeção dos scripts de terceiros (Tag Manager e afins)
 // Precisa vir ANTES do express.static: intercepta só as páginas HTML, insere o
 // que o admin configurou e devolve. Qualquer outro arquivo segue o caminho normal.

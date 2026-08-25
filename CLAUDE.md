@@ -308,9 +308,21 @@ adicionados à força** — recebem o link e entram por vontade própria. Foi es
 tirou o risco de banimento do número da sessão. Se o Waha exigir mais de um participante
 para criar o grupo, informe um segundo número interno em `WAHA_PARTICIPANTES_EXTRA`.
 
-**O template usa botão de URL dinâmica.** Na Meta, esse botão tem base fixa e só o sufixo
-varia: o template fica cadastrado como `https://chat.whatsapp.com/{{1}}` e o sistema envia
-**apenas o código** do convite, nunca a URL inteira (`lib/whatsapp.js`, `extrairCodigoConvite`).
+**O template `link_grupo_convite` tem DUAS variáveis** (conferido no painel da Meta em
+25/08/2026):
+
+| Onde | Variável | O que o sistema envia |
+|---|---|---|
+| Corpo | `{{1}}` | **primeiro nome** de quem recebe |
+| Botão de URL | `{{1}}` | **código do convite**, anexado à base fixa |
+
+A base do botão é `https://moravo.com.br/linkgrupo/`, e não o domínio do WhatsApp. Por isso
+existe a rota **`GET /linkgrupo/:codigo`** no `server.js`, que redireciona (302) para
+`https://chat.whatsapp.com/<codigo>`. Passar pelo domínio próprio mantém o link estável e
+permite medir quem abriu.
+
+⚠️ Mandar só a variável do botão faz a Meta recusar com *"number of parameters does not
+match"*. As duas precisam ir juntas.
 
 **A configuração fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
 `moravo.config_whatsapp` (linha única). O **token é cifrado com AES-256-GCM** usando
@@ -425,6 +437,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-25** — Template de WhatsApp acertado com o que foi cadastrado na Meta: o corpo
+  tem `{{1}}` com o primeiro nome e o botão usa base `https://moravo.com.br/linkgrupo/`.
+  Criada a rota `GET /linkgrupo/:codigo` que redireciona para o convite real. Erros da Meta
+  passam a trazer código e subcódigo, para diagnóstico.
 - **2026-08-18** — Nova aba **Configurações** no painel do admin, com campos de script para
   `<head>` e `<body>` (Tag Manager, pixels). Tabela `config_site`, `lib/site-config.js` e um
   middleware no `server.js` que injeta o código ao servir cada página HTML. O painel do admin

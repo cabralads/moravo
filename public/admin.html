@@ -1336,7 +1336,9 @@ body {
           '<div class="painel-grid">' +
             '<div class="field"><label for="wappTesteTel">Telefone (com DDD)</label>' +
               '<input id="wappTesteTel" placeholder="47999998888" /></div>' +
-            '<div class="field"><label for="wappTesteCod">Código do convite (opcional)</label>' +
+            '<div class="field"><label for="wappTesteNome">Nome (variável do corpo)</label>' +
+              '<input id="wappTesteNome" placeholder="João" /></div>' +
+            '<div class="field full"><label for="wappTesteCod">Código do convite (sufixo do botão)</label>' +
               '<input id="wappTesteCod" placeholder="TESTE123" /></div>' +
           '</div>' +
           '<div class="acoes"><button class="btn btn-ghost" id="wappTestar">Enviar teste</button></div>' +
@@ -1367,7 +1369,11 @@ body {
         var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
         api('/api/admin/whatsapp/testar', {
           method: 'POST',
-          body: { telefone: $('wappTesteTel').value, codigo: $('wappTesteCod').value || 'TESTE123' }
+          body: {
+            telefone: $('wappTesteTel').value,
+            nome: $('wappTesteNome').value || 'Teste',
+            codigo: $('wappTesteCod').value || 'TESTE123'
+          }
         }).then(function (resp) {
           btn.disabled = false; btn.textContent = 'Enviar teste';
           if (!resp.ok) { toast(resp.body.error || 'Falha no envio.', 'error'); return; }

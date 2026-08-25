@@ -304,7 +304,8 @@ router.post('/whatsapp/testar', async (req, res) => {
     const codigo   = (req.body && req.body.codigo || 'TESTE123').trim();
     if (!telefone) return res.status(400).json({ ok: false, error: 'Informe o telefone de destino.' });
 
-    const envio = await wa.enviarTemplateConvite({ telefone: telefone, codigoConvite: codigo });
+    const nome = (req.body && req.body.nome || '').trim() || 'Teste';
+    const envio = await wa.enviarTemplateConvite({ telefone: telefone, codigoConvite: codigo, nome: nome });
     await wa.registrarEnvio({
       papel: 'teste', telefone: telefone, template: null,
       codigo_convite: codigo, status: 'enviado', wamid: envio.wamid,
