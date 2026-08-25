@@ -1342,6 +1342,15 @@ body {
               '<input id="wappTesteCod" placeholder="TESTE123" /></div>' +
           '</div>' +
           '<div class="acoes"><button class="btn btn-ghost" id="wappTestar">Enviar teste</button></div>' +
+        '</div>' +
+
+        '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Templates cadastrados na Meta</h3>' +
+          '<p class="muted" style="margin-bottom:16px">Consulta direto na sua conta do WhatsApp Business. ' +
+          'Se o envio falha com "Template name does not exist", a resposta está aqui: nome diferente, ' +
+          'idioma diferente ou template ainda não aprovado.</p>' +
+          '<div class="acoes"><button class="btn btn-ghost" id="wappTemplates">Consultar templates</button></div>' +
+          '<div id="wappTemplatesLista" style="margin-top:16px"></div>' +
         '</div>';
 
       $('wappSalvar').onclick = function () {
@@ -1362,6 +1371,48 @@ body {
           if (!resp.ok) { toast(resp.body.error || 'Erro ao salvar.', 'error'); return; }
           toast(resp.body.pronto ? 'Salvo. Envio pronto para uso.' : ('Salvo. ' + (resp.body.motivo || '')), 'success');
           renderWhatsappConfig();
+        });
+      };
+
+      $('wappTemplates').onclick = function () {
+        var btn = this, alvo = $('wappTemplatesLista');
+        btn.disabled = true; btn.textContent = 'Consultando…';
+        alvo.innerHTML = '';
+        api('/api/admin/whatsapp/templates').then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Consultar templates';
+          if (!resp.ok) {
+            alvo.innerHTML = '<p class="muted" style="color:#c0392b">' + escapeHtml((resp.body && resp.body.error) || 'Erro na consulta.') + '</p>';
+            return;
+          }
+          var lista = resp.body.templates || [];
+          var proc = resp.body.procurando || {};
+          var achou = resp.body.encontrado;
+
+          var aviso = achou
+            ? '<div class="painel-status on">● Encontrado: ' + escapeHtml(proc.nome) + ' (' + escapeHtml(proc.idioma) + ') com status ' + escapeHtml(achou.status) + '</div>'
+            : '<div class="painel-status off" style="background:#fdecea;color:#c0392b">✕ Nenhum template com nome <strong style="margin:0 4px">' +
+              escapeHtml(proc.nome) + '</strong> no idioma <strong style="margin:0 4px">' + escapeHtml(proc.idioma) + '</strong></div>';
+
+          if (!lista.length) {
+            alvo.innerHTML = aviso + '<p class="muted">A conta não tem nenhum template cadastrado.</p>';
+            return;
+          }
+
+          var linhas = lista.map(function (t) {
+            var ok = t.status === 'APPROVED';
+            return '<tr>' +
+              '<td><strong>' + escapeHtml(t.nome) + '</strong></td>' +
+              '<td>' + escapeHtml(t.idioma) + '</td>' +
+              '<td><span style="color:' + (ok ? '#12855A' : '#c0392b') + ';font-weight:700">' + escapeHtml(t.status) + '</span></td>' +
+              '<td>' + t.variaveis_corpo + ' no corpo</td>' +
+              '<td style="font-size:.8rem;word-break:break-all">' + escapeHtml(t.botao_url || '-') + '</td>' +
+            '</tr>';
+          }).join('');
+
+          alvo.innerHTML = aviso +
+            '<div class="admin-logs"><table>' +
+            '<thead><tr><th>Nome</th><th>Idioma</th><th>Status</th><th>Variáveis</th><th>URL do botão</th></tr></thead>' +
+            '<tbody>' + linhas + '</tbody></table></div>';
         });
       };
 

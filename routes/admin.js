@@ -320,6 +320,25 @@ router.post('/whatsapp/testar', async (req, res) => {
   }
 });
 
+// ---- GET /api/admin/whatsapp/templates — o que a Meta realmente tem cadastrado
+router.get('/whatsapp/templates', async (req, res) => {
+  try {
+    const templates = await wa.listarTemplates();
+    const config = await wa.getConfig();
+    const combina = templates.filter(function (t) {
+      return t.nome === config.template_nome && t.idioma === config.template_idioma;
+    });
+    return res.json({
+      ok: true,
+      templates: templates,
+      procurando: { nome: config.template_nome, idioma: config.template_idioma },
+      encontrado: combina[0] || null,
+    });
+  } catch (err) {
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 // ---- GET /api/admin/whatsapp/envios?status=falhou|enviado|todos
 router.get('/whatsapp/envios', async (req, res) => {
   try {
