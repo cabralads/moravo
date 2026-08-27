@@ -9,6 +9,7 @@ const { sign: signJwt } = require('../lib/jwt');
 const { criarNotificacao } = require('../lib/notifications');
 const wa = require('../lib/whatsapp');
 const siteConfig = require('../lib/site-config');
+const waha = require('../lib/waha');
 
 const router = express.Router();
 
@@ -316,6 +317,15 @@ router.post('/whatsapp/testar', async (req, res) => {
       papel: 'teste', telefone: (req.body && req.body.telefone) || '',
       status: 'falhou', erro: err.message,
     });
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ---- GET /api/admin/whatsapp/waha — qual sessão o servidor está usando
+router.get('/whatsapp/waha', async (req, res) => {
+  try {
+    return res.json({ ok: true, waha: await waha.diagnostico() });
+  } catch (err) {
     return res.status(400).json({ ok: false, error: err.message });
   }
 });

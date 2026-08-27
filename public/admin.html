@@ -1345,6 +1345,15 @@ body {
         '</div>' +
 
         '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Conexão do Waha (criação do grupo)</h3>' +
+          '<p class="muted" style="margin-bottom:16px">Quem cria o grupo é o Waha, não a API oficial. ' +
+          'Aqui você vê qual sessão o servidor está usando de verdade e se ela está conectada. ' +
+          'Se o grupo não é criado, a resposta costuma estar nesta tela.</p>' +
+          '<div class="acoes"><button class="btn btn-ghost" id="wahaCheck">Verificar conexão</button></div>' +
+          '<div id="wahaLista" style="margin-top:16px"></div>' +
+        '</div>' +
+
+        '<div class="admin-panel" style="max-width:780px">' +
           '<h3>Templates cadastrados na Meta</h3>' +
           '<p class="muted" style="margin-bottom:16px">Consulta direto na sua conta do WhatsApp Business. ' +
           'Se o envio falha com "Template name does not exist", a resposta está aqui: nome diferente, ' +
@@ -1371,6 +1380,58 @@ body {
           if (!resp.ok) { toast(resp.body.error || 'Erro ao salvar.', 'error'); return; }
           toast(resp.body.pronto ? 'Salvo. Envio pronto para uso.' : ('Salvo. ' + (resp.body.motivo || '')), 'success');
           renderWhatsappConfig();
+        });
+      };
+
+      $('wahaCheck').onclick = function () {
+        var btn = this, alvo = $('wahaLista');
+        btn.disabled = true; btn.textContent = 'Verificando…';
+        alvo.innerHTML = '';
+        api('/api/admin/whatsapp/waha').then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Verificar conexão';
+          if (!resp.ok) {
+            alvo.innerHTML = '<p class="muted" style="color:#c0392b">' + escapeHtml((resp.body && resp.body.error) || 'Erro.') + '</p>';
+            return;
+          }
+          var w = resp.body.waha || {};
+          var ok = w.sessao_existe && String(w.sessao_status).toUpperCase() === 'WORKING';
+
+          var alerta = '';
+          if (!w.sessao_veio_do_env) {
+            alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
+              '✕ WAHA_SESSION não está no .env do servidor. Usando o padrão do código: <strong style="margin-left:4px">' +
+              escapeHtml(w.sessao_em_uso) + '</strong></div>';
+          }
+          if (!w.atendente_principal) {
+            alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
+              '✕ WAHA_ATENDENTE_PRINCIPAL não configurado. Sem ele o grupo nunca é criado.</div>';
+          }
+          if (w.erro) {
+            alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">✕ ' + escapeHtml(w.erro) + '</div>';
+          }
+          if (!alerta && ok) {
+            alerta = '<div class="painel-status on">● Sessão <strong style="margin:0 4px">' + escapeHtml(w.sessao_em_uso) +
+                     '</strong> conectada e pronta</div>';
+          }
+
+          var linhas = (w.sessoes || []).map(function (x) {
+            var emUso = x.nome === w.sessao_em_uso;
+            var boa = String(x.status).toUpperCase() === 'WORKING';
+            return '<tr>' +
+              '<td><strong>' + escapeHtml(x.nome) + '</strong>' + (emUso ? ' <span style="color:var(--emerald);font-size:.8rem">(em uso)</span>' : '') + '</td>' +
+              '<td><span style="color:' + (boa ? '#12855A' : '#c0392b') + ';font-weight:700">' + escapeHtml(x.status) + '</span></td>' +
+            '</tr>';
+          }).join('');
+
+          alvo.innerHTML = alerta +
+            '<table class="admin-logs" style="width:100%"><tbody>' +
+            '<tr><td style="color:var(--ink-soft)">Servidor</td><td>' + escapeHtml(w.url) + '</td></tr>' +
+            '<tr><td style="color:var(--ink-soft)">Sessão em uso</td><td><strong>' + escapeHtml(w.sessao_em_uso) + '</strong></td></tr>' +
+            '<tr><td style="color:var(--ink-soft)">Chave de API</td><td>' + (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ')' : 'NÃO definida') + '</td></tr>' +
+            '<tr><td style="color:var(--ink-soft)">Atendente principal</td><td>' + escapeHtml(w.atendente_principal || 'NÃO definido') + '</td></tr>' +
+            '</tbody></table>' +
+            (linhas ? '<p class="muted" style="margin:14px 0 6px;font-weight:700">Sessões no Waha</p>' +
+                      '<div class="admin-logs"><table><thead><tr><th>Sessão</th><th>Status</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' : '');
         });
       };
 
