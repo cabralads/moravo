@@ -111,6 +111,8 @@ lib/site-config.js     scripts de terceiros do admin e a injeção deles no HTML
 lib/pagina-grupo.js    página de entrada no grupo de WhatsApp (escapa a query string)
 lib/codigo-imovel.js   código público do imóvel, slug e URL amigável
 lib/foto-grupo.js      imagem dos grupos, guardada no banco (com padrão no repo)
+lib/atendimento.js     fila de corretores para o comprador, atribuição e repasse
+lib/horario-comercial.js  expediente da Moravo, para o prazo contar só em hora útil
 
 routes/
   auth.js          register, login, me
@@ -273,6 +275,46 @@ constraint no banco.
 
 ---
 
+## Atendimento do comprador (em construção)
+
+Um proprietário também compra. Quando ele quer fazer proposta no imóvel de outro,
+precisa de um corretor no meio, e nasce um **segundo grupo**.
+
+**Um corretor por grupo, nunca vários.** Corretores são concorrentes entre si; um
+vendo a negociação do outro azeda a conversa. E o comprador **não entra** no grupo
+que já existe entre dono e corretor: ali ele negociaria direto com o dono, e a
+intermediação, que é de onde sai a receita, deixaria de existir.
+
+**A fila** (`lib/atendimento.js`, `filaCorretores`), por faixa:
+
+| Faixa | Critério |
+|---|---|
+| 0 | já trabalha o imóvel (está na carteira) |
+| 1 | mesma cidade **e** mesmo estado |
+| 2 | mesmo estado |
+| 3 | `regiao_atuacao` cita a cidade ou o estado |
+| 4 | qualquer corretor |
+
+Dentro da faixa, ordena por nota e depois aleatório. Quem ainda não tem nota entra
+como **3.5**, não 0: começar do zero congelaria o corretor novo para sempre, porque
+ele nunca receberia o lead que lhe daria a primeira nota.
+
+⚠️ A UF é comparada como **palavra inteira**, não como pedaço de texto: `ILIKE '%SC%'`
+casa dentro de "Belém do São Fran**cisc**o" e colocava um corretor de PE na faixa de SC.
+
+**O prazo é de 1 hora ÚTIL.** Não entrou no grupo, passa para o próximo, e quem
+perdeu a vez não é oferecido de novo naquele atendimento. Expediente
+(`lib/horario-comercial.js`, fuso de São Paulo): seg a sex 8h-18h, sábado 8h-16h,
+domingo fechado. O relógio **pausa** fora do expediente: um lead que chega sexta
+17h50 ainda tem 50 minutos na segunda de manhã. A ronda roda a cada 5 minutos.
+
+**Acabando os corretores**, o atendimento fica `sem_corretor`, mas o grupo continua
+de pé com o atendente da Moravo dentro: quem assume é uma pessoa, não uma fila vazia.
+
+`ofertas_corretor` grava cada oferta e o desfecho (`entrou`, `expirou`, `recusou`) com
+o tempo de resposta em minutos úteis. Não muda nada hoje: existe para o ranking ter
+histórico real quando chegar, o que não dá para reconstruir depois.
+
 ## Fluxo principal
 
 ```
@@ -330,6 +372,8 @@ Consequências no código:
 | `favoritos` | usuário ↔ imóvel |
 | `notificacoes` | destinatário, tipo, payload JSONB, lida |
 | `admin_login_logs` | auditoria de acesso ao painel admin |
+| `ofertas_corretor` | cada oferta de atendimento a um corretor e o desfecho |
+| `avaliacoes_corretor` | nota de 1 a 5 que o proprietário dá ao corretor |
 | `whatsapp_envios` | um envio de convite: status na Meta + status de entrega do webhook |
 
 **Tipos de notificação:** `corretor_trabalhando`, `proposta_recebida`, `proposta_aceita`,
@@ -541,6 +585,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Base do **atendimento do comprador**: fila de corretores por faixa
+  (carteira > cidade > estado > região > qualquer), prazo de 1 hora **útil** com repasse
+  automático, e `ofertas_corretor` gravando o desfecho desde já para alimentar o ranking
+  futuro. Adicionados `usuarios.uf`, `usuarios.creci_verificado` e `avaliacoes_corretor`.
+  Falta a criação do grupo do comprador, as telas e os templates da Meta.
 - **2026-08-27** — Foto dos grupos passa a ser trocável pelo painel, gravada no banco em
   vez de `uploads/`, que se perde quando o container é recriado. O arquivo do repositório
   continua como padrão.

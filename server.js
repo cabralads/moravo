@@ -812,6 +812,98 @@ app.listen(PORT, '0.0.0.0', async () => {
       console.warn('[migração] backfill de código:', err.message);
     }
 
+    // Estado do usuário. Só o imóvel tinha UF; o corretor tinha "região de
+    // atuação" em texto livre, que não dá para cruzar com nada.
+    await migrar('usuarios.uf', `
+      ALTER TABLE moravo.usuarios ADD COLUMN IF NOT EXISTS uf TEXT;
+    `);
+    await migrar('usuarios.creci_verificado', `
+      ALTER TABLE moravo.usuarios
+        ADD COLUMN IF NOT EXISTS creci_verificado     BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS creci_verificado_em  TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS creci_verificado_por BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL;
+    `);
+    await migrar('usuarios.idx_uf_cidade', `
+      CREATE INDEX IF NOT EXISTS idx_usuarios_uf_cidade
+        ON moravo.usuarios (perfil, uf, cidade);
+    `);
+
+    // O atendimento do comprador: quem quer comprar, qual imóvel, qual
+    // corretor está atendendo e qual o grupo. É o par do 'interesses' (que é
+    // a carteira do corretor), só que do outro lado da mesa.
+    await migrar('interesses_compradores.atendimento', `
+      ALTER TABLE moravo.interesses_compradores
+        ADD COLUMN IF NOT EXISTS corretor_id          BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS status               TEXT NOT NULL DEFAULT 'aguardando_corretor',
+        ADD COLUMN IF NOT EXISTS grupo_whatsapp_id    TEXT,
+        ADD COLUMN IF NOT EXISTS grupo_whatsapp_link  TEXT,
+        ADD COLUMN IF NOT EXISTS atribuido_em         TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS entrou_em            TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS rodada               INT NOT NULL DEFAULT 0;
+    `);
+    await migrar('interesses_compradores.idx_status', `
+      CREATE INDEX IF NOT EXISTS idx_interesses_compradores_status
+        ON moravo.interesses_compradores (status, atribuido_em);
+    `);
+
+    // Histórico de cada oferta feita a um corretor. Não muda nada hoje: existe
+    // para que o ranking, quando chegar, tenha meses de comportamento real em
+    // vez de começar do zero. Isso não dá para reconstruir depois.
+    await migrar('tabela ofertas_corretor', `
+      CREATE TABLE IF NOT EXISTS moravo.ofertas_corretor (
+        id             BIGSERIAL PRIMARY KEY,
+        atendimento_id BIGINT NOT NULL REFERENCES moravo.interesses_compradores(id) ON DELETE CASCADE,
+        corretor_id    BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
+        imovel_id      BIGINT REFERENCES moravo.imoveis(id) ON DELETE SET NULL,
+        rodada         INT NOT NULL DEFAULT 1,
+        criterio       TEXT,
+        desfecho       TEXT NOT NULL DEFAULT 'aberta'
+                       CHECK (desfecho IN ('aberta','entrou','expirou','recusou')),
+        ofertada_em    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        respondida_em  TIMESTAMPTZ,
+        minutos_uteis  INT
+      );
+    `);
+    await migrar('ofertas_corretor.indices', `
+      CREATE INDEX IF NOT EXISTS idx_ofertas_corretor_corretor
+        ON moravo.ofertas_corretor (corretor_id, desfecho);
+      CREATE INDEX IF NOT EXISTS idx_ofertas_corretor_abertas
+        ON moravo.ofertas_corretor (desfecho, ofertada_em) WHERE desfecho = 'aberta';
+    `);
+
+    // Nota de 1 a 5 que o proprietário dá ao corretor. Uma por par, editável.
+    await migrar('tabela avaliacoes_corretor', `
+      CREATE TABLE IF NOT EXISTS moravo.avaliacoes_corretor (
+        id            BIGSERIAL PRIMARY KEY,
+        corretor_id   BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
+        autor_id      BIGINT NOT NULL REFERENCES moravo.usuarios(id) ON DELETE CASCADE,
+        imovel_id     BIGINT REFERENCES moravo.imoveis(id) ON DELETE SET NULL,
+        nota          INT NOT NULL CHECK (nota BETWEEN 1 AND 5),
+        comentario    TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uk_avaliacao_por_imovel UNIQUE (corretor_id, autor_id, imovel_id)
+      );
+    `);
+    await migrar('avaliacoes_corretor.idx', `
+      CREATE INDEX IF NOT EXISTS idx_avaliacoes_corretor
+        ON moravo.avaliacoes_corretor (corretor_id);
+    `);
+
+    // Ronda que repassa o lead do comprador quando o corretor não entra no
+    // grupo dentro de 1 hora útil. Cinco minutos é folga suficiente para um
+    // prazo de uma hora e mantém o banco quieto.
+    try {
+      const atendimento = require('./lib/atendimento');
+      setInterval(() => {
+        atendimento.repassarVencidos().catch((err) =>
+          console.error('[atendimento] ronda falhou:', err.message));
+      }, 5 * 60 * 1000).unref();
+      console.log('[moravo] ronda de repasse de atendimento a cada 5 min.');
+    } catch (err) {
+      console.warn('[moravo] ronda de atendimento não iniciada:', err.message);
+    }
+
     // Seed: usuário mestre admin (idempotente - só cria se não existir)
     try {
       const adminExists = await query(
