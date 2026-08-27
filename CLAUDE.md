@@ -501,6 +501,15 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — `/linkgrupo` passa a mandar primeiro para `whatsapp://chat?code=`, com
+  `https://chat.whatsapp.com/` como reserva automática. No iPhone, o link https aberto de
+  dentro do navegador embutido do WhatsApp levava à página web do WhatsApp e de lá para a App
+  Store, oferecendo instalar o app para quem já tinha. Os dois endereços saem do mesmo link
+  validado, e o `render` revalida por conta própria.
+- **2026-08-27** — `#propertyMap` ganhou `position: relative; z-index: 0`. Os panes do Leaflet
+  usam z-index 200/400 e os controles 1000; sem contexto de empilhamento no contêiner, eles
+  escapavam e cobriam o modal de "Trabalhar este imóvel", que fica preso no contexto criado
+  pelo `position: sticky` do `.sticky-card`.
 - **2026-08-27** — Criado o **webhook de status da Meta** (`routes/webhook-whatsapp.js`):
   a lista de envios passa a mostrar entregue, lido ou falhou na entrega, com o motivo, em vez
   de só "a Meta aceitou". Handshake por token, corpo conferido por assinatura quando o App

@@ -609,6 +609,12 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--beige);
     overflow: hidden;
+    /* O Leaflet usa z-index alto nos panes e controles (até 1000), o que
+       empatava com o modal e com o menu do topo e deixava o mapa por cima.
+       position + z-index criam um contexto de empilhamento: tudo que é do
+       mapa fica contido aqui dentro, no nível 0. */
+    position: relative;
+    z-index: 0;
   }
 
   /* ---- Right Column Sticky Sidebar ---- */
