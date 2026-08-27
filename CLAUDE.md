@@ -476,6 +476,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   alternando enquanto o grupo é criado e as mensagens saem, terminando no botão de entrar no
   grupo. Quando o grupo falha, a tela diz que o imóvel entrou na carteira e omite o botão, em
   vez de oferecer um link vazio.
+- **2026-08-27** — Corrigido o bug que anulava a configuração do painel: `lib/grupo.js` e a
+  rota `/criar-grupo-whatsapp` liam `process.env.WAHA_ATENDENTE_PRINCIPAL` direto, ignorando o
+  que o admin tinha preenchido. A rota antiga (213 linhas com a criação do grupo duplicada)
+  passou a chamar `garantirGrupo`, e ficou com 38. **Nada em `routes/` lê variável do Waha
+  agora**: só `lib/waha.js`, que é onde o `.env` funciona como reserva.
 - **2026-08-27** — Chave de API do Waha passa a ser configurável no painel, cifrada como o
   token da Meta. Cifra extraída para `lib/cripto.js`, usada pelos dois. Motivo: o diagnóstico
   mostrou que o `.env` da VPS não tinha nenhuma variável do Waha, e sem a chave a criação do

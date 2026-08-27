@@ -6,7 +6,6 @@ const router  = express.Router();
 const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { criarNotificacao } = require('../lib/notifications');
-const { criarGrupo, enviarMensagem, montarLinkGrupo, extrairIdGrupo, gerarInviteGrupo } = require('../lib/waha');
 const wa = require('../lib/whatsapp');
 const { garantirGrupo } = require('../lib/grupo');
 
@@ -587,215 +586,40 @@ async function enviarConvites(interesse, grupoLink) {
 // Só funciona se o status for 'aceito'. Se o grupo já existe, retorna o link (idempotente).
 router.post('/:id/criar-grupo-whatsapp', requireAuth, async (req, res) => {
   const interesseId = parseInt(req.params.id, 10);
-  console.log('🔥🔥🔥 ENDPOINT CHAMADO! interesseId:', interesseId);
   if (!Number.isFinite(interesseId)) {
     return res.status(400).json({ ok: false, error: 'ID de interesse inválido.' });
   }
 
   try {
-    // 1. Busca interesse + dados do imóvel + dono + corretor
-    const interesseRow = await query(
-      `SELECT i.id, i.imovel_id, i.corretor_id, i.status,
-              i.grupo_whatsapp_id, i.grupo_whatsapp_link, i.grupo_whatsapp_created_at,
-              im.titulo AS imovel_titulo, im.dono_id,
-              u_dono.nome   AS dono_nome,      u_dono.whatsapp   AS dono_whatsapp,
-              u_corr.nome   AS corretor_nome,  u_corr.whatsapp   AS corretor_whatsapp
-       FROM moravo.interesses i
-       JOIN moravo.imoveis im     ON im.id = i.imovel_id
-       JOIN moravo.usuarios u_dono ON u_dono.id = im.dono_id
-       JOIN moravo.usuarios u_corr ON u_corr.id = i.corretor_id
-       WHERE i.id = $1`,
+    // Permissão: só o corretor do interesse ou o dono do imóvel
+    const dono = await query(
+      `SELECT i.corretor_id, im.dono_id
+         FROM moravo.interesses i
+         JOIN moravo.imoveis im ON im.id = i.imovel_id
+        WHERE i.id = $1`,
       [interesseId]
     );
-
-    if (interesseRow.rowCount === 0) {
-      console.log('❌ interesse não encontrado');
+    if (dono.rowCount === 0) {
       return res.status(404).json({ ok: false, error: 'Interesse não encontrado.' });
     }
-    const interesse = interesseRow.rows[0];
-    console.log('✅ interesse encontrado:', { id: interesse.id, status: interesse.status, dono: interesse.dono_whatsapp, corretor: interesse.corretor_whatsapp, link_existente: interesse.grupo_whatsapp_link });
-
-    // 2. Permissão: corretor do interesse OU dono do imóvel podem disparar
-    const ehCorretor = interesse.corretor_id === req.user.id;
-    const ehDono = interesse.dono_id === req.user.id;
-    console.log('🔐 permissão: ehCorretor=' + ehCorretor + ' ehDono=' + ehDono + ' req.user.id=' + req.user.id);
-    if (!ehCorretor && !ehDono) {
-      console.log('❌ sem permissão');
+    const linha = dono.rows[0];
+    if (linha.corretor_id !== req.user.id && linha.dono_id !== req.user.id) {
       return res.status(403).json({ ok: false, error: 'Você não tem permissão para este interesse.' });
     }
 
-    // 3. Só permite criar grupo quando o proprietário aceitou
-    if (interesse.status !== 'aceito') {
-      console.log('❌ status não é aceito:', interesse.status);
-      return res.status(400).json({ ok: false, error: 'Você ainda não foi aceito pelo proprietário.' });
-    }
-    console.log('✅ status aceito');
-
-    // 4. Valida que todos os participantes têm WhatsApp
-    if (!interesse.dono_whatsapp || !interesse.corretor_whatsapp) {
-      return res.status(400).json({
-        ok: false,
-        error: 'WhatsApp do vendedor ou do corretor não está cadastrado.',
-      });
-    }
-
-    const atendentePrincipal = (process.env.WAHA_ATENDENTE_PRINCIPAL || '').replace(/\D/g, '');
-    if (!atendentePrincipal) {
-      return res.status(500).json({
-        ok: false,
-        error: 'WAHA_ATENDENTE_PRINCIPAL não configurado no servidor.',
-      });
-    }
-
-    // 5. Se já existe grupo E o link é válido (chat.whatsapp.com), devolve (idempotência)
-    // Se o link for wa.me/<jid> (formato antigo que não funciona pra grupos), tenta
-    // REGENERAR o invite code usando o grupo existente (não recria!)
-    const linkExiste = interesse.grupo_whatsapp_link;
-    const grupoIdExistente = interesse.grupo_whatsapp_id;
-    const linkInvalidoWaMe = linkExiste && linkExiste.startsWith('https://wa.me/');
-
-    if (linkExiste && !linkInvalidoWaMe) {
-      console.log('✅ grupo já existe com link válido:', linkExiste);
-      // Reenvia o convite: é o caminho de "não recebi o link"
-      const envios = await enviarConvites(interesse, linkExiste);
-      return res.json({
-        ok: true,
-        grupo_link: linkExiste,
-        grupo_id: grupoIdExistente,
-        ja_existia: true,
-        created_at: interesse.grupo_whatsapp_created_at,
-        envios: envios,
-      });
-    }
-
-    let grupoId;
-    let grupoLink = '';
-    let grupoOwner = '';
-    let jaExistia = false;
-
-    // Se o link é inválido mas JID existe → tenta gerar invite code do grupo existente
-    if (linkInvalidoWaMe && grupoIdExistente) {
-      console.log('⚠️ link antigo wa.me detectado. Reutilizando grupo existente JID:', grupoIdExistente);
-
-      // Não cria grupo — só tenta gerar invite code do grupo que já existe
-      const inviteGerado = await gerarInviteGrupo(grupoIdExistente).catch((err) => {
-        console.warn('[waha] falha ao gerar invite do grupo existente:', err.message);
-        return '';
-      });
-
-      if (inviteGerado && !inviteGerado.startsWith('https://wa.me/')) {
-        grupoId = grupoIdExistente;
-        grupoLink = inviteGerado;
-        jaExistia = true;
-        console.log('[waha] invite code regenerado com sucesso:', grupoLink);
-
-        // Atualiza o link no banco
-        await query(
-          `UPDATE moravo.interesses SET grupo_whatsapp_link = $1 WHERE id = $2`,
-          [grupoLink, interesseId]
-        );
-
-        const enviosRegen = await enviarConvites(interesse, grupoLink);
-        return res.json({
-          ok: true,
-          grupo_link: grupoLink,
-          grupo_id: grupoId,
-          grupo_owner: '',
-          ja_existia: true,
-          envios: enviosRegen,
-        });
-      } else {
-        console.warn('[waha] não foi possível regenerar invite do grupo existente; criando novo grupo...');
-      }
-    }
-
-    // 6. Cria o grupo no Waha
-    const grupoNome = `Moravo - ${interesse.imovel_titulo}`;
-    const grupoDesc = `Negociação do imóvel "${interesse.imovel_titulo}". Vendedor: ${interesse.dono_nome}. Corretor: ${interesse.corretor_nome}.`;
-
-    let wahaResult;
-    try {
-      // Ninguém é adicionado à força: o grupo nasce só com os números da Moravo
-      // e as partes entram pelo link de convite enviado pela API oficial.
-      // WAHA_PARTICIPANTES_EXTRA aceita outros números internos separados por
-      // vírgula (a API do Waha costuma exigir mais de um participante).
-      const internos = (process.env.WAHA_PARTICIPANTES_EXTRA || '')
-        .split(',').map((n) => n.replace(/\D/g, '')).filter(Boolean);
-
-      wahaResult = await criarGrupo({
-        nome: grupoNome,
-        descricao: grupoDesc,
-        participantes: [atendentePrincipal].concat(internos),
-      });
-    } catch (wahaErr) {
-      console.error('[criar-grupo-whatsapp] erro Waha:', wahaErr.message);
-      return res.status(502).json({
-        ok: false,
-        error: 'Não foi possível criar o grupo no WhatsApp. Tente novamente em alguns instantes.',
-      });
-    }
-
-    grupoId = extrairIdGrupo(wahaResult);
-    grupoOwner = wahaResult.OwnerPN || wahaResult.owner || '';
-
-    console.log('[waha] grupo criado — JID:', grupoId, '| Owner:', grupoOwner, '| SuperAdmin:', atendentePrincipal + '@s.whatsapp.net');
-
-    // Tenta primeiro extrair invite da resposta; se não vier, gera via endpoint separado
-    grupoLink = montarLinkGrupo(wahaResult);
-
-    // Se montarLinkGrupo devolveu um link wa.me (JID puro), tenta gerar o invite real
-    if (grupoLink.startsWith('https://wa.me/')) {
-      console.log('[waha] resposta não trouxe invite; tentando gerar invite code via endpoint dedicado...');
-      const inviteGerado = await gerarInviteGrupo(grupoId).catch((err) => {
-        console.warn('[waha] falha ao gerar invite:', err.message);
-        return '';
-      });
-      if (inviteGerado) {
-        grupoLink = inviteGerado;
-        console.log('[waha] invite gerado:', grupoLink);
-      } else {
-        console.warn('[waha] não foi possível gerar invite; usando wa.me como fallback');
-      }
-    }
-
-    // 7. Salva no banco
-    await query(
-      `UPDATE moravo.interesses
-          SET grupo_whatsapp_id         = $1,
-              grupo_whatsapp_link       = $2,
-              grupo_whatsapp_created_at = NOW()
-        WHERE id = $3`,
-      [grupoId, grupoLink, interesseId]
-    );
-
-    // 8. Envia mensagem inicial de boas-vindas no grupo (best effort, não bloqueia a resposta)
-    if (grupoId) {
-      const msgInicial =
-        `👋 Olá! Bem-vindos ao grupo oficial de negociação do imóvel "${interesse.imovel_titulo}".\n\n` +
-        `🏠 Vendedor: ${interesse.dono_nome}\n` +
-        `🤝 Corretor: ${interesse.corretor_nome}\n\n` +
-        `A Moravo está acompanhando esta negociação para garantir segurança e transparência ` +
-        `para todos os envolvidos. Por favor, mantenham a comunicação cordial e organizada.`;
-
-      enviarMensagem(grupoId, msgInicial).catch((err) => {
-        console.warn('[criar-grupo-whatsapp] falha ao enviar msg inicial:', err.message);
-      });
-    }
-
-    // 9. Convida proprietário e corretor pela API oficial
-    const envios = await enviarConvites(interesse, grupoLink);
-
+    // Toda a criação vive em lib/grupo.js. Esta rota tinha uma cópia da lógica
+    // que lia process.env direto e por isso ignorava a configuração do painel.
+    const grupo = await garantirGrupo(interesseId);
     return res.json({
       ok: true,
-      grupo_link: grupoLink,
-      grupo_id:   grupoId,
-      grupo_owner: grupoOwner,
-      ja_existia: false,
-      envios: envios,
+      grupo_link: grupo.grupo_link,
+      grupo_id: grupo.grupo_id,
+      ja_existia: grupo.ja_existia,
+      envios: grupo.envios,
     });
   } catch (err) {
-    console.error('[criar-grupo-whatsapp] erro:', err);
-    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+    console.error('[criar-grupo-whatsapp] erro:', err.message);
+    return res.status(502).json({ ok: false, error: err.message });
   }
 });
 
