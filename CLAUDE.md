@@ -479,6 +479,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — `getConfig` (`lib/whatsapp.js`) não trazia `template_corretor` no SELECT,
+  então o campo era sempre vazio: o painel mostrava em branco mesmo depois de salvo e o
+  corretor nunca recebia convite. Registrado também que **`status = 'enviado'` significa
+  "a Meta aceitou"**, não "chegou": sem webhook de status, entrega não é observável.
 - **2026-08-27** — Confirmado o par de templates da Meta: `convite_grupo_proprietario` e
   `convite_grupo_corretor`, com **três variáveis cada e ordens diferentes**. A ordem enviada
   pelo `lib/grupo.js` bate com as duas. Removida a reserva de template (sem o do corretor,
