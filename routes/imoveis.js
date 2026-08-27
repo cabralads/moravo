@@ -7,6 +7,7 @@ const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { verify: verifyJwt } = require('../lib/jwt');
 const { criarNotificacao } = require('../lib/notifications');
+const { gerarCodigo, pareceCodigo, urlImovel } = require('../lib/codigo-imovel');
 
 const TIPOS_IMOVEL = ['casa', 'apartamento', 'terreno', 'comercial', 'chacara', 'sitio'];
 const STATUS_VALIDOS = ['ativo', 'vendido', 'pausado'];
@@ -112,8 +113,12 @@ router.get('/', async (req, res) => {
 // ---- GET /api/imoveis/:id
 router.get('/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
+    // Aceita as duas formas: o id numérico, que os links antigos usam, e o
+    // código público, que é o que circula agora.
+    const bruto = String(req.params.id || '');
+    const id = /^\d+$/.test(bruto) ? parseInt(bruto, 10) : null;
+    const codigo = id === null && pareceCodigo(bruto) ? bruto : null;
+    if (id === null && !codigo) return res.status(400).json({ ok: false, error: 'ID inválido.' });
 
     let loggedUserId = null;
     const authHeader = req.headers.authorization;
@@ -129,7 +134,8 @@ router.get('/:id', async (req, res) => {
       }
     }
 
-    const params = [id];
+    const params = [id !== null ? id : codigo];
+    const filtro = id !== null ? 'im.id = $1' : 'im.codigo = $1';
     let sql = '';
     if (loggedUserId) {
       sql = `
@@ -142,7 +148,7 @@ router.get('/:id', async (req, res) => {
                (SELECT status FROM moravo.interesses i WHERE i.imovel_id = im.id AND i.corretor_id = $2 LIMIT 1) AS meu_interesse_status
         FROM moravo.imoveis im
         JOIN moravo.usuarios u ON u.id = im.dono_id
-        WHERE im.id = $1
+        WHERE ${filtro}
       `;
       params.push(loggedUserId);
     } else {
@@ -156,7 +162,7 @@ router.get('/:id', async (req, res) => {
                NULL AS meu_interesse_status
         FROM moravo.imoveis im
         JOIN moravo.usuarios u ON u.id = im.dono_id
-        WHERE im.id = $1
+        WHERE ${filtro}
       `;
     }
 
@@ -272,33 +278,54 @@ router.post('/', requireAuth, requireRole('proprietario', 'corretor'), async (re
 
     if (errors.length) return res.status(400).json({ ok: false, errors });
 
-    const result = await query(
-      `INSERT INTO moravo.imoveis
-        (dono_id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
-         area_m2, quartos, banheiros, vagas, descricao, fotos, status, lat, lng,
-         matricula, escritura_texto, escritura_arquivo_url, condominio, valor_condominio)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
-       RETURNING id, created_at`,
-      [
-        req.user.id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
-        b.area_m2  ? Number(b.area_m2)  : null,
-        b.quartos  ? parseInt(b.quartos, 10)  : null,
-        b.banheiros? parseInt(b.banheiros,10) : null,
-        b.vagas    ? parseInt(b.vagas,   10)  : null,
-        (b.descricao || '').trim() || null,
-        JSON.stringify(Array.isArray(b.fotos) ? b.fotos : []),
-        'ativo',
-        b.lat ? Number(b.lat) : null,
-        b.lng ? Number(b.lng) : null,
-        matricula,                // $21
-        escritura_texto,          // $22
-        escritura_arquivo_url,    // $23
-        condominio,               // $24
-        valor_condominio,         // $25
-      ]
-    );
+    // O código é sorteado, então pode colidir com um já existente. É raro, mas
+    // tem que ser tratado: em vez de estourar o cadastro, sorteia outro.
+    let result = null;
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      try {
+        result = await query(
+          `INSERT INTO moravo.imoveis
+            (dono_id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
+             area_m2, quartos, banheiros, vagas, descricao, fotos, status, lat, lng,
+             matricula, escritura_texto, escritura_arquivo_url, condominio, valor_condominio, codigo)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+           RETURNING id, codigo, created_at`,
+          [
+            req.user.id, titulo, tipo, preco, uf, cep, rua, numero, complemento, bairro, cidade,
+            b.area_m2  ? Number(b.area_m2)  : null,
+            b.quartos  ? parseInt(b.quartos, 10)  : null,
+            b.banheiros? parseInt(b.banheiros,10) : null,
+            b.vagas    ? parseInt(b.vagas,   10)  : null,
+            (b.descricao || '').trim() || null,
+            JSON.stringify(Array.isArray(b.fotos) ? b.fotos : []),
+            'ativo',
+            b.lat ? Number(b.lat) : null,
+            b.lng ? Number(b.lng) : null,
+            matricula,                // $21
+            escritura_texto,          // $22
+            escritura_arquivo_url,    // $23
+            condominio,               // $24
+            valor_condominio,         // $25
+            gerarCodigo(),            // $26
+          ]
+        );
+        break;
+      } catch (err) {
+        // 23505 é unicidade, mas o endereço também é único nesta tabela:
+        // sortear outro código não resolveria endereço repetido, e mascararia
+        // o erro que o usuário precisa ver.
+        const colidiuCodigo = err.code === '23505' &&
+          /codigo/i.test(String(err.constraint || '') + String(err.detail || ''));
+        if (!colidiuCodigo || tentativa === 4) throw err;
+      }
+    }
 
-    return res.status(201).json({ ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at });
+    const criado = result.rows[0];
+    return res.status(201).json({
+      ok: true, id: criado.id, codigo: criado.codigo,
+      url: urlImovel({ codigo: criado.codigo, tipo: tipo, preco: preco, cidade: cidade }),
+      created_at: criado.created_at,
+    });
   } catch (err) {
     if (err.code === '23514') {
       return res.status(400).json({ ok: false, errors: [{ field: 'tipo', message: 'Dados não passam validação.' }] });

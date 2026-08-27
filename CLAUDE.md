@@ -109,6 +109,7 @@ lib/whatsapp.js        WhatsApp Cloud API oficial (envio do convite, config cifr
 lib/grupo.js           cria/reaproveita o grupo da negociação e dispara os convites
 lib/site-config.js     scripts de terceiros do admin e a injeção deles no HTML
 lib/pagina-grupo.js    página de entrada no grupo de WhatsApp (escapa a query string)
+lib/codigo-imovel.js   código público do imóvel, slug e URL amigável
 
 routes/
   auth.js          register, login, me
@@ -170,6 +171,39 @@ Detalhes que importam:
 É o que torna o campo útil, e também o que exige cuidado com quem recebe perfil `admin`.
 
 ---
+
+## Identificação do imóvel
+
+Cada imóvel tem **duas** identificações, e elas servem a coisas diferentes:
+
+| | O que é | Onde aparece |
+|---|---|---|
+| `id` | serial do banco | chave estrangeira, nada mais |
+| `codigo` | 7 caracteres sorteados (`mc7GvdX`) | URL, selo na página, nome do grupo, mensagem do WhatsApp |
+
+O `id` sequencial dizia quantos imóveis existem e permitia varrer o catálogo
+contando de 1 até acabar. O código não tem ordem nem vizinho.
+
+O alfabeto (`lib/codigo-imovel.js`) não tem `0/O/o` nem `1/l/I`: são os pares que
+a pessoa erra ao ditar o código por telefone.
+
+**URL pública:** `/imovel/<tipo>-<preço>-<cidade>/?id=<codigo>`
+
+O slug é enfeite para leitura e para busca; quem identifica é o código na query.
+Assim o preço pode mudar, o slug muda junto, e **nenhum link já enviado quebra**.
+`/detalhes?id=…` continua funcionando e responde **301** para a URL nova, aceitando
+tanto o id antigo quanto o código.
+
+**Nome do grupo no WhatsApp:** `Tipo Codigo`, por exemplo `Casa mc7GvdX`. A foto do
+grupo é `public/img/moravo-grupo.jpg`, aplicada logo após a criação; se falhar, o
+grupo nasce sem foto e o resto segue.
+
+**SEO:** a página do imóvel é montada no cliente, então o servidor injeta `<title>`,
+`description`, `canonical` e Open Graph com os dados reais antes de entregar o HTML
+(`servirPaginaImovel`, no `server.js`). Sem isso o buscador indexa a casca vazia.
+Existem também `/sitemap.xml` (gerado do banco) e `/robots.txt`, porque os cards do
+site abrem por `onclick` e não por `<a href>`: sem sitemap não há por onde chegar
+aos imóveis navegando.
 
 ## Perfis
 
@@ -501,6 +535,13 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Imóvel ganhou **código público** de 7 caracteres (`codigo`), e ele
+  substitui o id sequencial em tudo que é visível: URL (`/imovel/<slug>/?id=<codigo>`),
+  selo na página do imóvel, nome do grupo (`Casa mc7GvdX`) e variável das mensagens.
+  `/detalhes?id=` responde 301 para a URL nova. O servidor passou a injetar title,
+  description, canonical e Open Graph do imóvel, e foram criados `/sitemap.xml` e
+  `/robots.txt`: os cards abrem por `onclick`, então antes não havia link nenhum para um
+  buscador seguir. Grupo novo já nasce com a foto da Moravo.
 - **2026-08-27** — `/linkgrupo` passa a mandar primeiro para `whatsapp://chat?code=`, com
   `https://chat.whatsapp.com/` como reserva automática. No iPhone, o link https aberto de
   dentro do navegador embutido do WhatsApp levava à página web do WhatsApp e de lá para a App

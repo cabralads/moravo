@@ -241,6 +241,165 @@ async function entregarPaginaGrupo(req, res, valor) {
 app.get('/linkgrupo', (req, res) => entregarPaginaGrupo(req, res, req.query.t || req.query.id));
 app.get('/linkgrupo/:codigo', (req, res) => entregarPaginaGrupo(req, res, req.params.codigo));
 
+// =========================================================================
+// Página pública do imóvel: /imovel/<slug>/?id=<codigo>
+// =========================================================================
+// O slug existe para o Google e para a pessoa que lê o link; quem identifica
+// o imóvel é sempre o código na query. Assim o preço pode mudar, o slug muda
+// junto, e nenhum link já enviado deixa de funcionar.
+//
+// A página em si é a mesma detalhes.html. O que muda é que aqui o servidor
+// preenche título, descrição, canonical e Open Graph com os dados reais do
+// imóvel: sem isso o Google indexa a casca vazia, porque o conteúdo só
+// aparece depois que o JavaScript busca a API.
+const codigoImovel = require('./lib/codigo-imovel');
+
+async function buscarImovelPublico(identificador) {
+  const bruto = String(identificador || '');
+  const ehId = /^\d+$/.test(bruto);
+  if (!ehId && !codigoImovel.pareceCodigo(bruto)) return null;
+  const r = await query(
+    `SELECT id, codigo, titulo, tipo, preco, cidade, uf, bairro, quartos, banheiros,
+            vagas, area_m2, descricao, fotos, status
+       FROM moravo.imoveis
+      WHERE ` + (ehId ? 'id = $1' : 'codigo = $1'),
+    [ehId ? parseInt(bruto, 10) : bruto]
+  );
+  return r.rows[0] || null;
+}
+
+function escaparAttr(txt) {
+  return String(txt == null ? '' : txt)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function metaDoImovel(im, urlCanonica) {
+  const dinheiro = Number(im.preco || 0)
+    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const local = [im.bairro, im.cidade, im.uf].filter(Boolean).join(', ');
+  const titulo = `${im.titulo || 'Imóvel'} em ${im.cidade || 'Brasil'} por ${dinheiro} | Moravo`;
+
+  const partes = [];
+  if (im.quartos)   partes.push(im.quartos + (im.quartos > 1 ? ' quartos' : ' quarto'));
+  if (im.banheiros) partes.push(im.banheiros + (im.banheiros > 1 ? ' banheiros' : ' banheiro'));
+  if (im.vagas)     partes.push(im.vagas + (im.vagas > 1 ? ' vagas' : ' vaga'));
+  if (im.area_m2)   partes.push(Math.round(im.area_m2) + ' m²');
+
+  const descricao = (String(im.descricao || '').trim() ||
+    `${(im.tipo || 'Imóvel')} à venda em ${local || 'Brasil'} por ${dinheiro}` +
+    (partes.length ? '. ' + partes.join(', ') + '.' : '.') +
+    ' Anuncie e negocie direto na Moravo.').slice(0, 300);
+
+  let foto = '';
+  try {
+    const fotos = typeof im.fotos === 'string' ? JSON.parse(im.fotos) : (im.fotos || []);
+    if (Array.isArray(fotos) && fotos[0]) {
+      foto = String(fotos[0]).startsWith('http') ? fotos[0] : 'https://moravo.com.br/' + String(fotos[0]).replace(/^\/+/, '');
+    }
+  } catch (e) { /* imóvel sem foto não impede a página */ }
+
+  const tags = [
+    `<title>${escaparAttr(titulo)}</title>`,
+    `<meta name="description" content="${escaparAttr(descricao)}" />`,
+    `<link rel="canonical" href="${escaparAttr(urlCanonica)}" />`,
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:title" content="${escaparAttr(titulo)}" />`,
+    `<meta property="og:description" content="${escaparAttr(descricao)}" />`,
+    `<meta property="og:url" content="${escaparAttr(urlCanonica)}" />`,
+    `<meta name="twitter:card" content="${foto ? 'summary_large_image' : 'summary'}" />`,
+  ];
+  if (foto) tags.push(`<meta property="og:image" content="${escaparAttr(foto)}" />`);
+  // Imóvel vendido ou pausado não deveria disputar posição no Google
+  if (im.status !== 'ativo') tags.push('<meta name="robots" content="noindex, follow" />');
+  return tags.join('\n  ');
+}
+
+// Serve detalhes.html com as meta tags do imóvel no lugar das genéricas
+async function servirPaginaImovel(req, res, next, identificador) {
+  try {
+    const im = await buscarImovelPublico(identificador);
+    if (!im) return next();
+
+    const arquivo = path.join(__dirname, 'public', 'detalhes.html');
+    if (!fs.existsSync(arquivo)) return next();
+    let html = fs.readFileSync(arquivo, 'utf8');
+
+    const urlCanonica = 'https://moravo.com.br' + codigoImovel.urlImovel(im);
+    // Tira o <title> genérico do arquivo para não ficarem dois
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, '');
+    html = html.replace('</head>', () => '  ' + metaDoImovel(im, urlCanonica) + '\n</head>');
+
+    const scripts = await siteConfig.getScripts().catch(() => ({}));
+    if (scripts && (scripts.head_html || scripts.body_html)) {
+      html = siteConfig.injetar(html, scripts);
+    }
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('[imovel] falha ao montar a página, seguindo pelo caminho normal:', err.message);
+    next();
+  }
+}
+
+app.get('/imovel/:slug', (req, res, next) => {
+  servirPaginaImovel(req, res, next, req.query.id);
+});
+
+// URL antiga: manda para a nova com 301, para o Google juntar as duas em uma
+// só e para os links que já foram enviados continuarem valendo.
+app.get(['/detalhes', '/detalhes.html'], async (req, res, next) => {
+  try {
+    const im = await buscarImovelPublico(req.query.id);
+    if (!im || !im.codigo) return next();
+    return res.redirect(301, codigoImovel.urlImovel(im));
+  } catch (err) {
+    return next();
+  }
+});
+
+// ---- sitemap.xml e robots.txt
+// Os cards do site abrem por onclick, não por <a href>, então um buscador não
+// tem por onde chegar aos imóveis navegando. O sitemap é o caminho que resta.
+app.get('/sitemap.xml', async (req, res) => {
+  const base = 'https://moravo.com.br';
+  const fixas = ['/', '/busca', '/anuncie', '/cadastro', '/politica-de-privacidade', '/termos-de-uso'];
+  try {
+    const r = await query(
+      `SELECT id, codigo, tipo, preco, cidade, updated_at, created_at
+         FROM moravo.imoveis
+        WHERE status = 'ativo' AND codigo IS NOT NULL
+        ORDER BY id DESC LIMIT 5000`
+    );
+    const urls = fixas.map((u) => `  <url><loc>${base}${u}</loc></url>`);
+    for (const im of r.rows) {
+      const quando = im.updated_at || im.created_at;
+      urls.push('  <url><loc>' + base + codigoImovel.urlImovel(im) + '</loc>' +
+        (quando ? '<lastmod>' + new Date(quando).toISOString().slice(0, 10) + '</lastmod>' : '') +
+        '</url>');
+    }
+    res.type('application/xml').send(
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls.join('\n') + '\n</urlset>\n'
+    );
+  } catch (err) {
+    console.error('[sitemap] erro:', err.message);
+    res.status(500).type('text/plain').send('erro ao montar o sitemap');
+  }
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+    'User-agent: *\n' +
+    'Allow: /\n' +
+    'Disallow: /admin\n' +
+    'Disallow: /dashboard\n' +
+    'Disallow: /linkgrupo\n' +
+    'Disallow: /webhooks\n\n' +
+    'Sitemap: https://moravo.com.br/sitemap.xml\n'
+  );
+});
+
 // ---- Injeção dos scripts de terceiros (Tag Manager e afins)
 // Precisa vir ANTES do express.static: intercepta só as páginas HTML, insere o
 // que o admin configurou e devolve. Qualquer outro arquivo segue o caminho normal.
@@ -599,6 +758,38 @@ app.listen(PORT, '0.0.0.0', async () => {
       }
     } catch (err) {
       console.warn('[migração] webhook_token:', err.message);
+    }
+
+    // Código público do imóvel: aleatório, para o id sequencial parar de ser
+    // a identificação que circula em link e em nome de grupo.
+    await migrar('imoveis.codigo', `
+      ALTER TABLE moravo.imoveis ADD COLUMN IF NOT EXISTS codigo TEXT;
+    `);
+    await migrar('imoveis.codigo_unico', `
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_imoveis_codigo
+        ON moravo.imoveis (codigo) WHERE codigo IS NOT NULL;
+    `);
+    // Preenche quem ficou sem código. Um de cada vez porque o código é
+    // sorteado: colisão é improvável, mas tem que ser tratada, não ignorada.
+    try {
+      const { gerarCodigo } = require('./lib/codigo-imovel');
+      const semCodigo = await query(
+        `SELECT id FROM moravo.imoveis WHERE codigo IS NULL ORDER BY id`
+      );
+      for (const linha of semCodigo.rows) {
+        for (let tentativa = 0; tentativa < 5; tentativa++) {
+          try {
+            await query(`UPDATE moravo.imoveis SET codigo = $1 WHERE id = $2`,
+                        [gerarCodigo(), linha.id]);
+            break;
+          } catch (err) {
+            if (tentativa === 4) console.warn('[migração] código do imóvel ' + linha.id + ':', err.message);
+          }
+        }
+      }
+      if (semCodigo.rowCount) console.log('[moravo] código gerado para ' + semCodigo.rowCount + ' imóvel(is).');
+    } catch (err) {
+      console.warn('[migração] backfill de código:', err.message);
     }
 
     // Seed: usuário mestre admin (idempotente - só cria se não existir)

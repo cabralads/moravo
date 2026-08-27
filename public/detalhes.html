@@ -223,6 +223,21 @@
     gap: 16px;
     color: var(--ink-soft);
   }
+  /* Código público do imóvel: o que a pessoa cita no WhatsApp e o que nomeia
+     o grupo. Mesma família visual do selo verificado, que fica ao lado. */
+  .code-pill {
+    background: var(--emerald-lt);
+    color: var(--emerald-dk);
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .code-pill svg { flex-shrink: 0; opacity: .8; }
   .verify-pill {
     background: var(--emerald-lt);
     color: var(--emerald);
@@ -871,6 +886,10 @@
     <h1 id="propTitle">Carregando imóvel…</h1>
     <div class="property-meta-row">
       <div class="property-meta-left">
+        <span class="code-pill" id="propCodigo" style="display:none" title="Código do imóvel na Moravo">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 12h8"/></svg>
+          <span id="propCodigoTexto"></span>
+        </span>
         <span class="verify-pill">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           Anúncio Verificado
@@ -1324,7 +1343,12 @@
   }
 
   function renderPropertyDetails(im) {
-    document.title = 'Moravo | ' + im.titulo;
+    // O servidor já injeta um título com cidade e preço, pensado para busca.
+    // Sobrescrever aqui desfazia isso: o Google renderiza o JavaScript e fica
+    // com o que o script deixou por último.
+    if (!document.querySelector('link[rel="canonical"]')) {
+      document.title = 'Moravo | ' + im.titulo;
+    }
     var safeTitle = String(im.titulo || '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -1340,6 +1364,12 @@
           '</span>'
         : '');
     document.getElementById('propAddressSummary').textContent = im.bairro + ', ' + im.cidade + ' - ' + (im.uf || 'SC');
+
+    // Imóvel antigo pode não ter código; nesse caso o selo simplesmente não aparece
+    if (im.codigo) {
+      document.getElementById('propCodigoTexto').textContent = im.codigo;
+      document.getElementById('propCodigo').style.display = '';
+    }
     document.getElementById('propTypeHeadline').textContent = String(im.tipo).charAt(0).toUpperCase() + String(im.tipo).slice(1) + ' em ' + im.cidade;
     
     // Specs String

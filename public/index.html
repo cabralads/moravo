@@ -1739,7 +1739,7 @@ section { position: relative; }
         '</span>'
       : '';
     return '<article class="listing" data-listing-id="' + im.id + '" ' +
-      'onclick="if(!event.target.closest(\'.fav\'))window.verDetalhes(\'' + im.id + '\')" ' +
+      'onclick="if(!event.target.closest(\'.fav\'))window.verDetalhes(\'' + (im.codigo || im.id) + '\')" ' +
       'style="cursor:pointer;">' +
       aprovadoBadge +
       '<div class="ph">' +

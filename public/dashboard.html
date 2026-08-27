@@ -3181,7 +3181,7 @@
 
         return '' +
           '<article class="card" data-imovel-id="' + im.id + '" ' +
-          'onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + im.id + '\')" ' +
+          'onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + (im.codigo || im.id) + '\')" ' +
           'style="cursor:pointer;">' +
           '<div class="photo">' +
           (imgHtml || '<svg class="house-icon" width="56" height="56" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>') +
@@ -3472,7 +3472,7 @@
                 acaoRepresentar = '<button class="btn btn-sm" data-deixar-id="' + it.id + '" style="width:100%; color:#ef4444; background:transparent; border:2px solid transparent; font-weight:600; cursor:pointer; margin-top:2px; transition: background .15s;" onmouseover="this.style.background=\'rgba(239, 68, 68, 0.05)\';" onmouseout="this.style.background=\'transparent\';">Deixar de representar</button>';
               }
 
-              return '<article class="card" data-imovel-id="' + im.id + '" onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + im.id + '\')" style="cursor:pointer; display:flex; flex-direction:column;">' +
+              return '<article class="card" data-imovel-id="' + im.id + '" onclick="if(!event.target.closest(\'.actions\'))window.verDetalhes(\'' + (im.codigo || im.id) + '\')" style="cursor:pointer; display:flex; flex-direction:column;">' +
                 '<div class="photo">' +
                 (imgHtml || '<svg class="house-icon" width="56" height="56" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>') +
                 '<span class="status-tag" style="background:#22c55e; color:#fff; font-weight:700;">Na carteira</span>' +
@@ -4390,7 +4390,7 @@
 
         var priceStr = 'R$ ' + Number(im.preco).toLocaleString('pt-BR');
         return '<article class="listing" data-listing-id="' + im.id + '" ' +
-          'onclick="if(!event.target.closest(\'button\'))window.verDetalhes(\'' + im.id + '\')" ' +
+          'onclick="if(!event.target.closest(\'button\'))window.verDetalhes(\'' + (im.codigo || im.id) + '\')" ' +
           'style="border:1px solid var(--beige); border-radius:12px; overflow:hidden; background:#fff; display:flex; flex-direction:column; cursor:pointer; transition:box-shadow .18s, transform .18s;" ' +
           'onmouseenter="this.style.boxShadow=\'0 6px 24px rgba(0,0,0,.13)\';this.style.transform=\'translateY(-2px)\'" ' +
           'onmouseleave="this.style.boxShadow=\'\';this.style.transform=\'\'">' +
@@ -5477,7 +5477,7 @@
               if (verBtn) {
                 verBtn.addEventListener('click', function () {
                   if (window.openImovelPreview) window.openImovelPreview(verBtn.dataset.id);
-                  else window.open('detalhes.html?id=' + verBtn.dataset.id, '_blank');
+                  else window.open('detalhes.html?id=' + (verBtn.dataset.codigo || verBtn.dataset.id), '_blank');
                 });
               }
               var acompanharBtn = card.querySelector('.btn-acompanhar-solicitacao');
@@ -6855,7 +6855,7 @@
         }
 
         // Link
-        document.getElementById('mpLinkPagina').href = 'detalhes.html?id=' + im.id;
+        document.getElementById('mpLinkPagina').href = 'detalhes.html?id=' + (im.codigo || im.id);
 
         document.getElementById('mpLoading').style.display = 'none';
         document.getElementById('mpData').style.display = 'block';
