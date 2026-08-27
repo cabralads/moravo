@@ -488,6 +488,22 @@
       font-size: 0.72em !important;
     }
 
+    /* DDI + número: o país fica separado para o campo guardar só DDD e número */
+    .whats-linha { display: flex; gap: 8px; }
+    .whats-linha .whats-ddi {
+      flex: 0 0 108px;
+      height: 42px;
+      border: 1px solid var(--beige);
+      border-radius: 8px;
+      padding: 0 8px;
+      font: inherit;
+      font-size: 15px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .whats-linha input { flex: 1; min-width: 0; }
+
     /* === Configurações: tudo menor pra caber em uma tela sem scroll === */
     html body #section-configuracoes {
       font-size: 0.82em !important;
@@ -2185,7 +2201,7 @@
                   </div>
                   <div class="field" style="flex: 1;">
                     <label for="p-whats">Número de WhatsApp</label>
-                    <input type="text" inputmode="tel" id="p-whats" placeholder="(47) 99999-9999" required />
+                    <div class="whats-linha"><select id="p-ddi" class="whats-ddi" aria-label="País"><option value="55" data-bandeira="🇧🇷" selected>🇧🇷 +55</option><option value="351" data-bandeira="🇵🇹">🇵🇹 +351</option><option value="1" data-bandeira="🇺🇸">🇺🇸 +1</option><option value="34" data-bandeira="🇪🇸">🇪🇸 +34</option><option value="39" data-bandeira="🇮🇹">🇮🇹 +39</option><option value="44" data-bandeira="🇬🇧">🇬🇧 +44</option><option value="595" data-bandeira="🇵🇾">🇵🇾 +595</option><option value="598" data-bandeira="🇺🇾">🇺🇾 +598</option><option value="54" data-bandeira="🇦🇷">🇦🇷 +54</option></select><input type="text" inputmode="tel" id="p-whats" placeholder="(47) 99999-9999" required /></div>
                   </div>
                 </div>
                 <div class="field" id="p-cidade-field" style="margin-top: 16px;">
@@ -2261,15 +2277,15 @@
                   conta.</p>
                 <div class="field">
                   <label for="p-senha-atual">Senha atual</label>
-                  <input type="password" id="p-senha-atual" placeholder="Sua senha atual" maxlength="10" />
+                  <input type="password" id="p-senha-atual" placeholder="Sua senha atual" maxlength="10" autocomplete="off" data-lpignore="true" />
                 </div>
                 <div class="field" style="margin-top: 16px;">
                   <label for="p-senha-nova">Nova senha <span class="opt">(mínimo 6 e máximo 10 caracteres)</span></label>
-                  <input type="password" id="p-senha-nova" placeholder="Mínimo 6 caracteres" maxlength="10" />
+                  <input type="password" id="p-senha-nova" placeholder="Mínimo 6 caracteres" maxlength="10" autocomplete="new-password" data-lpignore="true" />
                 </div>
                 <div class="field" style="margin-top: 16px;">
                   <label for="p-senha-confirma">Confirmar nova senha</label>
-                  <input type="password" id="p-senha-confirma" placeholder="Confirme a nova senha" maxlength="10" />
+                  <input type="password" id="p-senha-confirma" placeholder="Confirme a nova senha" maxlength="10" autocomplete="new-password" data-lpignore="true" />
                 </div>
               </div>
               <div class="settings-pane" id="pane-privacidade">
@@ -4517,7 +4533,14 @@
           // popula os campos do usuário
           document.getElementById('p-nome').value = user.nome || '';
           document.getElementById('p-email').value = user.email || '';
-          document.getElementById('p-whats').value = user.whatsapp || '';
+          preencherWhatsapp(user.whatsapp || '');
+
+          // O navegador preenche os campos de senha sozinho ao abrir a tela.
+          // Limpamos na hora e de novo no tique seguinte, porque o autofill do
+          // Chrome acontece depois da renderização.
+          limparCamposDeSenha();
+          setTimeout(limparCamposDeSenha, 60);
+          setTimeout(limparCamposDeSenha, 400);
           var cidadeField = document.getElementById('p-cidade-field');
           if (user.perfil === 'corretor') {
             cidadeField.style.display = 'none';
@@ -5777,18 +5800,73 @@
         }
       })();
 
+      // ---- WhatsApp: DDI separado do número
+      // No banco o telefone é guardado só com dígitos, com DDI na frente.
+      // Na tela ele aparece dividido: país no seletor, DDD e número no campo.
+      var DDIS = ['55', '351', '1', '34', '39', '44', '595', '598', '54'];
+
+      function preencherWhatsapp(valor) {
+        var digitos = String(valor || '').replace(/\D/g, '');
+        var ddiSel = document.getElementById('p-ddi');
+        var campo = document.getElementById('p-whats');
+        if (!campo) return;
+
+        // Números antigos foram salvos sem DDI. Com 10 ou 11 dígitos assumimos
+        // Brasil, que é o caso de quase toda a base.
+        var ddi = '55';
+        var resto = digitos;
+        if (digitos.length > 11) {
+          var achou = DDIS.filter(function (d) { return digitos.indexOf(d) === 0; })
+                          .sort(function (a, b) { return b.length - a.length; })[0];
+          if (achou) { ddi = achou; resto = digitos.slice(achou.length); }
+        }
+        if (ddiSel) ddiSel.value = ddi;
+        campo.value = resto;
+      }
+
+      function montarWhatsapp() {
+        var ddiSel = document.getElementById('p-ddi');
+        var ddi = ddiSel ? ddiSel.value : '55';
+        var resto = (document.getElementById('p-whats').value || '').replace(/\D/g, '');
+        return resto ? ddi + resto : '';
+      }
+
+      function limparCamposDeSenha() {
+        ['p-senha-atual', 'p-senha-nova', 'p-senha-confirma'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el && el.dataset.tocado !== '1') { el.value = ''; }
+        });
+      }
+
+      // Marca o campo de senha assim que a pessoa digita. Preenchimento
+      // automático do navegador não dispara estes eventos.
+      ['p-senha-atual', 'p-senha-nova', 'p-senha-confirma'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        ['input', 'keyup', 'paste'].forEach(function (evt) {
+          el.addEventListener(evt, function () { this.dataset.tocado = this.value ? '1' : ''; });
+        });
+      });
+
       document.getElementById('perfilForm').addEventListener('submit', function (e) {
         e.preventDefault();
         var payload = {
           nome: document.getElementById('p-nome').value.trim(),
           email: document.getElementById('p-email').value.trim(),
-          whatsapp: document.getElementById('p-whats').value.trim()
+          whatsapp: montarWhatsapp()
         };
 
         // ---- Troca de senha (campos opcionais; só envia se preenchidos)
-        var senhaAtual = document.getElementById('p-senha-atual').value;
-        var senhaNova = document.getElementById('p-senha-nova').value;
-        var senhaConfirma = document.getElementById('p-senha-confirma').value;
+        // Só conta o que a pessoa digitou. Sem isso, o gerenciador de senhas do
+        // navegador preenche os campos sozinho e o formulário passa a exigir
+        // troca de senha de quem só queria salvar nome ou telefone.
+        function digitado(id) {
+          var el = document.getElementById(id);
+          return (el && el.dataset.tocado === '1') ? el.value : '';
+        }
+        var senhaAtual = digitado('p-senha-atual');
+        var senhaNova = digitado('p-senha-nova');
+        var senhaConfirma = digitado('p-senha-confirma');
         if (senhaAtual || senhaNova || senhaConfirma) {
           if (!senhaAtual) {
             toast('Informe a senha atual para poder alterá-la.', 'error');
