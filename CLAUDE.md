@@ -614,6 +614,16 @@ Aí decidir se some só o reprovado ou se nada aparece antes de aprovado.
 
 ---
 
+## Agente de bugs
+
+`.claude/agents/bugcode.md` é um subagente de caça a bugs, só de leitura. A lista de
+armadilhas dentro dele não é genérica: saiu de defeitos que já aconteceram aqui (SELECT
+sem a coluna, UPDATE que apaga o bloco vizinho, laço sobre tempo sem teto, `bigint` que
+volta como string, `ILIKE '%SC%'` casando dentro de "Francisco"). Quando um bug novo
+tiver uma causa que não está lá, vale acrescentar.
+
+Invocar com `bugcode`, apontando o fluxo a investigar.
+
 ## Manutenção deste arquivo
 
 Atualizar **no mesmo commit** da mudança sempre que mexer em:
@@ -628,6 +638,8 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Criado o subagente `bugcode` (`.claude/agents/`), só de leitura, com a
+  lista de armadilhas reais deste projeto em vez de conselhos genéricos.
 - **2026-08-27** — **Grupo do comprador**: nasce já com o corretor definido e leva o
   primeiro nome dele no assunto (`Casa mc7GvdX · Marcelo`). No repasse o grupo é
   renomeado, o convite anterior é revogado e o corretor que abre o link fora do prazo
