@@ -192,6 +192,9 @@ contando de 1 até acabar. O código não tem ordem nem vizinho.
 O alfabeto (`lib/codigo-imovel.js`) não tem `0/O/o` nem `1/l/I`: são os pares que
 a pessoa erra ao ditar o código por telefone.
 
+O código aparece em **toda tela interna**: card do painel, card do admin, cabeçalho da
+edição em `/anunciar`, selo na página do imóvel, nome do grupo e mensagens do WhatsApp.
+
 **URL pública:** `/imovel/<tipo>-<preço>-<cidade>/?id=<codigo>`
 
 O slug é enfeite para leitura e para busca; quem identifica é o código na query.
@@ -217,7 +220,7 @@ aos imóveis navegando.
 
 ## Cadastro: estado e cidade
 
-**Todo perfil informa estado e cidade**, não só o corretor. Antes o proprietário era
+**Todo perfil informa estado e cidade**, no cadastro **e no perfil**. Antes o proprietário era
 gravado com `cidade = 'Não especificada'` e ficava fora de qualquer critério de região;
 o corretor tinha só `regiao_atuacao` em texto livre, que não cruza com nada.
 
@@ -234,6 +237,10 @@ que trabalha um imóvel dele. Uma nota por (corretor, autor, imóvel), reeditáv
 Só avalia quem trabalhou com você: a rota confere que **o imóvel é seu** e que **o
 corretor tem interesse nele**. Sem isso a nota viraria opinião de quem nunca trocou uma
 palavra com o corretor.
+
+O corretor vê a própria média na aba **Compradores**: é o número que decide quem recebe
+comprador primeiro, e escondê-lo dele não faria sentido. Sem avaliação nenhuma, a tela
+explica em vez de mostrar zero, que pareceria nota ruim.
 
 A média já é lida por `lib/atendimento.js` para ordenar a fila. Quem não tem nota entra
 como 3.5, não 0 (ver "Atendimento do comprador").
@@ -360,6 +367,11 @@ fecha o prazo (`registrarEntrada`). Quem abre o link depois de perder a vez rece
 página explicando que o prazo terminou e que o atendimento já foi repassado, em vez de
 um "convite cancelado" que não diz nada.
 
+**O dono do imóvel é avisado** (`comprador_no_seu_imovel`), uma vez por atendimento:
+ele não entra neste grupo, mas saber que apareceu comprador no imóvel dele é a
+informação mais importante que ele recebe da plataforma. O repasse para outro corretor
+não gera aviso novo.
+
 **Acabando os corretores**, o atendimento fica `sem_corretor`, mas o grupo continua
 de pé com o atendente da Moravo dentro: quem assume é uma pessoa, não uma fila vazia.
 
@@ -435,7 +447,11 @@ Consequências no código:
 
 **Tipos de notificação:** `corretor_trabalhando`, `proposta_recebida`, `proposta_aceita`,
 `proposta_recusada`, `envio_whatsapp_falhou`, `corretor_escolhido`, `corretor_recusado`,
-`corretor_recusado_auto`, `corretor_renunciou`, `imovel_vendido`, `documento_reprovado`.
+`corretor_recusado_auto`, `corretor_renunciou`, `imovel_vendido`, `documento_reprovado`,
+`comprador_para_atender` (corretor), `comprador_no_seu_imovel` (dono).
+
+⚠️ Tipo novo sem `case` no `dashboard.html` cai no `default` e aparece **como o próprio
+slug** para o usuário. Ao criar um tipo, escrever o texto dele no mesmo commit.
 
 ---
 
@@ -656,6 +672,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Revisão das telas por perfil, com seis correções: estado e cidade
+  passam a ser editáveis no **perfil** (e o `PUT /api/usuarios/me` grava `uf`, que antes
+  ignorava); o **dono é avisado** quando aparece comprador no imóvel dele; as duas
+  notificações novas ganharam texto (apareciam como o slug cru); o corretor **vê a própria
+  nota**; e o código do imóvel passou a aparecer no admin, no `/anunciar` e nos cards.
 - **2026-08-27** — Telas do atendimento: botão do comprador em `/detalhes` com modal de
   progresso próprio, e aba **Compradores** no painel do corretor mostrando o prazo em
   minutos úteis e o botão que confirma. Nova rota `GET /api/atendimentos/meus`.

@@ -1157,6 +1157,11 @@ body {
               '<div class="head-titles">' +
                 '<h3>' + escapeHtml(im.titulo) + '</h3>' +
                 '<div class="tags">' +
+                  // Código público: é por ele que o suporte identifica o imóvel,
+                  // e é ele que nomeia o grupo no WhatsApp.
+                  (im.codigo ? '<span class="tag" style="background:var(--emerald-lt,#FFF0E6);' +
+                    'color:var(--emerald-dk,#E05300);font-weight:700;letter-spacing:.05em">' +
+                    escapeHtml(im.codigo) + '</span>' : '') +
                   '<span class="tag tipo">' + escapeHtml(im.tipo) + '</span>' +
                   '<span class="tag">' + escapeHtml(im.cidade + (im.uf ? '/' + im.uf : '')) + '</span>' +
                   (im.bairro ? '<span class="tag">' + escapeHtml(im.bairro) + '</span>' : '') +

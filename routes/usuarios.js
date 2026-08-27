@@ -98,7 +98,7 @@ const { requireAuth } = require('../middleware/auth');
 
 router.put('/me', requireAuth, async (req, res) => {
   try {
-    const { nome, email, whatsapp, cidade, creci, regiao, senha_atual, senha_nova } = req.body;
+    const { nome, email, whatsapp, cidade, uf, creci, regiao, senha_atual, senha_nova } = req.body;
     
     if (!nome || !email) {
       return res.status(400).json({ ok: false, error: 'Nome e E-mail são obrigatórios.' });
@@ -135,7 +135,7 @@ router.put('/me', requireAuth, async (req, res) => {
     // Busca os dados atuais do usuário para preencher campos não enviados
     // (importante pra campos NOT NULL como cidade, que podem estar ausentes no PUT)
     const currentUser = await query(
-      'SELECT nome, email, whatsapp, cidade, creci, regiao_atuacao FROM moravo.usuarios WHERE id = $1',
+      'SELECT nome, email, whatsapp, cidade, uf, creci, regiao_atuacao FROM moravo.usuarios WHERE id = $1',
       [req.user.id]
     );
     if (currentUser.rowCount === 0) {
@@ -158,9 +158,10 @@ router.put('/me', requireAuth, async (req, res) => {
 
     const result = await query(
       `UPDATE moravo.usuarios
-       SET nome = $1, email = $2, whatsapp = $3, cidade = $4, creci = $5, regiao_atuacao = $6, updated_at = NOW()
+       SET nome = $1, email = $2, whatsapp = $3, cidade = $4, creci = $5, regiao_atuacao = $6,
+           uf = $8, updated_at = NOW()
        WHERE id = $7
-       RETURNING id, nome, email, whatsapp, cidade, perfil, creci, regiao_atuacao AS regiao, foto_perfil`,
+       RETURNING id, nome, email, whatsapp, cidade, uf, perfil, creci, regiao_atuacao AS regiao, foto_perfil`,
       [
         (nome || u.nome).trim(),
         (email || u.email).trim().toLowerCase(),
@@ -168,7 +169,11 @@ router.put('/me', requireAuth, async (req, res) => {
         cidadeFinal,
         creci != null ? creci.trim() : u.creci,
         regiao != null ? regiao.trim() : u.regiao_atuacao,
-        req.user.id
+        req.user.id,
+        // Campo ausente no corpo mantém o valor atual; sigla inválida também,
+        // para um envio malformado não apagar o que já estava certo.
+        (typeof uf === 'string' && /^[A-Za-z]{2}$/.test(uf.trim()))
+          ? uf.trim().toUpperCase() : u.uf,
       ]
     );
 

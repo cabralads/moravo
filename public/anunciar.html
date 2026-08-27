@@ -587,6 +587,16 @@ textarea{min-height:96px;resize:vertical}
       if (!r.ok || !r.body.imovel) { aviso('Imóvel não encontrado.', 'erro'); return; }
       var im = r.body.imovel;
       $('titulo').textContent = 'Editar anúncio';
+      // O código identifica o imóvel em link, grupo e suporte: quem edita
+      // precisa vê-lo para citar o imóvel certo.
+      if (im.codigo) {
+        var marca = document.createElement('span');
+        marca.textContent = im.codigo;
+        marca.title = 'Código do imóvel na Moravo';
+        marca.style.cssText = 'margin-left:10px; font-size:.72em; font-weight:700; letter-spacing:.05em;' +
+          'background:#FFF0E6; color:#E05300; padding:4px 10px; border-radius:30px; vertical-align:middle';
+        $('titulo').appendChild(marca);
+      }
       $('subtitulo').textContent = 'As alterações aparecem no site assim que você salvar.';
       $('salvar').textContent = 'Salvar alterações';
       document.title = 'Moravo | Editar anúncio';

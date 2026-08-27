@@ -88,7 +88,7 @@ router.get('/imoveis', async (req, res) => {
     const comDocumento = req.query.com_documento === '1' || req.query.com_documento === 'true';
     const where = 'im.status_aprovacao = $1' + (comDocumento ? " AND im.escritura_arquivo_url IS NOT NULL AND im.escritura_arquivo_url <> ''" : '');
     const r = await query(
-      `SELECT im.id, im.titulo, im.tipo, im.preco, im.cidade, im.uf, im.bairro,
+      `SELECT im.id, im.codigo, im.titulo, im.tipo, im.preco, im.cidade, im.uf, im.bairro,
               im.status_aprovacao, im.aprovado_em, im.reprovado_em, im.reprovado_motivo,
               im.escritura_arquivo_url, im.matricula, im.condominio, im.valor_condominio,
               im.created_at, im.fotos,

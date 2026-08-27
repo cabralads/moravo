@@ -713,6 +713,13 @@
     /* Corretor card (na lista de interessados) */
     /* Estrelas de avaliação do corretor. Botão de verdade, não span com
        onclick: precisa chegar pelo teclado e ser lido em voz alta. */
+    /* Código público do imóvel: aparece no card, no grupo do WhatsApp e na URL.
+       É por ele que o suporte e o corretor citam o imóvel. */
+    .codigo-imovel {
+      font-weight: 700; letter-spacing: .05em; font-size: .82em;
+      background: var(--emerald-lt, #FFF0E6); color: var(--emerald-dk, #E05300);
+      padding: 1px 7px; border-radius: 20px;
+    }
     .avaliacao-linha {
       display: flex; align-items: center; gap: 8px;
       margin-top: 10px; padding-top: 10px;
@@ -2223,28 +2230,13 @@
                     <div class="whats-linha"><select id="p-ddi" class="whats-ddi" aria-label="País"><option value="55" data-bandeira="🇧🇷" selected>🇧🇷 +55</option><option value="351" data-bandeira="🇵🇹">🇵🇹 +351</option><option value="1" data-bandeira="🇺🇸">🇺🇸 +1</option><option value="34" data-bandeira="🇪🇸">🇪🇸 +34</option><option value="39" data-bandeira="🇮🇹">🇮🇹 +39</option><option value="44" data-bandeira="🇬🇧">🇬🇧 +44</option><option value="595" data-bandeira="🇵🇾">🇵🇾 +595</option><option value="598" data-bandeira="🇺🇾">🇺🇾 +598</option><option value="54" data-bandeira="🇦🇷">🇦🇷 +54</option></select><input type="text" inputmode="tel" id="p-whats" placeholder="(47) 99999-9999" required /></div>
                   </div>
                 </div>
-                <div class="field" id="p-cidade-field" style="margin-top: 16px;">
-                  <label for="p-cidade">Cidade residencial</label>
+                <div class="field" id="p-cidade-field" style="display:none">
+                  <label for="p-cidade">Cidade</label>
                   <input type="text" id="p-cidade" placeholder="Ex.: Joinville" />
                 </div>
-                <div id="perfilCorretorFields" class="hidden">
-                  <div style="display: flex; gap: 16px; margin-top: 16px;">
-                    <div class="field" style="flex: 2;">
-                      <label for="p-creci-num">CRECI (número)</label>
-                      <input type="text" id="p-creci-num" placeholder="Ex.: 12345"
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;" />
-                    </div>
-                    <div class="field" style="flex: 1;">
-                      <label for="p-creci-tipo">Dígito/Letra</label>
-                      <select id="p-creci-tipo"
-                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
-                        <option value="">Selecione</option>
-                        <option value="F">F (Autônomo)</option>
-                        <option value="J">J (PJ)</option>
-                      </select>
-                    </div>
-                  </div>
-                  <input type="hidden" id="p-creci" />
+                <!-- Estado e cidade valem para todos os perfis: é o que liga um
+                     comprador ao corretor da região. Para o corretor, é também
+                     a região de atuação. -->
                   <div style="display: flex; gap: 16px; margin-top: 16px;">
                     <div class="field" style="flex: 1;">
                       <label for="p-regiao-uf">Estado</label>
@@ -2281,7 +2273,7 @@
                       </select>
                     </div>
                     <div class="field" style="flex: 1;">
-                      <label for="p-regiao-cidade">Cidade de atuação</label>
+                      <label for="p-regiao-cidade">Cidade</label>
                       <select id="p-regiao-cidade" disabled
                         style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
                         <option value="">Selecione o estado primeiro</option>
@@ -2289,6 +2281,24 @@
                     </div>
                   </div>
                   <input type="hidden" id="p-regiao" />
+                <div id="perfilCorretorFields" class="hidden">
+                  <div style="display: flex; gap: 16px; margin-top: 16px;">
+                    <div class="field" style="flex: 2;">
+                      <label for="p-creci-num">CRECI (número)</label>
+                      <input type="text" id="p-creci-num" placeholder="Ex.: 12345"
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;" />
+                    </div>
+                    <div class="field" style="flex: 1;">
+                      <label for="p-creci-tipo">Dígito/Letra</label>
+                      <select id="p-creci-tipo"
+                        style="width: 100%; height: 42px; border: 1px solid var(--beige); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 16px;">
+                        <option value="">Selecione</option>
+                        <option value="F">F (Autônomo)</option>
+                        <option value="J">J (PJ)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <input type="hidden" id="p-creci" />
                 </div>
               </div>
               <div class="settings-pane" id="pane-seguranca">
@@ -3219,7 +3229,9 @@
             '</svg>' +
             'Verificado' +
           '</span>' : '') + '</h3>' +
-          '<p class="meta">' + tipoLabel + (im.bairro ? ' · ' + im.bairro : '') + ' · ' + im.cidade + '</p>' +
+          '<p class="meta">' +
+            (im.codigo ? '<span class="codigo-imovel" title="Código do imóvel">' + escapeHtml(im.codigo) + '</span> · ' : '') +
+            tipoLabel + (im.bairro ? ' · ' + im.bairro : '') + ' · ' + im.cidade + '</p>' +
           (specs.length ? '<div class="specs">' + specs.map(function (s) { return '<span>' + s + '</span>'; }).join('') + '</div>' : '') +
           (opts.canEdit ? '<div style="margin: 8px 0; font-size: 0.82rem; color: #00796b; display: flex; align-items: center; gap: 6px; font-weight: 700; background: #e0f2f1; padding: 4px 10px; border-radius: 6px; width: fit-content;">👥 ' + (im.interesses_compradores || 0) + ' comprador' + ((im.interesses_compradores || 0) !== 1 ? 'es' : '') + ' interessado' + ((im.interesses_compradores || 0) !== 1 ? 's' : '') + '</div>' : '') +
           (acoes.length ? '<div class="actions">' + acoes.join('') + '</div>' : '') +
@@ -3504,7 +3516,9 @@
                 '<div class="body" style="display:flex; flex-direction:column; justify-content:space-between; flex:1;">' +
                 '<div>' +
                 '<h3>' + (im.titulo || tipoLabel) + '</h3>' +
-                '<p class="meta">' + tipoLabel + (im.bairro ? ' · ' + im.bairro : '') + ' · ' + im.cidade + '</p>' +
+                '<p class="meta">' +
+            (im.codigo ? '<span class="codigo-imovel" title="Código do imóvel">' + escapeHtml(im.codigo) + '</span> · ' : '') +
+            tipoLabel + (im.bairro ? ' · ' + im.bairro : '') + ' · ' + im.cidade + '</p>' +
                 (specs.length ? '<div class="specs">' + specs.map(function (s) { return '<span>' + s + '</span>'; }).join('') + '</div>' : '') +
                 '</div>' +
                 '<div style="margin-top:12px; display:flex; flex-direction:column;">' +
@@ -3818,6 +3832,43 @@
         });
       }
 
+      // ---- Nota do próprio corretor
+      // Ele é ordenado na fila por essa média (ver CLAUDE.md, "Atendimento do
+      // comprador"), então esconder dele o número que decide quem recebe
+      // comprador seria estranho. Sem avaliação nenhuma, explica em vez de
+      // mostrar zero, que pareceria nota ruim.
+      function renderMinhaNota(alvo) {
+        if (!alvo || user.perfil !== 'corretor') return;
+        api('/api/avaliacoes/corretor/' + user.id).then(function (r) {
+          if (!r.ok) return;
+          var resumo = (r.body && r.body.resumo) || {};
+          var total = Number(resumo.total || 0);
+          var media = Number(resumo.media || 0);
+
+          if (!total) {
+            alvo.innerHTML = '<div class="admin-panel" style="padding:14px 16px">' +
+              '<strong style="font-size:.95rem">Sua nota</strong><br>' +
+              '<span class="muted" style="font-size:.85rem">Você ainda não tem avaliações. ' +
+              'Os proprietários avaliam de 1 a 5 depois de trabalhar com você, e essa nota ' +
+              'ajuda a definir quem recebe comprador primeiro.</span></div>';
+            return;
+          }
+
+          var estrelas = '';
+          for (var i = 1; i <= 5; i++) {
+            estrelas += '<span style="font-size:1.05rem;color:' +
+              (i <= Math.round(media) ? '#F59E0B' : '#D6D3D1') + '">★</span>';
+          }
+          alvo.innerHTML = '<div class="admin-panel" style="padding:14px 16px; display:flex; ' +
+            'align-items:center; gap:12px; flex-wrap:wrap">' +
+            '<strong style="font-size:.95rem">Sua nota</strong>' +
+            '<span>' + estrelas + '</span>' +
+            '<strong style="font-size:1.05rem">' + media.toFixed(1).replace('.', ',') + '</strong>' +
+            '<span class="muted" style="font-size:.85rem">' + total +
+            (total === 1 ? ' avaliação' : ' avaliações') + '</span></div>';
+        });
+      }
+
       // ---- TAB: Compradores que caíram para este corretor
       // O prazo aparece em minutos ÚTEIS, e o texto diz isso: fora do
       // expediente o relógio está parado, e mostrar contagem regressiva
@@ -3825,7 +3876,9 @@
       function renderCompradores(c) {
         c.innerHTML = '<div class="section-head"><h1>Compradores</h1>' +
           '<p>Compradores que pediram atendimento nos imóveis da sua região. ' +
-          'Entrar no grupo é o que confirma o atendimento.</p></div><div id="grid"></div>';
+          'Entrar no grupo é o que confirma o atendimento.</p></div>' +
+          '<div id="minhaNota" style="margin-bottom:16px"></div><div id="grid"></div>';
+        renderMinhaNota(c.querySelector('#minhaNota'));
         var grid = c.querySelector('#grid');
         grid.innerHTML = '<p class="muted">Carregando…</p>';
 
@@ -4757,29 +4810,35 @@
             document.getElementById('p-creci-tipo').value = creciTipo;
             document.getElementById('p-creci').value = creciRaw;
 
-            var reg = user.regiao || '';
-            var cidVal = '';
-            var ufVal = '';
-            if (reg.indexOf(' - ') !== -1) {
-              var parts = reg.split(' - ');
-              cidVal = parts[0];
-              ufVal = parts[1];
-            } else {
-              cidVal = reg;
-            }
-
-            document.getElementById('p-regiao-uf').value = ufVal;
-            document.getElementById('p-regiao').value = reg;
-
-            if (ufVal) {
-              popularCidadesPerfil(ufVal, cidVal);
-            } else {
-              var pCid = document.getElementById('p-regiao-cidade');
-              pCid.innerHTML = '<option value="">Selecione o estado primeiro</option>';
-              pCid.disabled = true;
-            }
+            document.getElementById('p-regiao').value = user.regiao || '';
           } else {
             document.getElementById('perfilCorretorFields').classList.add('hidden');
+          }
+
+          // Estado e cidade: para todos os perfis. Vale o que está gravado em
+          // uf/cidade; se faltar (conta antiga), tenta ler da região de atuação,
+          // que guardava "Cidade - UF".
+          var ufVal = (user.uf || '').trim();
+          var cidVal = (user.cidade || '').trim();
+          if (!ufVal || !cidVal) {
+            var reg = (user.regiao || '');
+            if (reg.indexOf(' - ') !== -1) {
+              var parts = reg.split(' - ');
+              cidVal = cidVal || parts[0];
+              ufVal = ufVal || parts[1];
+            } else if (!cidVal) {
+              cidVal = reg;
+            }
+          }
+
+          document.getElementById('p-regiao-uf').value = ufVal;
+          document.getElementById('p-cidade').value = cidVal;
+          if (ufVal) {
+            popularCidadesPerfil(ufVal, cidVal);
+          } else {
+            var pCid = document.getElementById('p-regiao-cidade');
+            pCid.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+            pCid.disabled = true;
           }
           window.__settingsPainted = true;
         }
@@ -5432,6 +5491,24 @@
             return 'Sua proposta para o imóvel <strong>' +
               escapeHtml(n.imovel_titulo || ('#' + n.imovel_id)) + '</strong> foi recusada.' +
               (motivoProp ? '<br><span style="color:#d32f2f; font-size:0.85rem;">Motivo: ' + escapeHtml(motivoProp) + '</span>' : '');
+          case 'comprador_para_atender':
+            var compAt = (n.payload && n.payload.comprador_nome) || 'Um comprador';
+            var imovAt = (n.payload && n.payload.imovel_titulo) || n.imovel_titulo || ('#' + n.imovel_id);
+            var codAt = (n.payload && n.payload.imovel_codigo) ? ' <strong>' + escapeHtml(n.payload.imovel_codigo) + '</strong>' : '';
+            var prazoAt = (n.payload && n.payload.prazo_minutos) || 60;
+            return '<strong>' + escapeHtml(compAt) + '</strong> quer falar sobre o imóvel <strong>' +
+              escapeHtml(imovAt) + '</strong>' + codAt + '. Entre no grupo em até ' + prazoAt +
+              ' minutos de horário comercial para confirmar o atendimento; depois disso ele passa para outro corretor.' +
+              '<br><span style="color:var(--ink-soft); font-size:0.85rem;">Veja em Compradores.</span>';
+          case 'comprador_no_seu_imovel':
+            var compDono = (n.payload && n.payload.comprador_nome) || 'Um comprador';
+            var corrDono = (n.payload && n.payload.corretor_nome) || '';
+            var imovDono = (n.payload && n.payload.imovel_titulo) || n.imovel_titulo || ('#' + n.imovel_id);
+            return '<strong>' + escapeHtml(compDono) + '</strong> pediu atendimento no seu imóvel <strong>' +
+              escapeHtml(imovDono) + '</strong>' +
+              (corrDono ? ', e o corretor <strong>' + escapeHtml(corrDono) + '</strong> foi acionado para atender' : '') +
+              '.<br><span style="color:var(--ink-soft); font-size:0.85rem;">' +
+              'A conversa acontece entre o comprador e o corretor. Você é avisado quando houver proposta.</span>';
           case 'envio_whatsapp_falhou':
             return 'Falha ao enviar o convite do grupo por WhatsApp no imóvel <strong>' +
               escapeHtml((n.payload && n.payload.imovel_titulo) || ('#' + n.imovel_id)) +
@@ -5569,6 +5646,8 @@
                 'corretor_escolhido': 'Você foi aprovado',
                 'corretor_interessado': 'Novo corretor interessado',
                 'corretor_renunciou': 'Corretor renunciou',
+                'comprador_para_atender': 'Comprador para atender',
+                'comprador_no_seu_imovel': 'Comprador no seu imóvel',
                 'corretor_recusado': 'Proposta recusada',
                 'corretor_recusado_auto': 'Proposta encerrada',
                 'imovel_vendido': 'Imóvel vendido',
@@ -6113,6 +6192,20 @@
           payload.creci = document.getElementById('p-creci').value.trim();
           payload.regiao = document.getElementById('p-regiao').value.trim();
         }
+
+        // Estado e cidade valem para todos os perfis. O campo de texto antigo
+        // vira espelho do select, porque ainda há código lendo dele.
+        var ufSel = document.getElementById('p-regiao-uf').value.trim();
+        var cidSel = document.getElementById('p-regiao-cidade').value.trim();
+        // Sai antes de o botão ser desabilitado, então não há nada a restaurar
+        if (!ufSel || !cidSel) {
+          toast('Selecione o seu estado e a sua cidade.', 'error');
+          document.getElementById(ufSel ? 'p-regiao-cidade' : 'p-regiao-uf').focus();
+          return;
+        }
+        document.getElementById('p-cidade').value = cidSel;
+        payload.uf = ufSel;
+        payload.cidade = cidSel;
 
         var saveBtn = document.getElementById('savePerfilBtn');
         saveBtn.disabled = true;
