@@ -110,6 +110,7 @@ lib/grupo.js           cria/reaproveita o grupo da negociação e dispara os con
 lib/site-config.js     scripts de terceiros do admin e a injeção deles no HTML
 lib/pagina-grupo.js    página de entrada no grupo de WhatsApp (escapa a query string)
 lib/codigo-imovel.js   código público do imóvel, slug e URL amigável
+lib/foto-grupo.js      imagem dos grupos, guardada no banco (com padrão no repo)
 
 routes/
   auth.js          register, login, me
@@ -194,9 +195,14 @@ Assim o preço pode mudar, o slug muda junto, e **nenhum link já enviado quebra
 `/detalhes?id=…` continua funcionando e responde **301** para a URL nova, aceitando
 tanto o id antigo quanto o código.
 
-**Nome do grupo no WhatsApp:** `Tipo Codigo`, por exemplo `Casa mc7GvdX`. A foto do
-grupo é `public/img/moravo-grupo.jpg`, aplicada logo após a criação; se falhar, o
-grupo nasce sem foto e o resto segue.
+**Nome do grupo no WhatsApp:** `Tipo Codigo`, por exemplo `Casa mc7GvdX`. A foto é
+aplicada logo após a criação; se falhar, o grupo nasce sem foto e o resto segue.
+
+A imagem é trocável em `/admin` → Config. WhatsApp → **Foto dos grupos**, e fica
+**no banco** (`config_whatsapp.foto_grupo`, base64), não em `uploads/`: o container
+é recriado a cada deploy e arquivo em disco vai junto. Sem nada no banco, vale
+`public/img/moravo-grupo.jpg`, então nunca falta imagem por falta de configuração.
+A rota pública `GET /img/grupo` serve a que estiver valendo.
 
 **SEO:** a página do imóvel é montada no cliente, então o servidor injeta `<title>`,
 `description`, `canonical` e Open Graph com os dados reais antes de entregar o HTML
@@ -535,6 +541,9 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Foto dos grupos passa a ser trocável pelo painel, gravada no banco em
+  vez de `uploads/`, que se perde quando o container é recriado. O arquivo do repositório
+  continua como padrão.
 - **2026-08-27** — Imóvel ganhou **código público** de 7 caracteres (`codigo`), e ele
   substitui o id sequencial em tudo que é visível: URL (`/imovel/<slug>/?id=<codigo>`),
   selo na página do imóvel, nome do grupo (`Casa mc7GvdX`) e variável das mensagens.

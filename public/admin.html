@@ -925,10 +925,13 @@ body {
   // ---- API helper (com Authorization)
   function api(path, opts) {
     opts = opts || {};
-    var headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    // Com FormData quem define o Content-Type é o navegador, que precisa
+    // incluir o boundary. Fixar application/json aqui quebraria o upload.
+    var ehForm = (typeof FormData !== 'undefined') && (opts.body instanceof FormData);
+    var headers = Object.assign(ehForm ? {} : { 'Content-Type': 'application/json' }, opts.headers || {});
     if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
     var init = Object.assign({}, opts, { headers: headers });
-    if (init.body && typeof init.body !== 'string') init.body = JSON.stringify(init.body);
+    if (init.body && !ehForm && typeof init.body !== 'string') init.body = JSON.stringify(init.body);
     return fetch(API_BASE + path, init).then(function (r) {
       return r.json().then(function (body) { return { ok: r.ok, status: r.status, body: body }; });
     });
@@ -1409,6 +1412,26 @@ body {
         '</div>' +
 
         '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Foto dos grupos</h3>' +
+          '<p class="muted" style="margin-bottom:18px">Aplicada em todo grupo novo, logo depois de criado. ' +
+          'Quem recebe o convite vê essa imagem antes de entrar. Use uma imagem <b>quadrada</b>: o WhatsApp corta ' +
+          'em círculo. JPG, PNG ou WEBP, até 2MB.</p>' +
+          '<div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap">' +
+            '<img id="fotoGrupoPrevia" src="/img/grupo?v=' + Date.now() + '" alt="Foto atual dos grupos" ' +
+              'style="width:110px; height:110px; border-radius:50%; object-fit:cover; border:1px solid var(--beige); background:#fff" />' +
+            '<div style="flex:1; min-width:260px">' +
+              '<p class="muted" id="fotoGrupoOrigem" style="font-size:.85rem; margin-bottom:12px">Carregando…</p>' +
+              '<input type="file" id="fotoGrupoArquivo" accept="image/jpeg,image/png,image/webp" ' +
+                'style="display:block; margin-bottom:14px" />' +
+              '<div class="acoes">' +
+                '<button class="btn btn-primary" id="fotoGrupoSalvar">Salvar foto</button>' +
+                '<button class="btn btn-ghost" id="fotoGrupoPadrao">Usar a padrão</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="admin-panel" style="max-width:780px">' +
           '<h3>Templates cadastrados na Meta</h3>' +
           '<p class="muted" style="margin-bottom:16px">Consulta direto na sua conta do WhatsApp Business. ' +
           'Se o envio falha com "Template name does not exist", a resposta está aqui: nome diferente, ' +
@@ -1436,6 +1459,47 @@ body {
           if (!resp.ok) { toast(resp.body.error || 'Erro ao salvar.', 'error'); return; }
           toast(resp.body.pronto ? 'Salvo. Envio pronto para uso.' : ('Salvo. ' + (resp.body.motivo || '')), 'success');
           renderWhatsappConfig();
+        });
+      };
+
+      // ---- Foto dos grupos
+      function recarregarFotoGrupo() {
+        $('fotoGrupoPrevia').src = '/img/grupo?v=' + Date.now();
+        api('/api/admin/whatsapp/foto-grupo').then(function (r) {
+          var alvo = $('fotoGrupoOrigem');
+          if (!alvo) return;
+          if (!r.ok || !r.body.existe) { alvo.textContent = 'Nenhuma imagem disponível.'; return; }
+          var kb = Math.round((r.body.bytes || 0) / 1024);
+          alvo.textContent = r.body.origem === 'painel'
+            ? 'Enviada pelo painel · ' + kb + ' KB'
+            : 'Usando a imagem padrão do sistema · ' + kb + ' KB';
+        });
+      }
+      recarregarFotoGrupo();
+
+      $('fotoGrupoSalvar').onclick = function () {
+        var btn = this, campo = $('fotoGrupoArquivo');
+        if (!campo.files || !campo.files[0]) { toast('Escolha uma imagem primeiro.', 'error'); return; }
+        var dados = new FormData();
+        dados.append('foto', campo.files[0]);
+        btn.disabled = true; btn.textContent = 'Enviando…';
+        api('/api/admin/whatsapp/foto-grupo', { method: 'POST', body: dados }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Salvar foto';
+          if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro ao enviar.', 'error'); return; }
+          campo.value = '';
+          toast('Foto salva. Vale para os próximos grupos.', 'success');
+          recarregarFotoGrupo();
+        });
+      };
+
+      $('fotoGrupoPadrao').onclick = function () {
+        var btn = this;
+        btn.disabled = true; btn.textContent = 'Voltando…';
+        api('/api/admin/whatsapp/foto-grupo', { method: 'DELETE' }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Usar a padrão';
+          if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro.', 'error'); return; }
+          toast('Voltou para a imagem padrão.', 'success');
+          recarregarFotoGrupo();
         });
       };
 

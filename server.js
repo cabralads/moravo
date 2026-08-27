@@ -357,6 +357,20 @@ app.get(['/detalhes', '/detalhes.html'], async (req, res, next) => {
   }
 });
 
+// ---- Foto do grupo, servida do banco (ou do repositório, se não houver)
+// Existe para a prévia do painel do admin. É a mesma imagem que todo mundo
+// que entra num grupo já vê, então não há o que proteger aqui.
+app.get('/img/grupo', async (req, res) => {
+  try {
+    const foto = await require('./lib/foto-grupo').obterFotoGrupo();
+    if (!foto) return res.sendStatus(404);
+    res.type(foto.mimetype).set('Cache-Control', 'no-store').send(Buffer.from(foto.base64, 'base64'));
+  } catch (err) {
+    console.error('[img/grupo] erro:', err.message);
+    res.sendStatus(500);
+  }
+});
+
 // ---- sitemap.xml e robots.txt
 // Os cards do site abrem por onclick, não por <a href>, então um buscador não
 // tem por onde chegar aos imóveis navegando. O sitemap é o caminho que resta.
@@ -739,6 +753,12 @@ app.listen(PORT, '0.0.0.0', async () => {
     await migrar('whatsapp_envios.idx_wamid', `
       CREATE INDEX IF NOT EXISTS idx_whatsapp_envios_wamid
         ON moravo.whatsapp_envios (wamid);
+    `);
+    await migrar('config_whatsapp.foto_grupo', `
+      ALTER TABLE moravo.config_whatsapp
+        ADD COLUMN IF NOT EXISTS foto_grupo      TEXT,
+        ADD COLUMN IF NOT EXISTS foto_grupo_mime TEXT,
+        ADD COLUMN IF NOT EXISTS foto_grupo_em   TIMESTAMPTZ;
     `);
     await migrar('config_whatsapp.webhook', `
       ALTER TABLE moravo.config_whatsapp

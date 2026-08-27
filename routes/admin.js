@@ -12,6 +12,15 @@ const siteConfig = require('../lib/site-config');
 const waha = require('../lib/waha');
 const cripto = require('../lib/cripto');
 const { garantirGrupo, reenviarConvite } = require('../lib/grupo');
+const multer = require('multer');
+const fotoGrupo = require('../lib/foto-grupo');
+
+// Memória, não disco: a imagem vai para o banco. Gravar em uploads/ seria
+// perdê-la no próximo deploy, junto com o container.
+const uploadFoto = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: fotoGrupo.TAMANHO_MAX, files: 1 },
+});
 
 const router = express.Router();
 
@@ -539,6 +548,47 @@ router.post('/whatsapp/envios/:id/reenviar', async (req, res) => {
     }
   } catch (err) {
     console.error('[admin/whatsapp/reenviar] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- Foto que os grupos novos recebem
+// GET devolve só os metadados: a imagem em si sai por /img/grupo, para não
+// carregar base64 dentro do JSON da tela toda vez.
+router.get('/whatsapp/foto-grupo', async (req, res) => {
+  try {
+    const foto = await fotoGrupo.obterFotoGrupo();
+    if (!foto) return res.json({ ok: true, existe: false });
+    return res.json({
+      ok: true, existe: true, origem: foto.origem,
+      mimetype: foto.mimetype, atualizada_em: foto.em,
+      bytes: Buffer.from(foto.base64, 'base64').length,
+    });
+  } catch (err) {
+    console.error('[admin/foto-grupo GET] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+router.post('/whatsapp/foto-grupo', uploadFoto.single('foto'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ ok: false, error: 'Escolha uma imagem.' });
+    const r = await fotoGrupo.salvarFotoGrupo({
+      buffer: req.file.buffer, mimetype: req.file.mimetype,
+    });
+    return res.json({ ok: true, bytes: r.bytes });
+  } catch (err) {
+    // Erro de validação é do usuário, não do servidor
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+router.delete('/whatsapp/foto-grupo', async (req, res) => {
+  try {
+    await fotoGrupo.limparFotoGrupo();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[admin/foto-grupo DELETE] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
   }
 });
