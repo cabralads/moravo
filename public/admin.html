@@ -1294,6 +1294,7 @@ body {
     api('/api/admin/whatsapp/config').then(function (r) {
       if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
       var c = r.body.config;
+      var w = r.body.waha || {};
       box.innerHTML =
         '<div class="admin-panel" style="max-width:780px">' +
           '<h3>Credenciais do app</h3>' +
@@ -1346,10 +1347,24 @@ body {
 
         '<div class="admin-panel" style="max-width:780px">' +
           '<h3>Conexão do Waha (criação do grupo)</h3>' +
-          '<p class="muted" style="margin-bottom:16px">Quem cria o grupo é o Waha, não a API oficial. ' +
-          'Aqui você vê qual sessão o servidor está usando de verdade e se ela está conectada. ' +
-          'Se o grupo não é criado, a resposta costuma estar nesta tela.</p>' +
-          '<div class="acoes"><button class="btn btn-ghost" id="wahaCheck">Verificar conexão</button></div>' +
+          '<p class="muted" style="margin-bottom:18px">Quem cria o grupo é o Waha, não a API oficial. ' +
+          'O que estiver preenchido aqui vale sobre o .env do servidor.</p>' +
+          '<div class="painel-grid">' +
+            '<div class="field"><label for="wahaSessao">Nome da sessão</label>' +
+              '<input id="wahaSessao" value="' + escapeHtml(w.sessao || '') + '" placeholder="AtendenteX_Waha" /></div>' +
+            '<div class="field"><label for="wahaAtendente">Atendente principal (com DDI)</label>' +
+              '<input id="wahaAtendente" value="' + escapeHtml(w.atendente || '') + '" placeholder="5515981829650" /></div>' +
+            '<div class="field full"><label for="wahaUrl">URL do Waha</label>' +
+              '<input id="wahaUrl" value="' + escapeHtml(w.url || '') + '" placeholder="https://wpp.atendentex.com.br" /></div>' +
+            '<div class="field full"><label for="wahaExtras">Números internos extras <span class="opt">(opcional, separados por vírgula)</span></label>' +
+              '<input id="wahaExtras" value="' + escapeHtml(w.extras || '') + '" placeholder="5515999999999" /></div>' +
+          '</div>' +
+          '<p class="painel-dica" style="margin-top:-6px">O atendente é obrigatório: sem ele o grupo nunca é criado. ' +
+          'A chave de API continua no .env do servidor, por ser secreta.</p>' +
+          '<div class="acoes">' +
+            '<button class="btn btn-primary" id="wahaSalvar">Salvar conexão</button>' +
+            '<button class="btn btn-ghost" id="wahaCheck">Verificar conexão</button>' +
+          '</div>' +
           '<div id="wahaLista" style="margin-top:16px"></div>' +
         '</div>' +
 
@@ -1383,6 +1398,32 @@ body {
         });
       };
 
+      $('wahaSalvar').onclick = function () {
+        var btn = this;
+        btn.disabled = true; btn.textContent = 'Salvando…';
+        api('/api/admin/whatsapp/config', {
+          method: 'PUT',
+          body: {
+            phone_number_id: $('wappPhone').value,
+            waba_id:         $('wappWaba').value,
+            api_version:     $('wappVersao').value,
+            token:           '',
+            template_nome:   $('wappTemplate').value,
+            template_idioma: $('wappIdioma').value,
+            ativo:           $('wappAtivo').checked,
+            waha_url:        $('wahaUrl').value,
+            waha_sessao:     $('wahaSessao').value,
+            waha_atendente:  $('wahaAtendente').value,
+            waha_extras:     $('wahaExtras').value
+          }
+        }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Salvar conexão';
+          if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro ao salvar.', 'error'); return; }
+          toast('Conexão salva. Já vale para o próximo grupo.', 'success');
+          $('wahaCheck').click();
+        });
+      };
+
       $('wahaCheck').onclick = function () {
         var btn = this, alvo = $('wahaLista');
         btn.disabled = true; btn.textContent = 'Verificando…';
@@ -1397,9 +1438,9 @@ body {
           var ok = w.sessao_existe && String(w.sessao_status).toUpperCase() === 'WORKING';
 
           var alerta = '';
-          if (!w.sessao_veio_do_env) {
-            alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
-              '✕ WAHA_SESSION não está no .env do servidor. Usando o padrão do código: <strong style="margin-left:4px">' +
+          if (w.origem_sessao === 'padrão do código') {
+            alerta += '<div class="painel-status off" style="background:#fff6e6;color:#8a6100">' +
+              '! A sessão não foi definida no painel nem no .env. Usando o padrão: <strong style="margin-left:4px">' +
               escapeHtml(w.sessao_em_uso) + '</strong></div>';
           }
           if (!w.atendente_principal) {
@@ -1426,7 +1467,7 @@ body {
           alvo.innerHTML = alerta +
             '<table class="admin-logs" style="width:100%"><tbody>' +
             '<tr><td style="color:var(--ink-soft)">Servidor</td><td>' + escapeHtml(w.url) + '</td></tr>' +
-            '<tr><td style="color:var(--ink-soft)">Sessão em uso</td><td><strong>' + escapeHtml(w.sessao_em_uso) + '</strong></td></tr>' +
+            '<tr><td style="color:var(--ink-soft)">Sessão em uso</td><td><strong>' + escapeHtml(w.sessao_em_uso) + '</strong> <span class="muted" style="font-size:.82rem">(' + escapeHtml(w.origem_sessao || '') + ')</span></td></tr>' +
             '<tr><td style="color:var(--ink-soft)">Chave de API</td><td>' + (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ')' : 'NÃO definida') + '</td></tr>' +
             '<tr><td style="color:var(--ink-soft)">Atendente principal</td><td>' + escapeHtml(w.atendente_principal || 'NÃO definido') + '</td></tr>' +
             '</tbody></table>' +

@@ -503,6 +503,17 @@ app.listen(PORT, '0.0.0.0', async () => {
       INSERT INTO moravo.config_whatsapp (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
     `);
 
+    // Conexão do Waha configurável pelo painel. Antes só existia em variável de
+    // ambiente, com padrão embutido no código: quem esquecesse WAHA_SESSION no
+    // .env ficava usando outra sessão sem nunca ser avisado.
+    await migrar('config_whatsapp.waha', `
+      ALTER TABLE moravo.config_whatsapp
+        ADD COLUMN IF NOT EXISTS waha_url       TEXT,
+        ADD COLUMN IF NOT EXISTS waha_sessao    TEXT,
+        ADD COLUMN IF NOT EXISTS waha_atendente TEXT,
+        ADD COLUMN IF NOT EXISTS waha_extras    TEXT;
+    `);
+
     // Log de envios do convite pelo WhatsApp (alimenta a tela de erros do admin)
     await migrar('tabela whatsapp_envios', `
       CREATE TABLE IF NOT EXISTS moravo.whatsapp_envios (

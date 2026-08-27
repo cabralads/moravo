@@ -224,8 +224,13 @@ function mascararToken(token) {
 router.get('/whatsapp/config', async (req, res) => {
   try {
     const c = await wa.getConfig({ semCache: true });
+    const w = await waha.config({ semCache: true });
     return res.json({
       ok: true,
+      waha: {
+        url: w.url, sessao: w.sessao, atendente: w.atendente,
+        extras: w.extras.join(', '), origem: w.origem,
+      },
       config: {
         phone_number_id: c.phone_number_id,
         waba_id:         c.waba_id,
@@ -273,9 +278,22 @@ router.put('/whatsapp/config', async (req, res) => {
       }
     }
 
+    const wahaUrl    = (b.waha_url || '').trim();
+    const wahaSessao = (b.waha_sessao || '').trim();
+    const wahaAtend  = (b.waha_atendente || '').replace(/\D/g, '');
+    const wahaExtras = (b.waha_extras || '').trim();
+
+    if (wahaUrl && !/^https?:\/\//i.test(wahaUrl)) {
+      return res.status(400).json({ ok: false, error: 'A URL do Waha precisa começar com http:// ou https://' });
+    }
+    if (wahaSessao && !/^[A-Za-z0-9_.-]{1,80}$/.test(wahaSessao)) {
+      return res.status(400).json({ ok: false, error: 'Nome de sessão inválido. Use letras, números, ponto, hífen ou sublinhado.' });
+    }
+
     await query(
       `UPDATE moravo.config_whatsapp
-          SET phone_number_id = $1,
+          SET waha_url = $9, waha_sessao = $10, waha_atendente = $11, waha_extras = $12,
+              phone_number_id = $1,
               waba_id         = $2,
               api_version     = $3,
               template_nome   = $4,
@@ -285,10 +303,12 @@ router.put('/whatsapp/config', async (req, res) => {
               atualizado_por  = $8,
               atualizado_em   = NOW()
         WHERE id = 1`,
-      [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id]
+      [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id,
+       wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null]
     );
 
     wa.limparCache();
+    waha.limparCache();
     const check = await wa.prontoParaEnviar();
     return res.json({ ok: true, pronto: check.pronto, motivo: check.motivo || null });
   } catch (err) {

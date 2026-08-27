@@ -340,7 +340,16 @@ Por isso cada destinatário recebe um **token aleatório de 32 caracteres**, gra
 por id de interesse nem por código de grupo solto. Sem isso, qualquer pessoa usaria o domínio
 da Moravo para dar aparência oficial a um convite de grupo qualquer.
 
-**A configuração fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
+**A conexão do Waha também é editada no painel** (`/admin` → Config. WhatsApp): nome da
+sessão, número do atendente principal, URL e números internos extras ficam em
+`moravo.config_whatsapp`. O `.env` continua valendo como reserva, e o painel mostra a origem
+de cada valor (painel, `.env` ou padrão do código).
+
+⚠️ O padrão embutido no código é `AtendenteX_Waha`. Antes disso, quem esquecesse
+`WAHA_SESSION` no `.env` ficava usando essa sessão sem nunca ser avisado, e o grupo
+simplesmente não nascia. A **chave de API segue no `.env`**, por ser secreta.
+
+**A configuração da Meta fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
 `moravo.config_whatsapp` (linha única). O **token é cifrado com AES-256-GCM** usando
 `CONFIG_SECRET` (ou `JWT_SECRET` como reserva) e **nunca volta para o front-end** — a tela
 mostra só os 4 últimos caracteres. Com `ativo` desligado, o grupo é criado e o link aparece,
@@ -455,6 +464,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-27** — Conexão do Waha (sessão, atendente, URL e extras) passa a ser editável em
+  `/admin` → Config. WhatsApp, gravada em `config_whatsapp`, com o `.env` como reserva. Novo
+  diagnóstico mostra a sessão realmente em uso, de onde ela veio e o status das sessões no
+  Waha. Motivo: um imóvel entrou na carteira sem criar grupo e sem nenhum registro de erro
+  visível, porque a sessão vinha de variável de ambiente com padrão silencioso.
 - **2026-08-25** — Convite do grupo passa a usar **token nominal** (`convites_grupo`) em vez do
   código do WhatsApp na URL, com registro de quem abriu e revogação individual. `/linkgrupo`
   só resolve por token: id de imóvel e código de grupo solto foram removidos por serem
