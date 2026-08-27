@@ -1311,8 +1311,10 @@ body {
             '<div class="field"><label for="wappToken">Token de acesso permanente</label>' +
               '<input id="wappToken" type="password" autocomplete="new-password" placeholder="' +
               (c.token_definido ? 'definido (' + escapeHtml(c.token_mascarado) + ')' : 'ainda não configurado') + '" /></div>' +
-            '<div class="field"><label for="wappTemplate">Nome do template</label>' +
-              '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || 'link_grupo_convite') + '" /></div>' +
+            '<div class="field"><label for="wappTemplate">Template do proprietário</label>' +
+              '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || '') + '" placeholder="convite_grupo_proprietario" /></div>' +
+            '<div class="field"><label for="wappTemplateCor">Template do corretor</label>' +
+              '<input id="wappTemplateCor" value="' + escapeHtml(c.template_corretor || '') + '" placeholder="convite_grupo_corretor" /></div>' +
             '<div class="field"><label for="wappIdioma">Idioma do template</label>' +
               '<input id="wappIdioma" value="' + escapeHtml(c.template_idioma || 'pt_BR') + '" placeholder="pt_BR" /></div>' +
           '</div>' +
@@ -1339,8 +1341,13 @@ body {
               '<input id="wappTesteTel" placeholder="47999998888" /></div>' +
             '<div class="field"><label for="wappTesteNome">Nome (variável do corpo)</label>' +
               '<input id="wappTesteNome" placeholder="João" /></div>' +
-            '<div class="field full"><label for="wappTesteCod">Código do convite (sufixo do botão)</label>' +
+            '<div class="field"><label for="wappTesteCod">Código do convite (sufixo do botão)</label>' +
               '<input id="wappTesteCod" placeholder="TESTE123" /></div>' +
+            '<div class="field"><label for="wappTesteTemplate">Qual template testar</label>' +
+              '<select id="wappTesteTemplate">' +
+                '<option value="">Do proprietário</option>' +
+                '<option value="__corretor__">Do corretor</option>' +
+              '</select></div>' +
           '</div>' +
           '<div class="acoes"><button class="btn btn-ghost" id="wappTestar">Enviar teste</button></div>' +
         '</div>' +
@@ -1386,8 +1393,9 @@ body {
             waba_id:         $('wappWaba').value,
             api_version:     $('wappVersao').value,
             token:           $('wappToken').value,
-            template_nome:   $('wappTemplate').value,
-            template_idioma: $('wappIdioma').value,
+            template_nome:     $('wappTemplate').value,
+            template_corretor: $('wappTemplateCor').value,
+            template_idioma:   $('wappIdioma').value,
             ativo:           $('wappAtivo').checked
           }
         }).then(function (resp) {
@@ -1408,8 +1416,9 @@ body {
             waba_id:         $('wappWaba').value,
             api_version:     $('wappVersao').value,
             token:           '',
-            template_nome:   $('wappTemplate').value,
-            template_idioma: $('wappIdioma').value,
+            template_nome:     $('wappTemplate').value,
+            template_corretor: $('wappTemplateCor').value,
+            template_idioma:   $('wappIdioma').value,
             ativo:           $('wappAtivo').checked,
             waha_url:        $('wahaUrl').value,
             waha_sessao:     $('wahaSessao').value,
@@ -1525,7 +1534,9 @@ body {
           body: {
             telefone: $('wappTesteTel').value,
             nome: $('wappTesteNome').value || 'Teste',
-            codigo: $('wappTesteCod').value || 'TESTE123'
+            codigo: $('wappTesteCod').value || 'TESTE123',
+            template: $('wappTesteTemplate').value === '__corretor__'
+              ? $('wappTemplateCor').value : $('wappTemplate').value
           }
         }).then(function (resp) {
           btn.disabled = false; btn.textContent = 'Enviar teste';

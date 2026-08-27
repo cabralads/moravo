@@ -235,7 +235,8 @@ router.get('/whatsapp/config', async (req, res) => {
         phone_number_id: c.phone_number_id,
         waba_id:         c.waba_id,
         api_version:     c.api_version,
-        template_nome:   c.template_nome,
+        template_nome:     c.template_nome,
+        template_corretor: c.template_corretor,
         template_idioma: c.template_idioma,
         ativo:           c.ativo,
         atualizado_em:   c.atualizado_em,
@@ -258,6 +259,7 @@ router.put('/whatsapp/config', async (req, res) => {
     const waba    = (b.waba_id || '').trim();
     const versao  = (b.api_version || 'v23.0').trim();
     const tmpl    = (b.template_nome || 'link_grupo_convite').trim();
+    const tmplCor = (b.template_corretor || '').trim();
     const idioma  = (b.template_idioma || 'pt_BR').trim();
     const ativo   = !!b.ativo;
     const token   = (b.token || '').trim();
@@ -297,6 +299,7 @@ router.put('/whatsapp/config', async (req, res) => {
               waba_id         = $2,
               api_version     = $3,
               template_nome   = $4,
+              template_corretor = $13,
               template_idioma = $5,
               ativo           = $6,
               token_cifrado   = COALESCE($7, token_cifrado),
@@ -304,7 +307,8 @@ router.put('/whatsapp/config', async (req, res) => {
               atualizado_em   = NOW()
         WHERE id = 1`,
       [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id,
-       wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null]
+       wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null,
+       tmplCor || null]
     );
 
     wa.limparCache();
@@ -326,7 +330,18 @@ router.post('/whatsapp/testar', async (req, res) => {
     if (!telefone) return res.status(400).json({ ok: false, error: 'Informe o telefone de destino.' });
 
     const nome = (req.body && req.body.nome || '').trim() || 'Teste';
-    const envio = await wa.enviarTemplateConvite({ telefone: telefone, codigoConvite: codigo, nome: nome });
+    const template = (req.body && req.body.template || '').trim() || undefined;
+
+    // Em vez de adivinhar quantas variáveis mandar, perguntamos à Meta quantas
+    // o template espera. Errar essa conta é o erro 132000.
+    const quantas = await wa.contarVariaveisCorpo(template);
+    const exemplos = [nome, 'Bruno Corretor (CRECI 12345-F)', 'Apartamento no Centro (imóvel 1)',
+                      'Valor de teste', 'Valor de teste'];
+    const variaveis = quantas ? exemplos.slice(0, quantas) : [nome];
+
+    const envio = await wa.enviarTemplateConvite({
+      telefone: telefone, codigoConvite: codigo, variaveis: variaveis, template: template,
+    });
     await wa.registrarEnvio({
       papel: 'teste', telefone: telefone, template: null,
       codigo_convite: codigo, status: 'enviado', wamid: envio.wamid,
