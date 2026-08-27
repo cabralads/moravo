@@ -481,6 +481,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   alternando enquanto o grupo é criado e as mensagens saem, terminando no botão de entrar no
   grupo. Quando o grupo falha, a tela diz que o imóvel entrou na carteira e omite o botão, em
   vez de oferecer um link vazio.
+- **2026-08-27** — **Primeiro convite entregue de ponta a ponta** em produção: grupo criado no
+  Waha, token emitido, template disparado e mensagem recebida com o botão. O corretor, porém,
+  recebeu o texto do proprietário, porque `template_corretor` estava vazio e havia reserva
+  para o outro template. A reserva foi removida: sem template próprio, o corretor não recebe
+  mensagem e a falha fica registrada em `whatsapp_envios` com o motivo, para reenvio depois.
 - **2026-08-27** — Falhas na criação do grupo passam a ser registradas em `grupo_tentativas`
   com a etapa em que pararam, visíveis no painel e com botão de repetir. O teste dessa
   instrumentação revelou um bug que travava **toda** criação de grupo: `criarGrupo` exigia 2
