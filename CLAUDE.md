@@ -123,6 +123,7 @@ propostas.js     proposta de compra: cria o grupo e aciona o proprietário
   favoritos.js     favoritar/desfavoritar
   notificacoes.js  listar, contar não lidas, marcar lidas, apagar
   webhook-whatsapp.js  status de entrega vindo da Meta (rota pública, assinada)
+  avaliacoes.js    nota de 1 a 5 do proprietário para o corretor
   usuarios.js      listagem pública, editar perfil, foto de perfil
   documentos.js    upload/remoção da escritura (PDF/imagem, 5MB)
   fotos.js         upload/remoção de fotos do imóvel
@@ -213,6 +214,29 @@ Existem também `/sitemap.xml` (gerado do banco) e `/robots.txt`, porque os card
 site abrem por `onclick` e não por `<a href>`: sem sitemap não há por onde chegar
 aos imóveis navegando.
 
+## Cadastro: estado e cidade
+
+**Todo perfil informa estado e cidade**, não só o corretor. Antes o proprietário era
+gravado com `cidade = 'Não especificada'` e ficava fora de qualquer critério de região;
+o corretor tinha só `regiao_atuacao` em texto livre, que não cruza com nada.
+
+A UF de quem já estava cadastrado foi deduzida onde dava para ter certeza: corretor pela
+região de atuação (`"Joinville - SC"`), proprietário pelo estado dos imóveis dele. Quem
+não se encaixou ficou `NULL` e cai nas faixas seguintes da fila, que é o comportamento
+correto para dado que não se sabe.
+
+## Avaliação do corretor
+
+O proprietário dá de **1 a 5 estrelas** ao corretor, no painel, em cada card de corretor
+que trabalha um imóvel dele. Uma nota por (corretor, autor, imóvel), reeditável.
+
+Só avalia quem trabalhou com você: a rota confere que **o imóvel é seu** e que **o
+corretor tem interesse nele**. Sem isso a nota viraria opinião de quem nunca trocou uma
+palavra com o corretor.
+
+A média já é lida por `lib/atendimento.js` para ordenar a fila. Quem não tem nota entra
+como 3.5, não 0 (ver "Atendimento do comprador").
+
 ## Perfis
 
 São **3 valores** no banco: `proprietario`, `corretor`, `admin`.
@@ -295,7 +319,7 @@ intermediação, que é de onde sai a receita, deixaria de existir.
 | 3 | `regiao_atuacao` cita a cidade ou o estado |
 | 4 | qualquer corretor |
 
-Dentro da faixa, ordena por nota e depois aleatório. Quem ainda não tem nota entra
+Dentro da faixa, ordena por **nota** (`avaliacoes_corretor`) e depois aleatório. Quem ainda não tem nota entra
 como **3.5**, não 0: começar do zero congelaria o corretor novo para sempre, porque
 ele nunca receberia o lead que lhe daria a primeira nota.
 
@@ -585,6 +609,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Estado e cidade passam a ser obrigatórios para **todos** os perfis no
+  cadastro (antes o proprietário virava "Não especificada"), com backfill da UF de quem já
+  existia. Criada a avaliação por estrelas do corretor (`/api/avaliacoes`), já lida pela
+  fila do atendimento. Copy do cadastro: "Quero anunciar ou comprar imóveis" e "Quero
+  trabalhar imóveis na Moravo".
 - **2026-08-27** — Base do **atendimento do comprador**: fila de corretores por faixa
   (carteira > cidade > estado > região > qualquer), prazo de 1 hora **útil** com repasse
   automático, e `ofertas_corretor` gravando o desfecho desde já para alimentar o ranking

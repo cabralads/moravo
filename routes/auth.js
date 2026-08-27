@@ -29,6 +29,10 @@ router.post('/register', async (req, res) => {
     const email = (body.email || '').trim().toLowerCase();
     const whatsapp = normalizeWhatsapp(body.whatsapp);
     const cidade = (body.cidade || '').trim();
+    // Estado passou a valer para todos os perfis: é o que permite ligar um
+    // comprador ao corretor da mesma região. Antes só o corretor tinha
+    // localização, e mesmo assim em texto livre.
+    const uf = (body.uf || '').trim().toUpperCase() || null;
     const perfil = (body.perfil || '').trim().toLowerCase();
     const senha = body.senha || '';
     const tipo_imovel = (body.tipo_imovel || '').trim() || null;
@@ -41,6 +45,7 @@ router.post('/register', async (req, res) => {
     if (!EMAIL_RE.test(email)) errors.push({ field: 'email', message: 'E-mail inválido.' });
     if (whatsapp.length < 10 || whatsapp.length > 13) errors.push({ field: 'whatsapp', message: 'WhatsApp inválido.' });
     if (cidade.length < 2) errors.push({ field: 'cidade', message: 'Cidade inválida.' });
+    if (uf && !/^[A-Z]{2}$/.test(uf)) errors.push({ field: 'uf', message: 'Estado inválido.' });
     if (PERFIS.indexOf(perfil) === -1) errors.push({ field: 'perfil', message: 'Perfil inválido.' });
     if (senha.length < 6) errors.push({ field: 'senha', message: 'Senha deve ter no mínimo 6 caracteres.' });
 
@@ -61,12 +66,12 @@ router.post('/register', async (req, res) => {
 
     const result = await query(
       `INSERT INTO moravo.usuarios
-        (nome, email, senha_hash, whatsapp, cidade, perfil,
+        (nome, email, senha_hash, whatsapp, cidade, uf, perfil,
          tipo_imovel, preco_estimado, creci, regiao_atuacao,
          ip_cadastro, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING id, created_at`,
-      [nome, email, senha_hash, whatsapp, cidade, perfil,
+      [nome, email, senha_hash, whatsapp, cidade, uf, perfil,
         tipo_imovel, preco_estimado, creci, regiao_atuacao,
         req.ip || null,
         (req.get('user-agent') || '').slice(0, 255) || null]
@@ -137,7 +142,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const r = await query(
-      `SELECT id, nome, email, whatsapp, cidade, perfil,
+      `SELECT id, nome, email, whatsapp, cidade, uf, perfil,
               tipo_imovel, preco_estimado, creci, regiao_atuacao, foto_perfil, created_at
        FROM moravo.usuarios WHERE id = $1`,
       [req.user.id]

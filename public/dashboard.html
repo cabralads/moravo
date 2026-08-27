@@ -711,6 +711,25 @@
     }
 
     /* Corretor card (na lista de interessados) */
+    /* Estrelas de avaliação do corretor. Botão de verdade, não span com
+       onclick: precisa chegar pelo teclado e ser lido em voz alta. */
+    .avaliacao-linha {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--beige, #E6E1DC);
+    }
+    .avaliacao-rotulo { font-size: .78rem; color: var(--ink-soft, #78716C); }
+    .estrelas { display: inline-flex; gap: 2px; }
+    .estrela {
+      background: none; border: 0; padding: 0 1px; cursor: pointer;
+      font-size: 1.15rem; line-height: 1;
+      color: #D6D3D1; transition: color .12s, transform .12s;
+    }
+    .estrela:hover { transform: scale(1.15); }
+    .estrela.cheia { color: #F59E0B; }
+    .estrela:focus-visible { outline: 2px solid var(--emerald, #FF6A00); outline-offset: 2px; border-radius: 3px; }
+    .avaliacao-msg { font-size: .74rem; color: var(--ink-light, #A8A29E); }
+
     .corretor-card {
       background: #fff;
       border: 1px solid var(--beige);
@@ -3697,6 +3716,16 @@
                     '<div class="msg">' + (it.mensagem ? '"' + escapeHtml(it.mensagem) + '"' : '<em style="color:#999">Sem mensagem</em>') + '</div>' +
                     '<div class="contato">📞 ' + (it.corretor_whatsapp || '-') + ' · ✉ ' + (it.corretor_email || '-') + '</div>' +
                     '<div class="contato" style="margin-top:4px;font-size:.78rem">Interessado no imóvel <span class="imovel-hover-link" style="color:var(--emerald); text-decoration:underline; font-weight:700; cursor:pointer;" data-imovel-id="' + it.imovel_id + '">' + escapeHtml(it.imovel_titulo || 'Imóvel #' + it.imovel_id) + '</span></div>' +
+                    '<div class="avaliacao-linha" data-corretor="' + it.corretor_id + '" data-imovel="' + it.imovel_id + '">' +
+                      '<span class="avaliacao-rotulo">Sua nota</span>' +
+                      '<span class="estrelas" role="group" aria-label="Nota de 1 a 5">' +
+                        [1,2,3,4,5].map(function (n) {
+                          return '<button type="button" class="estrela" data-nota="' + n + '" ' +
+                                 'aria-label="' + n + ' de 5" title="' + n + ' de 5">★</button>';
+                        }).join('') +
+                      '</span>' +
+                      '<span class="avaliacao-msg"></span>' +
+                    '</div>' +
                     '</div>' +
                     acoes +
                     '</article>';
@@ -3715,8 +3744,74 @@
                 if (window.initImovelHoverLinks) {
                   window.initImovelHoverLinks(grid);
                 }
+
+                ligarEstrelas(grid);
               });
           });
+      }
+
+      // ---- Estrelas de avaliação do corretor
+      // Uma chamada só traz tudo que este proprietário já avaliou; pintar
+      // estrela por estrela seria uma requisição por card.
+      function ligarEstrelas(grid) {
+        var linhas = grid.querySelectorAll('.avaliacao-linha');
+        if (!linhas.length) return;
+
+        function pintar(linha, nota) {
+          linha.querySelectorAll('.estrela').forEach(function (e) {
+            e.classList.toggle('cheia', parseInt(e.dataset.nota, 10) <= nota);
+          });
+          linha.dataset.nota = nota || '';
+        }
+
+        api('/api/avaliacoes/minhas').then(function (r) {
+          var jaFeitas = {};
+          if (r.ok) (r.body.avaliacoes || []).forEach(function (a) {
+            jaFeitas[a.corretor_id + '-' + a.imovel_id] = a.nota;
+          });
+          linhas.forEach(function (linha) {
+            var chave = linha.dataset.corretor + '-' + linha.dataset.imovel;
+            if (jaFeitas[chave]) {
+              pintar(linha, jaFeitas[chave]);
+              linha.querySelector('.avaliacao-msg').textContent = 'avaliado';
+            }
+          });
+        });
+
+        linhas.forEach(function (linha) {
+          var msg = linha.querySelector('.avaliacao-msg');
+          linha.querySelectorAll('.estrela').forEach(function (botao) {
+            var nota = parseInt(botao.dataset.nota, 10);
+
+            // Prévia ao passar o mouse, desfeita ao sair: a nota só muda no clique
+            botao.addEventListener('mouseenter', function () { pintar(linha, nota); });
+            botao.addEventListener('click', function () {
+              msg.textContent = 'salvando…';
+              api('/api/avaliacoes', {
+                method: 'POST',
+                body: {
+                  corretor_id: parseInt(linha.dataset.corretor, 10),
+                  imovel_id: parseInt(linha.dataset.imovel, 10),
+                  nota: nota,
+                },
+              }).then(function (resp) {
+                if (!resp.ok) {
+                  msg.textContent = '';
+                  pintar(linha, parseInt(linha.dataset.notaSalva || '0', 10));
+                  toast((resp.body && resp.body.error) || 'Não foi possível avaliar.', 'error');
+                  return;
+                }
+                linha.dataset.notaSalva = nota;
+                pintar(linha, nota);
+                msg.textContent = 'avaliado';
+                toast('Nota registrada.', 'success');
+              });
+            });
+          });
+          linha.addEventListener('mouseleave', function () {
+            pintar(linha, parseInt(linha.dataset.notaSalva || linha.dataset.nota || '0', 10));
+          });
+        });
       }
 
       // ---- TAB: Feed simples (proprietário)

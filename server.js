@@ -136,6 +136,7 @@ app.use('/api/imoveis/:id/documentos', documentosRouter);
 app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
+app.use('/api/avaliacoes',   require('./routes/avaliacoes'));
 // Público de propósito: quem chama é a Meta. A autenticidade vem do
 // verify token no handshake e da assinatura do corpo, não de JWT.
 app.use('/webhooks/whatsapp', require('./routes/webhook-whatsapp'));
@@ -826,6 +827,30 @@ app.listen(PORT, '0.0.0.0', async () => {
     await migrar('usuarios.idx_uf_cidade', `
       CREATE INDEX IF NOT EXISTS idx_usuarios_uf_cidade
         ON moravo.usuarios (perfil, uf, cidade);
+    `);
+
+    // Preenche a UF de quem já estava cadastrado, para a faixa "mesma cidade
+    // e mesmo estado" não nascer vazia. Só onde dá para deduzir com certeza:
+    // corretor pela região de atuação ("Joinville - SC"), proprietário pelo
+    // estado dos imóveis dele. Quem não se encaixa fica NULL e cai nas faixas
+    // seguintes, que é o comportamento correto para dado que não se sabe.
+    await migrar('usuarios.uf backfill', `
+      UPDATE moravo.usuarios u
+         SET uf = upper(substring(u.regiao_atuacao from '([A-Za-z]{2})\\s*$'))
+       WHERE u.uf IS NULL
+         AND u.perfil = 'corretor'
+         AND upper(substring(u.regiao_atuacao from '([A-Za-z]{2})\\s*$')) IN (
+           'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
+           'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO');
+    `);
+    await migrar('usuarios.uf backfill dono', `
+      UPDATE moravo.usuarios u
+         SET uf = d.uf
+        FROM (
+          SELECT dono_id, uf, row_number() OVER (PARTITION BY dono_id ORDER BY count(*) DESC) AS pos
+            FROM moravo.imoveis WHERE uf IS NOT NULL GROUP BY dono_id, uf
+        ) d
+       WHERE d.dono_id = u.id AND d.pos = 1 AND u.uf IS NULL;
     `);
 
     // O atendimento do comprador: quem quer comprar, qual imóvel, qual

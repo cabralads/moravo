@@ -164,14 +164,14 @@ body {
           <input type="radio" name="role" value="proprietario" checked />
           <span class="face">
             <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9h14v-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
-            <span class="txt"><strong>Usuário</strong><span>Quero anunciar e favoritar imóveis</span></span>
+            <span class="txt"><strong>Usuário</strong><span>Quero anunciar ou comprar imóveis</span></span>
           </span>
         </label>
         <label class="role-opt">
           <input type="radio" name="role" value="corretor" />
           <span class="face">
             <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c0-3.3 3.1-5 7-5s7 1.7 7 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
-            <span class="txt"><strong>Corretor</strong><span>Quero ficar com 77% da comissão</span></span>
+            <span class="txt"><strong>Corretor</strong><span>Quero trabalhar imóveis na Moravo</span></span>
           </span>
         </label>
       </div>
@@ -210,7 +210,7 @@ body {
         <div class="field" style="display:none;">
           <input type="hidden" id="f-creci" name="creci" />
         </div>
-        <div class="field role-field role-corretor half hidden" data-role="corretor">
+        <div class="field half">
           <label for="f-regiao-uf">Estado</label>
           <select id="f-regiao-uf">
             <option value="">Selecione</option>
@@ -244,8 +244,8 @@ body {
           </select>
           <span class="err-msg">Selecione o estado.</span>
         </div>
-        <div class="field role-field role-corretor half hidden" data-role="corretor">
-          <label for="f-regiao-cidade">Cidade de atuação</label>
+        <div class="field half">
+          <label for="f-regiao-cidade">Cidade</label>
           <select id="f-regiao-cidade" disabled>
             <option value="">Selecione o estado primeiro</option>
           </select>
@@ -437,28 +437,25 @@ body {
         clearError(tipoField);
       }
 
-      var rCidade = document.getElementById('f-regiao-cidade');
-      var rUf = document.getElementById('f-regiao-uf');
-      var cVal = rCidade.value.trim();
-      var uVal = rUf.value.trim();
-      
-      var cField = rCidade.closest('.field');
-      var uField = rUf.closest('.field');
-
-      if (!uVal) {
-        setError(uField);
-        if (!firstInvalid) firstInvalid = rUf;
-      } else {
-        clearError(uField);
-      }
-
-      if (!cVal) {
-        setError(cField);
-        if (!firstInvalid) firstInvalid = rCidade;
-      } else {
-        clearError(cField);
-      }
     }
+
+    // Estado e cidade valem para todo mundo: sem eles não dá para ligar um
+    // comprador ao corretor mais próximo. Antes o proprietário era gravado
+    // como "Não especificada" e ficava fora de qualquer critério de região.
+    var rCidade = document.getElementById('f-regiao-cidade');
+    var rUf = document.getElementById('f-regiao-uf');
+    var cField = rCidade.closest('.field');
+    var uField = rUf.closest('.field');
+
+    if (!rUf.value.trim()) {
+      setError(uField);
+      if (!firstInvalid) firstInvalid = rUf;
+    } else { clearError(uField); }
+
+    if (!rCidade.value.trim()) {
+      setError(cField);
+      if (!firstInvalid) firstInvalid = rCidade;
+    } else { clearError(cField); }
 
     if (firstInvalid) { firstInvalid.focus(); return; }
 
@@ -573,17 +570,15 @@ body {
   function submitCadastro(data) {
     var submitBtn = document.getElementById('submitBtn');
     
-    var cidadeFinal = 'Não especificada';
-    if (data.role === 'corretor') {
-      var selectCidade = document.getElementById('f-regiao-cidade');
-      cidadeFinal = selectCidade.value.trim() || 'Não especificada';
-    }
+    var cidadeFinal = document.getElementById('f-regiao-cidade').value.trim();
+    var ufFinal     = document.getElementById('f-regiao-uf').value.trim();
 
     var payload = {
       nome:           data.nome,
       email:          data.email,
       whatsapp:       data.whatsapp,
       cidade:         cidadeFinal,
+      uf:             ufFinal || null,
       perfil:         data.role,
       senha:          data.senha,
       tipo_imovel:    data.tipo    || null,
