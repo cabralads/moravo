@@ -166,26 +166,45 @@ async function resolverGrupo(valor, ip) {
   // 1. Token nominal: identifica a pessoa e registra a abertura
   try {
     const r = await query(
-      `SELECT c.id, c.papel, c.revogado,
-              i.grupo_whatsapp_link AS link,
+      `SELECT c.id, c.papel, c.revogado, c.atendimento_id, c.usuario_id,
+              COALESCE(i.grupo_whatsapp_link, ic.grupo_whatsapp_link) AS link,
               im.titulo, im.id AS imovel_id,
               u.nome AS pessoa
          FROM moravo.convites_grupo c
-         JOIN moravo.interesses i ON i.id = c.interesse_id
-         JOIN moravo.imoveis   im ON im.id = i.imovel_id
-         JOIN moravo.usuarios   u ON u.id = c.usuario_id
+         LEFT JOIN moravo.interesses             i  ON i.id  = c.interesse_id
+         LEFT JOIN moravo.interesses_compradores ic ON ic.id = c.atendimento_id
+         JOIN moravo.imoveis  im ON im.id = COALESCE(i.imovel_id, ic.imovel_id)
+         JOIN moravo.usuarios  u ON u.id  = c.usuario_id
         WHERE c.token = $1`,
       [valor]
     );
     if (r.rowCount) {
       const c = r.rows[0];
-      if (c.revogado) return { revogado: true };
+      if (c.revogado) {
+        // Continua registrando a abertura: saber que o corretor tentou entrar
+        // depois do prazo é informação, e some se a gente sair antes daqui.
+        await query(
+          `UPDATE moravo.convites_grupo
+              SET aberturas = aberturas + 1, aberto_em = NOW(), ultimo_ip = $2
+            WHERE id = $1`,
+          [c.id, ip || null]
+        ).catch(function () {});
+        return { revogado: true, papel: c.papel, atendimento_id: c.atendimento_id };
+      }
       await query(
         `UPDATE moravo.convites_grupo
             SET aberturas = aberturas + 1, aberto_em = NOW(), ultimo_ip = $2
           WHERE id = $1`,
         [c.id, ip || null]
       ).catch(function () {});
+
+      // Entrar no grupo É o aceite. Não existe botão de "aceitar": abrir o
+      // convite nominal do corretor é o que fecha o prazo de 1 hora útil.
+      if (c.atendimento_id && c.papel === 'corretor') {
+        require('./lib/atendimento')
+          .registrarEntrada(c.atendimento_id, c.usuario_id)
+          .catch(function (err) { console.warn('[linkgrupo] entrada:', err.message); });
+      }
       return c;
     }
   } catch (err) {
@@ -207,8 +226,15 @@ async function entregarPaginaGrupo(req, res, valor) {
   const achado = await resolverGrupo(chave, req.ip);
 
   if (achado && achado.revogado) {
-    return res.status(410).type('html').send(
-      paginaGrupo.paginaErro('Este convite foi cancelado. Entre no painel para ver a negociação.'));
+    // O caso mais comum de convite revogado é o corretor que não entrou dentro
+    // do prazo: dizer só "cancelado" o deixaria sem saber o que aconteceu nem
+    // o que fazer agora.
+    const mensagem = (achado.atendimento_id && achado.papel === 'corretor')
+      ? 'O prazo para aceitar este atendimento terminou e ele já foi repassado a outro corretor. ' +
+        'Assim que surgir um novo comprador na sua região, você é avisado de novo. ' +
+        'Os imóveis da sua carteira continuam no painel.'
+      : 'Este convite foi cancelado. Entre no painel para ver a negociação.';
+    return res.status(410).type('html').send(paginaGrupo.paginaErro(mensagem));
   }
 
   // O destino vem sempre do banco. Valor desconhecido não vira link nenhum:
@@ -634,6 +660,28 @@ app.listen(PORT, '0.0.0.0', async () => {
         CONSTRAINT uk_convite_por_pessoa UNIQUE (interesse_id, usuario_id)
       );
     `);
+    // O convite passou a existir para dois tipos de grupo: o da carteira
+    // (interesse) e o do comprador (atendimento). Um dos dois, nunca os dois.
+    await migrar('convites_grupo.atendimento', `
+      ALTER TABLE moravo.convites_grupo
+        ALTER COLUMN interesse_id DROP NOT NULL,
+        ADD COLUMN IF NOT EXISTS atendimento_id BIGINT
+          REFERENCES moravo.interesses_compradores(id) ON DELETE CASCADE;
+    `);
+    await migrar('convites_grupo.papel_comprador', `
+      ALTER TABLE moravo.convites_grupo DROP CONSTRAINT IF EXISTS convites_grupo_papel_check;
+      ALTER TABLE moravo.convites_grupo ADD CONSTRAINT convites_grupo_papel_check
+        CHECK (papel IN ('proprietario','corretor','comprador'));
+    `);
+    await migrar('convites_grupo.uma_origem', `
+      ALTER TABLE moravo.convites_grupo DROP CONSTRAINT IF EXISTS convites_grupo_origem_chk;
+      ALTER TABLE moravo.convites_grupo ADD CONSTRAINT convites_grupo_origem_chk
+        CHECK ((interesse_id IS NOT NULL) <> (atendimento_id IS NOT NULL));
+    `);
+    await migrar('convites_grupo.uk_atendimento', `
+      CREATE UNIQUE INDEX IF NOT EXISTS uk_convite_atendimento_pessoa
+        ON moravo.convites_grupo (atendimento_id, usuario_id) WHERE atendimento_id IS NOT NULL;
+    `);
     await migrar('convites_grupo.indice', `
       CREATE INDEX IF NOT EXISTS idx_convites_grupo_token ON moravo.convites_grupo (token);
     `);
@@ -754,6 +802,11 @@ app.listen(PORT, '0.0.0.0', async () => {
     await migrar('whatsapp_envios.idx_wamid', `
       CREATE INDEX IF NOT EXISTS idx_whatsapp_envios_wamid
         ON moravo.whatsapp_envios (wamid);
+    `);
+    await migrar('config_whatsapp.templates_atendimento', `
+      ALTER TABLE moravo.config_whatsapp
+        ADD COLUMN IF NOT EXISTS template_comprador           TEXT,
+        ADD COLUMN IF NOT EXISTS template_corretor_atendimento TEXT;
     `);
     await migrar('config_whatsapp.foto_grupo', `
       ALTER TABLE moravo.config_whatsapp

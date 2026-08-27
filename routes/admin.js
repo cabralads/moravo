@@ -250,6 +250,8 @@ router.get('/whatsapp/config', async (req, res) => {
         api_version:     c.api_version,
         template_nome:     c.template_nome,
         template_corretor: c.template_corretor,
+        template_comprador: c.template_comprador,
+        template_corretor_atendimento: c.template_corretor_atendimento,
         template_idioma: c.template_idioma,
         ativo:           c.ativo,
         atualizado_em:   c.atualizado_em,
@@ -295,6 +297,8 @@ router.put('/whatsapp/config', async (req, res) => {
     const versao  = manter('api_version', (b.api_version || 'v23.0').trim()) || 'v23.0';
     const tmpl    = manter('template_nome', (b.template_nome || 'convite_grupo_proprietario').trim());
     const tmplCor = manter('template_corretor', (b.template_corretor || '').trim());
+    const tmplComp = manter('template_comprador', (b.template_comprador || '').trim());
+    const tmplCorAt = manter('template_corretor_atendimento', (b.template_corretor_atendimento || '').trim());
     const idioma  = manter('template_idioma', (b.template_idioma || 'pt_BR').trim()) || 'pt_BR';
     const ativo   = veio('ativo') ? !!b.ativo : !!atual.ativo;
     const token   = (b.token || '').trim();
@@ -360,6 +364,8 @@ router.put('/whatsapp/config', async (req, res) => {
               api_version     = $3,
               template_nome   = $4,
               template_corretor = $13,
+              template_comprador = $16,
+              template_corretor_atendimento = $17,
               template_idioma = $5,
               ativo           = $6,
               token_cifrado   = COALESCE($7, token_cifrado),
@@ -369,7 +375,8 @@ router.put('/whatsapp/config', async (req, res) => {
         WHERE id = 1`,
       [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id,
        wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null,
-       tmplCor || null, wahaChaveCifrada, appSecretCifrado]
+       tmplCor || null, wahaChaveCifrada, appSecretCifrado,
+       tmplComp || null, tmplCorAt || null]
     );
 
     wa.limparCache();

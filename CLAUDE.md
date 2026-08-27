@@ -332,8 +332,23 @@ perdeu a vez não é oferecido de novo naquele atendimento. Expediente
 domingo fechado. O relógio **pausa** fora do expediente: um lead que chega sexta
 17h50 ainda tem 50 minutos na segunda de manhã. A ronda roda a cada 5 minutos.
 
+**O grupo nasce já com o corretor definido**, e o primeiro nome dele vai no assunto:
+`Casa mc7GvdX · Marcelo`. O comprador pode ter mais de uma negociação aberta, e dois
+grupos com o mesmo título não dizem qual é qual. No repasse o grupo é **renomeado**,
+o convite de quem perdeu a vez é **revogado** e o novo corretor recebe o dele.
+
+**Entrar no grupo é o aceite.** Não existe botão de "aceitar": abrir o convite nominal
+fecha o prazo (`registrarEntrada`). Quem abre o link depois de perder a vez recebe uma
+página explicando que o prazo terminou e que o atendimento já foi repassado, em vez de
+um "convite cancelado" que não diz nada.
+
 **Acabando os corretores**, o atendimento fica `sem_corretor`, mas o grupo continua
 de pé com o atendente da Moravo dentro: quem assume é uma pessoa, não uma fila vazia.
+
+⚠️ `minutosUteisEntre` anda de minuto em minuto e tem **teto de 14 dias**. Sem o teto,
+uma data ausente (que em JavaScript vira 1970) fazia o laço rodar 29 milhões de voltas
+e **travar o processo inteiro**, servidor incluído. O formatador de fuso é criado uma
+vez só, fora da função: criá-lo a cada minuto levava a conta de 58ms para 5,9s.
 
 `ofertas_corretor` grava cada oferta e o desfecho (`entrou`, `expirou`, `recusou`) com
 o tempo de resposta em minutos úteis. Não muda nada hoje: existe para o ranking ter
@@ -433,6 +448,10 @@ não é a mesma nos dois**. Trocar um pelo outro entrega a frase invertida.
 | `{{1}}` | **primeiro nome** do proprietário |
 | `{{2}}` | **nome completo** do corretor |
 | `{{3}}` | título do imóvel + `(imóvel N)` |
+
+Para o **grupo do comprador** existe um segundo par, `atendimento_comprador` e
+`atendimento_corretor`, com a mesma regra: sem template próprio, aquela pessoa não
+recebe nada, e a falha fica em `whatsapp_envios`.
 
 `convite_grupo_corretor` (campo **Template do corretor**):
 
@@ -609,6 +628,15 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — **Grupo do comprador**: nasce já com o corretor definido e leva o
+  primeiro nome dele no assunto (`Casa mc7GvdX · Marcelo`). No repasse o grupo é
+  renomeado, o convite anterior é revogado e o corretor que abre o link fora do prazo
+  recebe uma página explicando o que houve. Abrir o convite passou a ser o aceite.
+  Dois templates novos na Meta (`atendimento_comprador`, `atendimento_corretor`) com
+  campos próprios no painel.
+- **2026-08-27** — Corrigido um travamento no cálculo de hora útil: com data ausente
+  (1970 em JavaScript) o laço rodava 29 milhões de voltas e **derrubava o servidor**.
+  Teto de 14 dias e formatador de fuso criado uma vez só: 5,9s → 58ms no pior caso.
 - **2026-08-27** — Estado e cidade passam a ser obrigatórios para **todos** os perfis no
   cadastro (antes o proprietário virava "Não especificada"), com backfill da UF de quem já
   existia. Criada a avaliação por estrelas do corretor (`/api/avaliacoes`), já lida pela

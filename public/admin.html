@@ -1325,6 +1325,18 @@ body {
               '<input id="wappIdioma" value="' + escapeHtml(c.template_idioma || 'pt_BR') + '" placeholder="pt_BR" /></div>' +
           '</div>' +
 
+          '<h3 style="margin-top:26px">Atendimento do comprador</h3>' +
+          '<p class="muted" style="margin-bottom:18px">Templates do <b>segundo</b> grupo, o do comprador com o corretor. ' +
+          'São outros textos: cada lado recebe variáveis em ordem própria, e usar o template errado entrega a frase invertida.</p>' +
+          '<div class="painel-grid">' +
+            '<div class="field"><label for="wappTemplateComp">Template do comprador' +
+              (c.template_comprador ? '' : ' <span class="opt" style="color:#c0392b">(vazio: o comprador não recebe convite)</span>') + '</label>' +
+              '<input id="wappTemplateComp" value="' + escapeHtml(c.template_comprador || '') + '" placeholder="nome exato do template na Meta" /></div>' +
+            '<div class="field"><label for="wappTemplateCorAt">Template do corretor (atendimento)' +
+              (c.template_corretor_atendimento ? '' : ' <span class="opt" style="color:#c0392b">(vazio: o corretor não recebe convite)</span>') + '</label>' +
+              '<input id="wappTemplateCorAt" value="' + escapeHtml(c.template_corretor_atendimento || '') + '" placeholder="nome exato do template na Meta" /></div>' +
+          '</div>' +
+
           '<label class="check">' +
             '<input type="checkbox" id="wappAtivo" ' + (c.ativo ? 'checked' : '') + ' />' +
             '<span><b>Enviar convites pela API oficial</b>' +
@@ -1451,6 +1463,8 @@ body {
             token:           $('wappToken').value,
             template_nome:     $('wappTemplate').value,
             template_corretor: $('wappTemplateCor').value,
+            template_comprador: $('wappTemplateComp').value,
+            template_corretor_atendimento: $('wappTemplateCorAt').value,
             template_idioma:   $('wappIdioma').value,
             ativo:           $('wappAtivo').checked
           }

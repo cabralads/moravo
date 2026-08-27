@@ -212,7 +212,49 @@ router.post('/:id/clique-interesse', requireAuth, async (req, res) => {
       throw dbErr;
     }
 
-    return res.json({ ok: true });
+    // A partir daqui o clique deixou de ser só um contador: escolhe o corretor
+    // que vai atender e abre o grupo com ele dentro. O grupo nasce com corretor
+    // definido de propósito; sem nome no grupo o comprador não sabe com quem
+    // está falando, e um grupo só com atendente parece abandonado.
+    const atend = await query(
+      `SELECT id, corretor_id, grupo_whatsapp_link
+         FROM moravo.interesses_compradores
+        WHERE imovel_id = $1 AND comprador_id = $2`,
+      [id, req.user.id]
+    );
+    if (atend.rowCount === 0) return res.json({ ok: true });
+    const atendimento = atend.rows[0];
+
+    // Já tem grupo: devolve o mesmo. Clicar duas vezes não cria dois grupos.
+    if (atendimento.grupo_whatsapp_link) {
+      return res.json({ ok: true, grupo_link: atendimento.grupo_whatsapp_link, ja_existia: true });
+    }
+
+    let escolha = { atribuido: false };
+    try {
+      escolha = await require('../lib/atendimento').atribuirCorretor(atendimento.id);
+    } catch (err) {
+      console.error('[clique-interesse] falha ao escolher corretor:', err.message);
+    }
+
+    try {
+      const grupo = await require('../lib/grupo').garantirGrupoComprador(atendimento.id);
+      return res.json({
+        ok: true,
+        grupo_link: grupo.grupo_link || null,
+        corretor: escolha.corretor ? { nome: escolha.corretor.nome } : null,
+        envios: grupo.envios,
+      });
+    } catch (err) {
+      // Falha no WhatsApp não desfaz o interesse: ele já está registrado e o
+      // corretor já foi avisado pela notificação no site.
+      console.error('[clique-interesse] falha ao criar o grupo:', err.message);
+      return res.json({
+        ok: true, grupo_link: null,
+        corretor: escolha.corretor ? { nome: escolha.corretor.nome } : null,
+        aviso: 'Interesse registrado. O grupo do WhatsApp será criado em instantes.',
+      });
+    }
   } catch (err) {
     console.error('[imoveis clique-interesse] erro:', err);
     return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
