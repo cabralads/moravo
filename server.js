@@ -363,6 +363,14 @@ async function servirPaginaImovel(req, res, next, identificador) {
       html = siteConfig.injetar(html, scripts);
     }
     res.type('html').send(html);
+
+    // Depois de entregar a página: contar acesso não pode atrasar quem está
+    // olhando o imóvel.
+    require('./lib/visitas').registrarVisita({
+      imovelId: im.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
   } catch (err) {
     console.error('[imovel] falha ao montar a página, seguindo pelo caminho normal:', err.message);
     next();
@@ -940,6 +948,21 @@ app.listen(PORT, '0.0.0.0', async () => {
     // Histórico de cada oferta feita a um corretor. Não muda nada hoje: existe
     // para que o ranking, quando chegar, tenha meses de comportamento real em
     // vez de começar do zero. Isso não dá para reconstruir depois.
+    await migrar('tabela imovel_visitas', `
+      CREATE TABLE IF NOT EXISTS moravo.imovel_visitas (
+        id             BIGSERIAL PRIMARY KEY,
+        imovel_id      BIGINT NOT NULL REFERENCES moravo.imoveis(id) ON DELETE CASCADE,
+        visitante_hash TEXT NOT NULL,
+        usuario_id     BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await migrar('imovel_visitas.indices', `
+      CREATE INDEX IF NOT EXISTS idx_imovel_visitas_imovel
+        ON moravo.imovel_visitas (imovel_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_imovel_visitas_unico
+        ON moravo.imovel_visitas (imovel_id, visitante_hash);
+    `);
     await migrar('tabela ofertas_corretor', `
       CREATE TABLE IF NOT EXISTS moravo.ofertas_corretor (
         id             BIGSERIAL PRIMARY KEY,

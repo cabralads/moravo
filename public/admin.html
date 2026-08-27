@@ -254,6 +254,13 @@ body {
   background: #fbfaf9; resize: vertical; min-height: 150px;
 }
 .admin-panel .painel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+/* Cartões de número lado a lado. Não dá para reaproveitar .painel-grid: ela
+   só existe dentro de .admin-panel, e aqui cada cartão É um .admin-panel. */
+.cartoes-grid {
+  display: grid; gap: 14px; margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.cartoes-grid .admin-panel { margin: 0; }
 .admin-panel .painel-grid .full { grid-column: 1 / -1; }
 .admin-panel .check {
   display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
@@ -823,6 +830,10 @@ body {
       <button class="admin-nav-item active" data-view="pendentes">Pendentes <span class="admin-nav-badge" id="cntPendentes">0</span></button>
       <button class="admin-nav-item" data-view="aprovados">Aprovados <span class="admin-nav-badge" id="cntAprovados">0</span></button>
       <button class="admin-nav-item" data-view="reprovados">Reprovados <span class="admin-nav-badge" id="cntReprovados">0</span></button>
+      <button class="admin-nav-item" data-view="atendimentos">Atendimentos <span class="admin-nav-badge" id="cntAtend">0</span></button>
+      <button class="admin-nav-item" data-view="metricas">Métricas</button>
+      <button class="admin-nav-item" data-view="corretores">Corretores</button>
+      <button class="admin-nav-item" data-view="cadastros">Cadastros</button>
       <button class="admin-nav-item" data-view="logs">Logins</button>
       <button class="admin-nav-item" data-view="envios">Envios WhatsApp <span class="admin-nav-badge" id="cntFalhas">0</span></button>
       <button class="admin-nav-item" data-view="whatsapp">Config. WhatsApp</button>
@@ -1027,6 +1038,10 @@ body {
       pendentes: 'Pendentes',
       aprovados: 'Aprovados',
       reprovados: 'Reprovados',
+      atendimentos: 'Atendimentos do comprador',
+      metricas: 'Audiência e conversão por imóvel',
+      corretores: 'Corretores: nota e resposta',
+      cadastros: 'Cadastros por período',
       logs: 'Logins de admin',
       envios: 'Envios de convite pelo WhatsApp',
       whatsapp: 'Configuração da WhatsApp Cloud API',
@@ -1034,7 +1049,15 @@ body {
     };
     $('adminSectionTitle').textContent = titleMap[view] || view;
 
-    if (view === 'logs') {
+    if (view === 'atendimentos') {
+      renderAtendimentos();
+    } else if (view === 'metricas') {
+      renderMetricas();
+    } else if (view === 'corretores') {
+      renderCorretores();
+    } else if (view === 'cadastros') {
+      renderCadastros();
+    } else if (view === 'logs') {
       renderLogs();
     } else if (view === 'envios') {
       renderEnvios();
@@ -1812,6 +1835,268 @@ body {
             });
         };
       });
+    });
+  }
+
+  // ---- Atendimentos do comprador
+  function renderAtendimentos() {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/atendimentos').then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var lista = r.body.atendimentos || [];
+      var c = r.body.contadores || {};
+
+      var resumo = '<div class="cartoes-grid">' +
+        cartao('Aguardando corretor', c.aguardando || 0, (c.aguardando ? '#c0392b' : '')) +
+        cartao('Com corretor', c.com_corretor || 0, '#1e7e34') +
+        cartao('Sem corretor disponível', c.sem_corretor || 0, (c.sem_corretor ? '#c0392b' : '')) +
+        '</div>';
+
+      if (!lista.length) {
+        box.innerHTML = resumo + '<div class="admin-panel"><p class="muted">' +
+          'Nenhum comprador pediu atendimento ainda.</p></div>';
+        return;
+      }
+
+      var linhas = lista.map(function (a) {
+        var estado = a.status === 'com_corretor'
+          ? '<span style="color:#1e7e34;font-weight:700">atendendo</span>'
+          : (a.status === 'sem_corretor'
+              ? '<span style="color:#c0392b;font-weight:700">sem corretor</span>'
+              : '<span style="color:#b8860b;font-weight:700">aguardando</span>');
+        var prazo = (a.minutos_restantes === null || a.minutos_restantes === undefined)
+          ? '' : '<br><span class="muted" style="font-size:.78rem">' +
+                 (a.minutos_restantes > 0 ? 'faltam ' + a.minutos_restantes + ' min úteis' : 'prazo vencido') + '</span>';
+        return '<tr>' +
+          '<td>' + escapeHtml(formatDateTime(a.created_at)) + '</td>' +
+          '<td>' + estado + prazo + '</td>' +
+          '<td>' + escapeHtml(a.comprador_nome || '-') +
+            '<br><span class="muted" style="font-size:.8rem">' + escapeHtml(a.comprador_whatsapp || '-') + '</span></td>' +
+          '<td>' + escapeHtml(a.corretor_nome || '—') +
+            (a.ofertas > 1 ? '<br><span class="muted" style="font-size:.78rem">' + a.ofertas + ' corretores acionados</span>' : '') + '</td>' +
+          '<td>' + escapeHtml(a.imovel_titulo || '-') +
+            (a.imovel_codigo ? '<br><span class="muted" style="font-size:.8rem">' + escapeHtml(a.imovel_codigo) + '</span>' : '') + '</td>' +
+          '<td>' + (a.grupo_whatsapp_link
+              ? '<a href="' + escapeHtml(a.grupo_whatsapp_link) + '" target="_blank" rel="noopener">grupo</a>'
+              : '<span class="muted">sem grupo</span>') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      box.innerHTML = resumo + '<div class="admin-logs"><table>' +
+        '<thead><tr><th>Quando</th><th>Situação</th><th>Comprador</th><th>Corretor</th><th>Imóvel</th><th></th></tr></thead>' +
+        '<tbody>' + linhas + '</tbody></table></div>';
+    });
+  }
+
+  function cartao(rotulo, valor, cor) {
+    return '<div class="admin-panel" style="padding:14px 16px">' +
+      '<div class="muted" style="font-size:.8rem">' + rotulo + '</div>' +
+      '<div style="font-size:1.6rem;font-weight:800' + (cor ? ';color:' + cor : '') + '">' + valor + '</div></div>';
+  }
+
+  // ---- Audiência e conversão por imóvel
+  function renderMetricas() {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/imoveis/metricas').then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var lista = r.body.imoveis || [];
+      var t = r.body.totais || {};
+
+      var topo = '<div class="cartoes-grid">' +
+        cartao('Acessos no total', t.visitas || 0, '') +
+        cartao('Visitantes únicos', t.visitantes || 0, '') +
+        '</div>' +
+        '<p class="muted" style="margin-bottom:16px;font-size:.85rem">' +
+        'Único é aparelho/rede, não pessoa: o mesmo visitante em casa e no trabalho conta duas vezes. ' +
+        'Robôs não entram na conta. A contagem começou hoje, então imóvel antigo aparece com números baixos.</p>';
+
+      var linhas = lista.map(function (im) {
+        // Visita sem proposta não é problema por si só; muita visita sem
+        // proposta é. Marcar em vermelho quem passou de 20 acessos únicos
+        // sem nenhuma proposta dá o alvo de investigação.
+        var alerta = (im.visitantes >= 20 && im.propostas === 0);
+        return '<tr' + (alerta ? ' style="background:#fff6f4"' : '') + '>' +
+          '<td>' + escapeHtml(im.titulo || '-') +
+            (im.codigo ? '<br><span class="muted" style="font-size:.8rem">' + escapeHtml(im.codigo) + '</span>' : '') + '</td>' +
+          '<td>' + escapeHtml((im.cidade || '') + (im.uf ? '/' + im.uf : '')) + '</td>' +
+          '<td style="text-align:right;font-weight:700">' + (im.visitas || 0) + '</td>' +
+          '<td style="text-align:right">' + (im.visitantes || 0) + '</td>' +
+          '<td style="text-align:right">' + (im.corretores || 0) + '</td>' +
+          '<td style="text-align:right">' + (im.compradores || 0) + '</td>' +
+          '<td style="text-align:right' + (alerta ? ';color:#c0392b;font-weight:700' : '') + '">' + (im.propostas || 0) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      box.innerHTML = topo + '<div class="admin-logs"><table>' +
+        '<thead><tr><th>Imóvel</th><th>Cidade</th><th style="text-align:right">Acessos</th>' +
+        '<th style="text-align:right">Únicos</th><th style="text-align:right">Corretores</th>' +
+        '<th style="text-align:right">Compradores</th><th style="text-align:right">Propostas</th></tr></thead>' +
+        '<tbody>' + linhas + '</tbody></table></div>';
+    });
+  }
+
+  // ---- Corretores: nota e comportamento diante da oferta
+  function renderCorretores() {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    api('/api/admin/corretores/desempenho').then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var lista = r.body.corretores || [];
+
+      var linhas = lista.map(function (c) {
+        var nota = Number(c.nota || 0);
+        var estrelas = '';
+        for (var i = 1; i <= 5; i++) {
+          estrelas += '<span style="color:' + (i <= Math.round(nota) ? '#F59E0B' : '#D6D3D1') + '">★</span>';
+        }
+        var notaTxt = c.avaliacoes
+          ? estrelas + ' <strong>' + nota.toFixed(1).replace('.', ',') + '</strong> ' +
+            '<span class="muted" style="font-size:.78rem">(' + c.avaliacoes + ')</span>'
+          : '<span class="muted" style="font-size:.82rem">sem avaliação</span>';
+
+        var resposta = c.ofertas
+          ? c.aceitou + '/' + c.ofertas +
+            (c.perdeu_prazo ? ' <span style="color:#c0392b">· ' + c.perdeu_prazo + ' perdidas</span>' : '') +
+            (c.media_minutos !== null && c.media_minutos !== undefined
+              ? '<br><span class="muted" style="font-size:.78rem">responde em ~' + c.media_minutos + ' min úteis</span>' : '')
+          : '<span class="muted" style="font-size:.82rem">nenhuma oferta ainda</span>';
+
+        return '<tr>' +
+          '<td>' + escapeHtml(c.nome || '-') +
+            '<br><span class="muted" style="font-size:.8rem">' +
+            escapeHtml((c.cidade || '') + (c.uf ? '/' + c.uf : '')) + '</span></td>' +
+          '<td>' + escapeHtml(c.creci || '-') + '</td>' +
+          '<td>' + (c.creci_verificado
+              ? '<span style="color:#1e7e34;font-weight:700">verificado</span>'
+              : '<span class="muted">não verificado</span>') + '</td>' +
+          '<td>' + notaTxt + '</td>' +
+          '<td>' + resposta + '</td>' +
+          '<td style="text-align:right">' + (c.carteira || 0) + '</td>' +
+          '<td><button class="btn btn-ghost btn-sm" data-creci="' + c.id + '" data-valor="' +
+            (c.creci_verificado ? '0' : '1') + '">' +
+            (c.creci_verificado ? 'Desfazer' : 'Marcar verificado') + '</button></td>' +
+        '</tr>';
+      }).join('');
+
+      box.innerHTML =
+        '<p class="muted" style="margin-bottom:16px;font-size:.85rem">' +
+        'A ordem desta lista é a mesma que decide quem recebe comprador primeiro, dentro de cada faixa de região. ' +
+        'Não existe API oficial do CRECI: a verificação é conferida a mão e fica registrada com quem verificou.</p>' +
+        '<div class="admin-logs"><table>' +
+        '<thead><tr><th>Corretor</th><th>CRECI</th><th>Verificação</th><th>Nota</th>' +
+        '<th>Resposta às ofertas</th><th style="text-align:right">Carteira</th><th></th></tr></thead>' +
+        '<tbody>' + linhas + '</tbody></table></div>';
+
+      box.querySelectorAll('[data-creci]').forEach(function (b) {
+        b.onclick = function () {
+          b.disabled = true;
+          api('/api/admin/corretores/' + b.dataset.creci + '/creci', {
+            method: 'POST', body: { verificado: b.dataset.valor === '1' }
+          }).then(function (resp) {
+            if (!resp.ok) { b.disabled = false; toast((resp.body && resp.body.error) || 'Erro.', 'error'); return; }
+            toast('Verificação atualizada.', 'success');
+            renderCorretores();
+          });
+        };
+      });
+    });
+  }
+
+  // ---- Cadastros por período
+  // Duas curvas separadas de propósito: proprietário parando de entrar é
+  // problema de catálogo, corretor parando de entrar é problema de quem vai
+  // atender esse catálogo. São diagnósticos diferentes.
+  function renderCadastros(de, ate) {
+    var box = $('adminContent');
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    var qs = [];
+    if (de) qs.push('de=' + encodeURIComponent(de));
+    if (ate) qs.push('ate=' + encodeURIComponent(ate));
+
+    api('/api/admin/usuarios/cadastros' + (qs.length ? '?' + qs.join('&') : '')).then(function (r) {
+      if (!r.ok) { box.innerHTML = '<p class="muted">Erro: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
+      var b = r.body, serie = b.serie || [], per = b.periodo || {}, tot = b.total || {};
+
+      var maior = serie.reduce(function (m, d) {
+        return Math.max(m, (d.usuarios || 0) + (d.corretores || 0));
+      }, 0) || 1;
+
+      // Barras em HTML puro: o volume aqui é de dezenas, e uma biblioteca de
+      // gráfico para isso seria peso sem ganho.
+      var barras = serie.map(function (d) {
+        var total = (d.usuarios || 0) + (d.corretores || 0);
+        var altura = Math.round((total / maior) * 100);
+        var partes = total
+          ? '<div style="height:' + (d.usuarios ? Math.round((d.usuarios / total) * altura) : 0) +
+            '%;background:var(--emerald,#FF6A00)"></div>' +
+            '<div style="height:' + (d.corretores ? Math.round((d.corretores / total) * altura) : 0) +
+            '%;background:#1e7e34"></div>'
+          : '';
+        var dia = d.dia.slice(8, 10) + '/' + d.dia.slice(5, 7);
+        return '<div title="' + dia + ': ' + (d.usuarios || 0) + ' usuário(s), ' +
+          (d.corretores || 0) + ' corretor(es)" ' +
+          'style="flex:1;min-width:6px;display:flex;flex-direction:column;justify-content:flex-end;height:120px">' +
+          partes + '</div>';
+      }).join('');
+
+      var comMovimento = serie.filter(function (d) { return (d.usuarios || 0) + (d.corretores || 0) > 0; });
+
+      box.innerHTML =
+        '<div class="admin-panel" style="max-width:820px;margin-bottom:18px">' +
+          '<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">' +
+            '<div class="field"><label for="cadDe">De</label>' +
+              '<input type="date" id="cadDe" value="' + escapeHtml(b.de) + '" /></div>' +
+            '<div class="field"><label for="cadAte">Até</label>' +
+              '<input type="date" id="cadAte" value="' + escapeHtml(b.ate) + '" /></div>' +
+            '<button class="btn btn-primary" id="cadFiltrar">Filtrar</button>' +
+            '<button class="btn btn-ghost" id="cad30">Últimos 30 dias</button>' +
+            '<button class="btn btn-ghost" id="cad90">Últimos 90 dias</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="cartoes-grid">' +
+          cartao('Usuários no período', per.usuarios || 0, 'var(--emerald,#FF6A00)') +
+          cartao('Corretores no período', per.corretores || 0, '#1e7e34') +
+          cartao('Usuários no total', tot.usuarios || 0, '') +
+          cartao('Corretores no total', tot.corretores || 0, '') +
+        '</div>' +
+
+        '<div class="admin-panel" style="margin-bottom:18px">' +
+          '<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">' +
+            '<span><span style="display:inline-block;width:10px;height:10px;background:var(--emerald,#FF6A00);border-radius:2px"></span> Usuários</span>' +
+            '<span><span style="display:inline-block;width:10px;height:10px;background:#1e7e34;border-radius:2px"></span> Corretores</span>' +
+          '</div>' +
+          '<div style="display:flex;gap:2px;align-items:flex-end">' + barras + '</div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:6px" class="muted">' +
+            '<span style="font-size:.75rem">' + escapeHtml(b.de) + '</span>' +
+            '<span style="font-size:.75rem">' + escapeHtml(b.ate) + '</span>' +
+          '</div>' +
+        '</div>' +
+
+        (comMovimento.length
+          ? '<div class="admin-logs"><table><thead><tr><th>Dia</th>' +
+            '<th style="text-align:right">Usuários</th><th style="text-align:right">Corretores</th>' +
+            '<th style="text-align:right">Total</th></tr></thead><tbody>' +
+            comMovimento.slice().reverse().map(function (d) {
+              return '<tr><td>' + d.dia.split('-').reverse().join('/') + '</td>' +
+                '<td style="text-align:right">' + (d.usuarios || 0) + '</td>' +
+                '<td style="text-align:right">' + (d.corretores || 0) + '</td>' +
+                '<td style="text-align:right;font-weight:700">' + ((d.usuarios || 0) + (d.corretores || 0)) + '</td></tr>';
+            }).join('') + '</tbody></table></div>'
+          : '<div class="admin-panel"><p class="muted">Nenhum cadastro neste período.</p></div>');
+
+      $('cadFiltrar').onclick = function () {
+        renderCadastros($('cadDe').value, $('cadAte').value);
+      };
+      function ultimosDias(n) {
+        var fim = new Date();
+        var ini = new Date(fim.getTime() - (n - 1) * 24 * 60 * 60 * 1000);
+        renderCadastros(ini.toISOString().slice(0, 10), fim.toISOString().slice(0, 10));
+      }
+      $('cad30').onclick = function () { ultimosDias(30); };
+      $('cad90').onclick = function () { ultimosDias(90); };
     });
   }
 

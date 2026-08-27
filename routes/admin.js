@@ -601,6 +601,213 @@ router.delete('/whatsapp/foto-grupo', async (req, res) => {
 });
 
 // =========================================================================
+// Atendimento do comprador: acompanhamento e métricas
+// =========================================================================
+
+// ---- GET /api/admin/atendimentos — quem está esperando, quem está atendendo
+router.get('/atendimentos', async (req, res) => {
+  try {
+    const horario = require('../lib/horario-comercial');
+    const { PRAZO_MINUTOS } = require('../lib/atendimento');
+    const r = await query(
+      `SELECT ic.id, ic.status, ic.rodada, ic.atribuido_em, ic.entrou_em,
+              ic.grupo_whatsapp_link, ic.created_at,
+              im.id AS imovel_id, im.codigo AS imovel_codigo, im.titulo AS imovel_titulo,
+              im.cidade, im.uf,
+              uc.nome AS comprador_nome, uc.whatsapp AS comprador_whatsapp,
+              ur.nome AS corretor_nome, ur.whatsapp AS corretor_whatsapp,
+              (SELECT count(*)::int FROM moravo.ofertas_corretor o
+                WHERE o.atendimento_id = ic.id) AS ofertas
+         FROM moravo.interesses_compradores ic
+         JOIN moravo.imoveis  im ON im.id = ic.imovel_id
+         JOIN moravo.usuarios uc ON uc.id = ic.comprador_id
+         LEFT JOIN moravo.usuarios ur ON ur.id = ic.corretor_id
+        ORDER BY ic.created_at DESC
+        LIMIT 200`
+    );
+
+    const atendimentos = r.rows.map((a) => {
+      const usados = a.atribuido_em
+        ? horario.minutosUteisEntre(new Date(a.atribuido_em), new Date()) : 0;
+      return Object.assign({}, a, {
+        minutos_restantes: (a.status === 'aguardando_corretor' && a.atribuido_em && !a.entrou_em)
+          ? Math.max(0, PRAZO_MINUTOS - usados) : null,
+      });
+    });
+
+    const cnt = await query(
+      `SELECT count(*) FILTER (WHERE status = 'aguardando_corretor')::int AS aguardando,
+              count(*) FILTER (WHERE status = 'com_corretor')::int      AS com_corretor,
+              count(*) FILTER (WHERE status = 'sem_corretor')::int      AS sem_corretor
+         FROM moravo.interesses_compradores`
+    );
+    return res.json({ ok: true, atendimentos, contadores: cnt.rows[0] });
+  } catch (err) {
+    console.error('[admin/atendimentos] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- GET /api/admin/corretores/desempenho — a base do ranking futuro
+// Junta o que já dá para medir: nota dada pelos proprietários e o
+// comportamento real diante de uma oferta (aceitou, deixou vencer, quanto
+// tempo levou). O ranking, quando existir, sai daqui.
+router.get('/corretores/desempenho', async (req, res) => {
+  try {
+    const r = await query(
+      `SELECT u.id, u.nome, u.cidade, u.uf, u.creci, u.creci_verificado,
+              COALESCE(a.media, 0)::float AS nota,
+              COALESCE(a.total, 0)::int   AS avaliacoes,
+              COALESCE(o.ofertas, 0)::int AS ofertas,
+              COALESCE(o.entrou, 0)::int  AS aceitou,
+              COALESCE(o.expirou, 0)::int AS perdeu_prazo,
+              o.media_minutos::int        AS media_minutos,
+              (SELECT count(*)::int FROM moravo.interesses i WHERE i.corretor_id = u.id) AS carteira
+         FROM moravo.usuarios u
+         LEFT JOIN (
+           SELECT corretor_id, ROUND(AVG(nota)::numeric, 2) AS media, count(*) AS total
+             FROM moravo.avaliacoes_corretor GROUP BY corretor_id
+         ) a ON a.corretor_id = u.id
+         LEFT JOIN (
+           SELECT corretor_id,
+                  count(*) AS ofertas,
+                  count(*) FILTER (WHERE desfecho = 'entrou')  AS entrou,
+                  count(*) FILTER (WHERE desfecho = 'expirou') AS expirou,
+                  AVG(minutos_uteis) FILTER (WHERE desfecho = 'entrou') AS media_minutos
+             FROM moravo.ofertas_corretor GROUP BY corretor_id
+         ) o ON o.corretor_id = u.id
+        WHERE u.perfil = 'corretor'
+        ORDER BY COALESCE(a.media, 0) DESC, COALESCE(o.entrou, 0) DESC, u.nome`
+    );
+    return res.json({ ok: true, corretores: r.rows });
+  } catch (err) {
+    console.error('[admin/corretores/desempenho] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- GET /api/admin/imoveis/metricas — audiência e conversão por imóvel
+// Visitas sozinhas não dizem nada; visitas CONTRA propostas dizem tudo.
+// 200 acessos sem proposta é anúncio caro demais; 3 acessos sem proposta é
+// anúncio invisível. As duas leituras pedem decisões opostas.
+router.get('/imoveis/metricas', async (req, res) => {
+  try {
+    const r = await query(
+      `SELECT im.id, im.codigo, im.titulo, im.tipo, im.preco, im.cidade, im.uf,
+              im.status, im.status_aprovacao, im.created_at,
+              u.nome AS dono_nome,
+              COALESCE(v.total, 0)::int  AS visitas,
+              COALESCE(v.unicos, 0)::int AS visitantes,
+              COALESCE(p.total, 0)::int  AS propostas,
+              (SELECT count(*)::int FROM moravo.interesses i
+                WHERE i.imovel_id = im.id) AS corretores,
+              (SELECT count(*)::int FROM moravo.interesses_compradores ic
+                WHERE ic.imovel_id = im.id) AS compradores
+         FROM moravo.imoveis im
+         JOIN moravo.usuarios u ON u.id = im.dono_id
+         LEFT JOIN (
+           SELECT imovel_id, count(*) AS total, count(DISTINCT visitante_hash) AS unicos
+             FROM moravo.imovel_visitas GROUP BY imovel_id
+         ) v ON v.imovel_id = im.id
+         LEFT JOIN (
+           SELECT imovel_id, count(*) AS total FROM moravo.propostas GROUP BY imovel_id
+         ) p ON p.imovel_id = im.id
+        ORDER BY COALESCE(v.total, 0) DESC, im.id DESC
+        LIMIT 300`
+    );
+    const totais = await query(
+      `SELECT count(*)::int AS visitas, count(DISTINCT visitante_hash)::int AS visitantes
+         FROM moravo.imovel_visitas`
+    );
+    return res.json({ ok: true, imoveis: r.rows, totais: totais.rows[0] });
+  } catch (err) {
+    console.error('[admin/imoveis/metricas] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- GET /api/admin/usuarios/cadastros?de=&ate= — quem se cadastrou, por dia
+// Separado por perfil porque as duas curvas contam histórias diferentes:
+// proprietário parando de entrar é problema de catálogo, corretor parando de
+// entrar é problema de quem vai atender esse catálogo.
+router.get('/usuarios/cadastros', async (req, res) => {
+  try {
+    const hoje = new Date();
+    const padraoDe = new Date(hoje.getTime() - 29 * 24 * 60 * 60 * 1000);
+    const soData = /^\d{4}-\d{2}-\d{2}$/;
+
+    const de  = soData.test(req.query.de || '')  ? req.query.de  : padraoDe.toISOString().slice(0, 10);
+    const ate = soData.test(req.query.ate || '') ? req.query.ate : hoje.toISOString().slice(0, 10);
+
+    // A série vem com TODOS os dias do intervalo, inclusive os vazios: sem
+    // isso um gráfico esconderia justamente os dias em que ninguém entrou.
+    const serie = await query(
+      `SELECT to_char(d.dia, 'YYYY-MM-DD') AS dia,
+              COALESCE(count(*) FILTER (WHERE u.perfil = 'proprietario'), 0)::int AS usuarios,
+              COALESCE(count(*) FILTER (WHERE u.perfil = 'corretor'), 0)::int     AS corretores
+         FROM generate_series($1::date, $2::date, '1 day') AS d(dia)
+         LEFT JOIN moravo.usuarios u
+                ON u.created_at >= d.dia
+               AND u.created_at <  d.dia + INTERVAL '1 day'
+               AND u.perfil <> 'admin'
+        GROUP BY d.dia
+        ORDER BY d.dia`,
+      [de, ate]
+    );
+
+    const periodo = await query(
+      `SELECT count(*) FILTER (WHERE perfil = 'proprietario')::int AS usuarios,
+              count(*) FILTER (WHERE perfil = 'corretor')::int     AS corretores
+         FROM moravo.usuarios
+        WHERE created_at >= $1::date AND created_at < $2::date + INTERVAL '1 day'`,
+      [de, ate]
+    );
+
+    const total = await query(
+      `SELECT count(*) FILTER (WHERE perfil = 'proprietario')::int AS usuarios,
+              count(*) FILTER (WHERE perfil = 'corretor')::int     AS corretores,
+              count(*) FILTER (WHERE perfil = 'corretor' AND creci_verificado)::int AS corretores_verificados
+         FROM moravo.usuarios`
+    );
+
+    return res.json({
+      ok: true, de: de, ate: ate,
+      serie: serie.rows, periodo: periodo.rows[0], total: total.rows[0],
+    });
+  } catch (err) {
+    console.error('[admin/usuarios/cadastros] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/admin/corretores/:id/creci — verificação manual
+// Não existe API oficial do CRECI (o COFECI não publica uma, e os raspadores
+// de terceiros quebram quando um estado muda de site). Com o volume atual, a
+// conferência é humana e fica registrada.
+router.post('/corretores/:id/creci', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
+    const verificado = !!(req.body && req.body.verificado);
+
+    const r = await query(
+      `UPDATE moravo.usuarios
+          SET creci_verificado = $1,
+              creci_verificado_em = CASE WHEN $1 THEN NOW() ELSE NULL END,
+              creci_verificado_por = CASE WHEN $1 THEN $2::bigint ELSE NULL END
+        WHERE id = $3 AND perfil = 'corretor'
+        RETURNING id, nome, creci, creci_verificado`,
+      [verificado, req.user.id, id]
+    );
+    if (r.rowCount === 0) return res.status(404).json({ ok: false, error: 'Corretor não encontrado.' });
+    return res.json({ ok: true, corretor: r.rows[0] });
+  } catch (err) {
+    console.error('[admin/creci] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// =========================================================================
 // Configurações do site: scripts de terceiros (Tag Manager, pixels)
 // =========================================================================
 

@@ -112,6 +112,7 @@ lib/pagina-grupo.js    página de entrada no grupo de WhatsApp (escapa a query s
 lib/codigo-imovel.js   código público do imóvel, slug e URL amigável
 lib/foto-grupo.js      imagem dos grupos, guardada no banco (com padrão no repo)
 lib/atendimento.js     fila de corretores para o comprador, atribuição e repasse
+lib/visitas.js         contagem de acesso por imóvel (visitante por hash)
 lib/horario-comercial.js  expediente da Moravo, para o prazo contar só em hora útil
 
 routes/
@@ -245,6 +246,25 @@ explica em vez de mostrar zero, que pareceria nota ruim.
 A média já é lida por `lib/atendimento.js` para ordenar a fila. Quem não tem nota entra
 como 3.5, não 0 (ver "Atendimento do comprador").
 
+## Medição de acesso
+
+`imovel_visitas` conta cada abertura da página do imóvel. A contagem acontece **no
+servidor**, depois de a página ser entregue: não depende de JavaScript e não atrasa quem
+está olhando o imóvel.
+
+O visitante é identificado por um **hash de IP + navegador**, nunca pelo IP em texto.
+
+⚠️ **"Único" é aparelho/rede, não pessoa.** A mesma pessoa em casa e no trabalho conta
+duas vezes, e duas pessoas na mesma casa contam duas. É o que dá para medir sem rastrear
+ninguém, e a tela do admin diz isso.
+
+Robôs são descartados por user-agent: contá-los faria o número dizer o contrário da
+verdade sobre audiência.
+
+A leitura que interessa não é visita, é **visita contra proposta**: 200 acessos sem
+proposta é anúncio caro demais; 3 acessos sem proposta é anúncio invisível. As duas
+pedem decisões opostas.
+
 ## URLs
 
 **Nenhuma página termina em `.html`.** O `express.static` já servia as duas formas, e as
@@ -275,9 +295,19 @@ Faz:
 - Lista imóveis por `status_aprovacao` (pendente / aprovado / reprovado)
 - **Aprova** imóvel (registra quem e quando)
 - **Reprova** com motivo obrigatório (mín. 10 caracteres) → notifica o dono (`documento_reprovado`)
+- **Atendimentos**: quem espera corretor, quem está atendendo, prazo restante e quantos
+  corretores já foram acionados naquele atendimento
+- **Métricas**: acessos e visitantes únicos por imóvel, contra corretores, compradores e
+  propostas. Imóvel com 20+ visitantes únicos e **zero** propostas aparece destacado: é
+  audiência que não converte, e é onde vale investigar
+- **Corretores**: nota, quantas ofertas recebeu, quantas aceitou, quantas deixou vencer e
+  em quantos minutos úteis costuma responder. A ordem da lista é a mesma da fila
+- **Verificação de CRECI** manual, com registro de quem verificou e quando
+- **Cadastros por período**: usuários e corretores por dia, com filtro de data
+- Envios de WhatsApp, configuração e scripts do site
 - Vê os últimos 100 logins do painel
 
-Não faz (hoje): gerenciar usuários, editar/excluir imóveis, ver negociações, métricas.
+Não faz (hoje): gerenciar usuários, editar/excluir imóveis.
 
 Só existe o admin do seed (`admin@moravo.local` / `admin1234`, criado no boot).
 Para criar outro, é `UPDATE` no banco na mão.
@@ -441,6 +471,7 @@ Consequências no código:
 | `favoritos` | usuário ↔ imóvel |
 | `notificacoes` | destinatário, tipo, payload JSONB, lida |
 | `admin_login_logs` | auditoria de acesso ao painel admin |
+| `imovel_visitas` | um acesso à página do imóvel (visitante por hash) |
 | `ofertas_corretor` | cada oferta de atendimento a um corretor e o desfecho |
 | `avaliacoes_corretor` | nota de 1 a 5 que o proprietário dá ao corretor |
 | `whatsapp_envios` | um envio de convite: status na Meta + status de entrega do webhook |
@@ -672,6 +703,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Painel do admin ganhou quatro telas: **Atendimentos** (fila e prazo),
+  **Métricas** (acessos, únicos, corretores, compradores e propostas por imóvel),
+  **Corretores** (nota, taxa de aceite, tempo de resposta e verificação de CRECI manual) e
+  **Cadastros por período** (usuários e corretores por dia, com filtro de data). Criada a
+  tabela `imovel_visitas`, contada no servidor e com visitante por hash.
 - **2026-08-27** — Revisão das telas por perfil, com seis correções: estado e cidade
   passam a ser editáveis no **perfil** (e o `PUT /api/usuarios/me` grava `uf`, que antes
   ignorava); o **dono é avisado** quando aparece comprador no imóvel dele; as duas
