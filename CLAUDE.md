@@ -303,23 +303,46 @@ Consequências no código:
 | Etapa | Quem faz | Observação |
 |---|---|---|
 | Criar o grupo | **Waha** (sessão `moravo_portal`, em `wpp.atendentex.com.br`) | Número não oficial controlado por API |
-| Enviar o convite | **WhatsApp Cloud API** (oficial, Meta) | Template `link_grupo_convite`, idioma `pt_BR` |
+| Enviar o convite | **WhatsApp Cloud API** (oficial, Meta) | Dois templates, idioma `pt_BR` |
 
 **O grupo nasce só com os números da Moravo.** Proprietário e corretor **não são mais
 adicionados à força** — recebem o link e entram por vontade própria. Foi essa mudança que
 tirou o risco de banimento do número da sessão. Se o Waha exigir mais de um participante
 para criar o grupo, informe um segundo número interno em `WAHA_PARTICIPANTES_EXTRA`.
 
-**O template `link_grupo_convite` tem DUAS variáveis** (conferido no painel da Meta em
-25/08/2026):
+**São DOIS templates, um por destinatário** (conferidos no painel da Meta em 27/08/2026).
+Não existe template único: cada lado recebe um texto diferente, e a **ordem das variáveis
+não é a mesma nos dois**. Trocar um pelo outro entrega a frase invertida.
 
-| Onde | Variável | O que o sistema envia |
-|---|---|---|
-| Corpo | `{{1}}` | **primeiro nome** de quem recebe |
-| Botão de URL | `{{1}}` | **código do convite**, anexado à base fixa |
+`convite_grupo_proprietario` (campo **Template do proprietário** no painel):
 
-A base do botão é `https://moravo.com.br/linkgrupo/`, e o sufixo é um **token nominal**, não
-o código do grupo.
+> Olá, *{{1}}*! O corretor *{{2}}* começou a trabalhar o seu imóvel {{3}} na Moravo.
+
+| Variável | O que o sistema envia |
+|---|---|
+| `{{1}}` | **primeiro nome** do proprietário |
+| `{{2}}` | **nome completo** do corretor |
+| `{{3}}` | título do imóvel + `(imóvel N)` |
+
+`convite_grupo_corretor` (campo **Template do corretor**):
+
+> Olá, {{1}}! O imóvel {{2}} entrou na sua carteira na Moravo.
+> Criamos um grupo no WhatsApp com você, o proprietário *{{3}}* e um atendente da Moravo.
+
+| Variável | O que o sistema envia |
+|---|---|
+| `{{1}}` | **primeiro nome** do corretor |
+| `{{2}}` | título do imóvel + `(imóvel N)` |
+| `{{3}}` | **nome completo** do proprietário |
+
+Nos dois, o **botão de URL** tem `{{1}}` com o **token nominal**, anexado à base fixa
+`https://moravo.com.br/linkgrupo/`. O que vai no link é o token, nunca o código do grupo.
+
+⚠️ **Não existe reserva de template.** Se o campo de um dos lados estiver vazio, aquela
+pessoa **não recebe mensagem** e a falha fica registrada em `whatsapp_envios` para reenvio.
+Usar o template do outro lado seria pior que não enviar: as variáveis entram em posições
+diferentes e a frase sai trocada (aconteceu em 26/08/2026, com o corretor recebendo
+"o corretor começou a trabalhar o seu imóvel").
 
 ### Por que token e não o código do convite
 
@@ -456,6 +479,13 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Confirmado o par de templates da Meta: `convite_grupo_proprietario` e
+  `convite_grupo_corretor`, com **três variáveis cada e ordens diferentes**. A ordem enviada
+  pelo `lib/grupo.js` bate com as duas. Removida a reserva de template (sem o do corretor,
+  ele não recebe nada em vez de receber o texto do proprietário) e apagada a `enviarConvites`
+  morta de `routes/interesses.js`, que ainda enviava sem variável nenhuma. O `gerarInviteGrupo`
+  passou a tentar primeiro o endpoint que o Waha responde, tirando três 404 do log a cada
+  grupo criado.
 - **2026-08-17** — Documento criado: mapeamento dos 3 perfis (admin / vendedor-proprietário /
   corretor), fluxo de intermediação, modelo de dados e dívidas conhecidas.
 - **2026-08-17** — Registrado que a aprovação não bloquear o imóvel no feed é decisão de

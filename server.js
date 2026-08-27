@@ -513,7 +513,7 @@ app.listen(PORT, '0.0.0.0', async () => {
         waba_id         TEXT,
         api_version     TEXT NOT NULL DEFAULT 'v23.0',
         token_cifrado   TEXT,
-        template_nome   TEXT NOT NULL DEFAULT 'link_grupo_convite',
+        template_nome   TEXT NOT NULL DEFAULT 'convite_grupo_proprietario',
         template_idioma TEXT NOT NULL DEFAULT 'pt_BR',
         ativo           BOOLEAN NOT NULL DEFAULT false,
         atualizado_por  BIGINT REFERENCES moravo.usuarios(id) ON DELETE SET NULL,
