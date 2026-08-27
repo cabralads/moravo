@@ -1313,10 +1313,10 @@ body {
               '<input id="wappToken" type="password" autocomplete="new-password" placeholder="' +
               (c.token_definido ? 'digite para trocar' : 'cole o token aqui') + '" /></div>' +
             '<div class="field"><label for="wappTemplate">Template do proprietário</label>' +
-              '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || '') + '" placeholder="convite_grupo_proprietario" /></div>' +
+              '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || '') + '" placeholder="nome exato do template na Meta" /></div>' +
             '<div class="field"><label for="wappTemplateCor">Template do corretor' +
               (c.template_corretor ? '' : ' <span class="opt" style="color:#c0392b">(vazio: o corretor não recebe convite)</span>') + '</label>' +
-              '<input id="wappTemplateCor" value="' + escapeHtml(c.template_corretor || '') + '" placeholder="convite_grupo_corretor" /></div>' +
+              '<input id="wappTemplateCor" value="' + escapeHtml(c.template_corretor || '') + '" placeholder="nome exato do template na Meta" /></div>' +
             '<div class="field"><label for="wappIdioma">Idioma do template</label>' +
               '<input id="wappIdioma" value="' + escapeHtml(c.template_idioma || 'pt_BR') + '" placeholder="pt_BR" /></div>' +
           '</div>' +
