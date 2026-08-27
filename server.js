@@ -30,7 +30,14 @@ const PORT = parseInt(process.env.PORT, 10) || 3000;
 // (Há também endpoints multipart separados em /api/imoveis/:id/fotos e /documentos
 //  que recebem FormData e usam os limites padrão do multer/busboy — esses não
 //  passam por aqui.)
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({
+  limit: '50mb',
+  // O corpo cru só é guardado no webhook: é dele que sai a assinatura
+  // X-Hub-Signature-256 que a Meta manda. Nas outras rotas seria peso à toa.
+  verify: (req, res, buf) => {
+    if (String(req.originalUrl || '').startsWith('/webhooks/whatsapp')) req.rawBody = buf;
+  },
+}));
 
 // Desabilita cache para todas as requisições de API
 app.use((req, res, next) => {
@@ -129,6 +136,9 @@ app.use('/api/imoveis/:id/documentos', documentosRouter);
 app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
+// Público de propósito: quem chama é a Meta. A autenticidade vem do
+// verify token no handshake e da assinatura do corpo, não de JWT.
+app.use('/webhooks/whatsapp', require('./routes/webhook-whatsapp'));
 
 // =========================================================================
 // Página de entrada no grupo de WhatsApp
@@ -558,6 +568,38 @@ app.listen(PORT, '0.0.0.0', async () => {
       CREATE INDEX IF NOT EXISTS idx_whatsapp_envios_status
         ON moravo.whatsapp_envios (status, created_at DESC);
     `);
+
+    // Status de ENTREGA, que é coisa diferente de status de envio: 'enviado'
+    // só diz que a Meta aceitou a chamada. Quem conta se chegou é o webhook.
+    await migrar('whatsapp_envios.entrega', `
+      ALTER TABLE moravo.whatsapp_envios
+        ADD COLUMN IF NOT EXISTS entrega      TEXT,
+        ADD COLUMN IF NOT EXISTS entrega_erro TEXT,
+        ADD COLUMN IF NOT EXISTS entrega_em   TIMESTAMPTZ;
+    `);
+    await migrar('whatsapp_envios.idx_wamid', `
+      CREATE INDEX IF NOT EXISTS idx_whatsapp_envios_wamid
+        ON moravo.whatsapp_envios (wamid);
+    `);
+    await migrar('config_whatsapp.webhook', `
+      ALTER TABLE moravo.config_whatsapp
+        ADD COLUMN IF NOT EXISTS webhook_token      TEXT,
+        ADD COLUMN IF NOT EXISTS app_secret_cifrado TEXT;
+    `);
+    // Token do handshake: gerado sozinho para não depender de o admin inventar um
+    try {
+      const semToken = await query(
+        `SELECT id FROM moravo.config_whatsapp WHERE id = 1 AND coalesce(webhook_token, '') = ''`
+      );
+      if (semToken.rowCount) {
+        await query(
+          `UPDATE moravo.config_whatsapp SET webhook_token = $1 WHERE id = 1`,
+          [require('crypto').randomBytes(16).toString('hex')]
+        );
+      }
+    } catch (err) {
+      console.warn('[migração] webhook_token:', err.message);
+    }
 
     // Seed: usuário mestre admin (idempotente - só cria se não existir)
     try {

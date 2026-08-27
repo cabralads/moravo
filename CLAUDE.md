@@ -118,6 +118,7 @@ interesses.js    carteira do corretor (imóveis que ele escolheu trabalhar)
 propostas.js     proposta de compra: cria o grupo e aciona o proprietário
   favoritos.js     favoritar/desfavoritar
   notificacoes.js  listar, contar não lidas, marcar lidas, apagar
+  webhook-whatsapp.js  status de entrega vindo da Meta (rota pública, assinada)
   usuarios.js      listagem pública, editar perfil, foto de perfil
   documentos.js    upload/remoção da escritura (PDF/imagem, 5MB)
   fotos.js         upload/remoção de fotos do imóvel
@@ -289,6 +290,7 @@ Consequências no código:
 | `favoritos` | usuário ↔ imóvel |
 | `notificacoes` | destinatário, tipo, payload JSONB, lida |
 | `admin_login_logs` | auditoria de acesso ao painel admin |
+| `whatsapp_envios` | um envio de convite: status na Meta + status de entrega do webhook |
 
 **Tipos de notificação:** `corretor_trabalhando`, `proposta_recebida`, `proposta_aceita`,
 `proposta_recusada`, `envio_whatsapp_falhou`, `corretor_escolhido`, `corretor_recusado`,
@@ -391,6 +393,26 @@ o erro e o número de tentativas. Aparece em `/admin` → Envios WhatsApp, com b
 para todos os admins (`tipo = 'envio_whatsapp_falhou'`) e aparece em `/admin` → Envios
 WhatsApp, com botão de reenviar. Envio por SMS como alternativa fica para um segundo momento.
 
+**O status de entrega vem do webhook da Meta** (`POST /webhooks/whatsapp`). Sem ele,
+`whatsapp_envios.status = 'enviado'` diz apenas que **a Meta aceitou a chamada**, não que a
+mensagem chegou: era o ponto cego que transformava todo "não recebi" em palpite. O webhook
+grava `entrega` (`sent`, `delivered`, `read`, `failed`), `entrega_erro` e `entrega_em`, e o
+painel mostra isso embaixo do status do envio.
+
+A rota é **pública de propósito** (quem chama é a Meta, não um usuário logado). O que
+garante a procedência:
+
+- **GET**: handshake com o `webhook_token` de `config_whatsapp`, gerado sozinho na migração
+- **POST**: HMAC SHA-256 do corpo cru com o **App Secret**, comparado com
+  `X-Hub-Signature-256`. Sem App Secret configurado a checagem é pulada e **o painel avisa**
+- o UPDATE **só encosta em linha cujo `wamid` já existe**: o webhook nunca cria registro
+
+Os estados chegam fora de ordem com frequência, então o status só avança na escala
+`sent < delivered < read < failed` e nunca regride.
+
+Configurar em Meta Developers → WhatsApp → Configuração → Webhooks, assinando o campo
+**messages**. URL, token e o campo do App Secret ficam em `/admin` → Config. WhatsApp.
+
 **Telefones**: no banco há números com e sem o DDI 55. A normalização acontece no envio
 (`lib/whatsapp.js`, `normalizarTelefone`). É a causa clássica de mensagem que não chega.
 
@@ -479,6 +501,13 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Criado o **webhook de status da Meta** (`routes/webhook-whatsapp.js`):
+  a lista de envios passa a mostrar entregue, lido ou falhou na entrega, com o motivo, em vez
+  de só "a Meta aceitou". Handshake por token, corpo conferido por assinatura quando o App
+  Secret está configurado, e o update só toca em `wamid` já existente. No caminho apareceu que
+  o botão **Reenviar** do painel mandava **sem variável nenhuma** e com o **código do grupo no
+  lugar do token** (link que o `/linkgrupo` nunca resolveria): agora ele usa o mesmo
+  `montarDestinatarios` do envio original, extraído para `lib/grupo.js`.
 - **2026-08-27** — Os dois formulários de `/admin` → Config. WhatsApp salvam pelo mesmo
   `PUT /whatsapp/config`, e cada um manda só os campos do seu bloco. O UPDATE gravava NULL
   no que faltasse, então **salvar a configuração da Meta apagava a conexão do Waha** (foi o

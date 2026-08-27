@@ -1295,6 +1295,7 @@ body {
       if (!r.ok) { box.innerHTML = '<p class="muted">Erro ao carregar: ' + escapeHtml(r.body.error || '') + '</p>'; return; }
       var c = r.body.config;
       var w = r.body.waha || {};
+      var wh = r.body.webhook || {};
       box.innerHTML =
         '<div class="admin-panel" style="max-width:780px">' +
           '<h3>Credenciais do app</h3>' +
@@ -1331,6 +1332,32 @@ body {
           '<div class="acoes">' +
             '<button class="btn btn-primary" id="wappSalvar">Salvar configuração</button>' +
             (c.atualizado_em ? '<span class="muted" style="font-size:.85rem">Última alteração: ' + escapeHtml(formatDateTime(c.atualizado_em)) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+
+        '<div class="admin-panel" style="max-width:780px">' +
+          '<h3>Webhook de status</h3>' +
+          '<p class="muted" style="margin-bottom:18px">Sem isto, <b>enviado</b> só quer dizer que a Meta aceitou a chamada. ' +
+          'Com o webhook ligado, a lista de envios passa a mostrar se a mensagem foi <b>entregue</b>, <b>lida</b> ou ' +
+          '<b>falhou na entrega</b>, com o motivo. Configure em Meta Developers → WhatsApp → Configuração → Webhooks, ' +
+          'e assine o campo <b>messages</b>.</p>' +
+          '<div class="painel-grid">' +
+            '<div class="field full"><label>URL de callback</label>' +
+              '<input readonly value="' + escapeHtml(wh.url || '') + '" onclick="this.select()" /></div>' +
+            '<div class="field full"><label>Token de verificação</label>' +
+              '<input readonly value="' + escapeHtml(wh.token || '') + '" onclick="this.select()" /></div>' +
+            '<div class="field full"><label for="wappAppSecret">App Secret' +
+              (wh.app_secret_definido
+                 ? ' <span class="opt">(definido)</span>'
+                 : ' <span class="opt" style="color:#c0392b">(vazio: a origem do evento não é conferida)</span>') + '</label>' +
+              '<input id="wappAppSecret" type="password" autocomplete="new-password" placeholder="' +
+              (wh.app_secret_definido ? 'digite para trocar' : 'cole o App Secret do app na Meta') + '" />' +
+              '<span class="muted" style="font-size:.82rem">Fica em Configurações → Básico, no painel do app. ' +
+              'É com ele que a assinatura de cada evento é conferida; sem ele, qualquer um que descubra a URL ' +
+              'consegue mandar status falso.</span></div>' +
+          '</div>' +
+          '<div class="acoes">' +
+            '<button class="btn btn-primary" id="wappSalvarSecret">Salvar App Secret</button>' +
           '</div>' +
         '</div>' +
 
@@ -1408,6 +1435,21 @@ body {
           btn.disabled = false; btn.textContent = 'Salvar configuração';
           if (!resp.ok) { toast(resp.body.error || 'Erro ao salvar.', 'error'); return; }
           toast(resp.body.pronto ? 'Salvo. Envio pronto para uso.' : ('Salvo. ' + (resp.body.motivo || '')), 'success');
+          renderWhatsappConfig();
+        });
+      };
+
+      $('wappSalvarSecret').onclick = function () {
+        var btn = this;
+        if (!$('wappAppSecret').value.trim()) { toast('Cole o App Secret antes de salvar.', 'error'); return; }
+        btn.disabled = true; btn.textContent = 'Salvando…';
+        api('/api/admin/whatsapp/config', {
+          method: 'PUT',
+          body: { app_secret: $('wappAppSecret').value }
+        }).then(function (resp) {
+          btn.disabled = false; btn.textContent = 'Salvar App Secret';
+          if (!resp.ok) { toast((resp.body && resp.body.error) || 'Erro ao salvar.', 'error'); return; }
+          toast('App Secret salvo. Os eventos do webhook passam a ser conferidos.', 'success');
           renderWhatsappConfig();
         });
       };
@@ -1628,20 +1670,37 @@ body {
           '<div style="margin-bottom:16px">' + abas + '</div>' +
           '<div class="admin-panel"><p class="muted">Nenhum envio de convite registrado ainda.</p></div>';
       } else {
+        // O que a Meta devolve pelo webhook. Sem webhook configurado nada disso
+        // chega, e a coluna fica dizendo que a entrega não foi confirmada.
+        var ENTREGA = {
+          sent:      { texto: 'saiu para o WhatsApp', cor: '#7a7a7a' },
+          delivered: { texto: 'entregue',             cor: '#1e7e34' },
+          read:      { texto: 'lido',                 cor: '#1e7e34' },
+          failed:    { texto: 'falhou na entrega',    cor: '#c0392b' }
+        };
+
         var linhas = lista.map(function (e) {
           var falhou = e.status === 'falhou';
+          var ent = ENTREGA[e.entrega];
+          var linhaEntrega = falhou ? ''
+            : (ent
+                ? '<br><span style="font-size:.8rem;font-weight:600;color:' + ent.cor + '">' + ent.texto + '</span>'
+                : '<br><span class="muted" style="font-size:.8rem">entrega não confirmada</span>');
           return '<tr>' +
             '<td>' + escapeHtml(formatDateTime(e.created_at)) + '</td>' +
             '<td><span style="font-weight:700;color:' + (falhou ? '#c0392b' : '#1e7e34') + '">' +
-              (falhou ? 'falhou' : 'enviado') + '</span>' +
+              (falhou ? 'falhou' : 'aceito pela Meta') + '</span>' + linhaEntrega +
               (e.tentativas > 1 ? '<br><span class="muted" style="font-size:.8rem">' + e.tentativas + ' tentativas</span>' : '') + '</td>' +
             '<td>' + escapeHtml(e.destinatario_nome || '-') +
               '<br><span class="muted" style="font-size:.82rem">' + escapeHtml(e.papel || '-') + ' · ' + escapeHtml(e.telefone || '-') + '</span></td>' +
             '<td>' + escapeHtml(e.imovel_titulo || '-') + '</td>' +
             '<td style="max-width:280px">' + (falhou
                 ? '<span style="color:#c0392b;font-size:.86rem">' + escapeHtml(e.erro || 'sem detalhe') + '</span>'
-                : '<span class="muted" style="font-size:.8rem">' + escapeHtml(e.wamid || '') + '</span>') + '</td>' +
-            '<td>' + (falhou ? '<button class="btn btn-ghost btn-sm" data-reenviar="' + e.id + '">Reenviar</button>' : '') + '</td>' +
+                : (e.entrega_erro
+                    ? '<span style="color:#c0392b;font-size:.86rem">' + escapeHtml(e.entrega_erro) + '</span>'
+                    : '<span class="muted" style="font-size:.8rem">' + escapeHtml(e.wamid || '') + '</span>')) + '</td>' +
+            '<td>' + ((falhou || e.entrega === 'failed')
+                ? '<button class="btn btn-ghost btn-sm" data-reenviar="' + e.id + '">Reenviar</button>' : '') + '</td>' +
           '</tr>';
         }).join('');
 

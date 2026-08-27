@@ -11,7 +11,7 @@ const wa = require('../lib/whatsapp');
 const siteConfig = require('../lib/site-config');
 const waha = require('../lib/waha');
 const cripto = require('../lib/cripto');
-const { garantirGrupo } = require('../lib/grupo');
+const { garantirGrupo, reenviarConvite } = require('../lib/grupo');
 
 const router = express.Router();
 
@@ -247,6 +247,14 @@ router.get('/whatsapp/config', async (req, res) => {
         token_definido:  !!c.token,
         token_mascarado: mascararToken(c.token),
       },
+      webhook: {
+        url:   'https://moravo.com.br/webhooks/whatsapp',
+        token: c.webhook_token || '',
+        app_secret_definido: !!c.app_secret,
+        // Sem App Secret o corpo não é conferido: qualquer um que descubra a
+        // URL consegue mandar status falso. A tela precisa dizer isso.
+        assinatura_conferida: !!c.app_secret,
+      },
     });
   } catch (err) {
     console.error('[admin/whatsapp/config GET] erro:', err);
@@ -304,6 +312,18 @@ router.put('/whatsapp/config', async (req, res) => {
     const wahaExtras = manter('waha_extras', (b.waha_extras || '').trim());
     const wahaChave  = (b.waha_api_key || '').trim();
 
+    // App Secret da Meta, usado só para conferir a assinatura do webhook.
+    // Mesma regra do token: em branco mantém o atual, nunca volta para a tela.
+    const appSecret = (b.app_secret || '').trim();
+    let appSecretCifrado = null;
+    if (appSecret) {
+      try {
+        appSecretCifrado = wa.cifrar(appSecret);
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     // A chave só é regravada quando vem preenchida: em branco mantém a atual,
     // igual ao token da Meta. Guardada cifrada, nunca em texto puro.
     let wahaChaveCifrada = null;
@@ -334,12 +354,13 @@ router.put('/whatsapp/config', async (req, res) => {
               template_idioma = $5,
               ativo           = $6,
               token_cifrado   = COALESCE($7, token_cifrado),
+              app_secret_cifrado = COALESCE($15, app_secret_cifrado),
               atualizado_por  = $8,
               atualizado_em   = NOW()
         WHERE id = 1`,
       [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id,
        wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null,
-       tmplCor || null, wahaChaveCifrada]
+       tmplCor || null, wahaChaveCifrada, appSecretCifrado]
     );
 
     wa.limparCache();
@@ -471,6 +492,7 @@ router.get('/whatsapp/envios', async (req, res) => {
     const r = await query(
       `SELECT e.id, e.interesse_id, e.papel, e.telefone, e.template,
               e.codigo_convite, e.status, e.wamid, e.erro, e.tentativas, e.created_at,
+              e.entrega, e.entrega_erro, e.entrega_em,
               u.nome AS destinatario_nome,
               im.titulo AS imovel_titulo
          FROM moravo.whatsapp_envios e
@@ -500,31 +522,11 @@ router.post('/whatsapp/envios/:id/reenviar', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
 
-    const r = await query(
-      `SELECT e.*, i.grupo_whatsapp_link
-         FROM moravo.whatsapp_envios e
-         LEFT JOIN moravo.interesses i ON i.id = e.interesse_id
-        WHERE e.id = $1`,
-      [id]
-    );
-    if (r.rowCount === 0) return res.status(404).json({ ok: false, error: 'Envio não encontrado.' });
-    const env = r.rows[0];
-
-    // Prefere o código atual do grupo; cai para o que foi registrado na tentativa
-    const codigo = wa.extrairCodigoConvite(env.grupo_whatsapp_link) || env.codigo_convite;
-    if (!codigo) {
-      return res.status(400).json({ ok: false, error: 'Não há código de convite disponível para este envio.' });
-    }
-
+    // Quem monta template e variáveis é o lib/grupo.js, o mesmo do envio
+    // original. Aqui havia uma segunda versão que mandava sem variável nenhuma
+    // e usava o código do grupo no lugar do token nominal.
     try {
-      const envio = await wa.enviarTemplateConvite({ telefone: env.telefone, codigoConvite: codigo });
-      await query(
-        `UPDATE moravo.whatsapp_envios
-            SET status = 'enviado', wamid = $1, erro = NULL,
-                tentativas = tentativas + 1, created_at = NOW()
-          WHERE id = $2`,
-        [envio.wamid, id]
-      );
+      const envio = await reenviarConvite(id);
       return res.json({ ok: true, wamid: envio.wamid });
     } catch (err) {
       await query(
