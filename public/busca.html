@@ -168,7 +168,7 @@ body {
   display: none; /* legacy - substituída pela .search-bar */
 }
 
-/* Search bar Airbnb-style (no header do busca.html) */
+/* Search bar Airbnb-style (no header do /busca) */
 .search-bar {
   display: flex;
   align-items: center;
@@ -665,8 +665,8 @@ body {
 
   <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px;">
     <span id="buscaNavUser">
-      <a href="cadastro.html" class="btn btn-secondary">Criar conta</a>
-      <a href="login.html" class="btn btn-primary">Entrar</a>
+      <a href="/cadastro" class="btn btn-secondary">Criar conta</a>
+      <a href="/login" class="btn btn-primary">Entrar</a>
     </span>
     <a href="/" class="overlay-close" id="backLink" aria-label="Voltar para home">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1347,7 +1347,7 @@ body {
 
   function toggleFavorite(imovelId, btn) {
     if (!isLoggedIn) {
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return;
     }
     var isFav = !!favoriteIds[imovelId];
@@ -1370,7 +1370,7 @@ body {
           console.warn('[favorito] token inválido, redirecionando para login');
           localStorage.removeItem('moravo_token');
           localStorage.removeItem('moravo_user');
-          window.location.href = 'login.html';
+          window.location.href = '/login';
           return;
         }
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1442,7 +1442,7 @@ body {
       }
       var qs = 'tipo=' + newType + '&quartos=&min=' + newMin + '&max=' + newMax;
       if (newCity) qs = 'cidade=' + newCity + '&' + qs;
-      window.location.href = 'busca.html?' + qs;
+      window.location.href = '/busca?' + qs;
     });
   }
 
@@ -1471,7 +1471,7 @@ body {
 
       var buscaImoveisHtml = '';
       if (userNav && userNav.perfil === 'corretor') {
-        buscaImoveisHtml = '<a href="busca.html">' +
+        buscaImoveisHtml = '<a href="/busca">' +
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
           'Buscar imóveis' +
           '</a>';
@@ -1479,7 +1479,7 @@ body {
 
       slot.innerHTML =
         '<div class="nav-user">' +
-          '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
+          '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'/dashboard#notificacoes-app\'" style="margin-right: 0;">' +
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
               '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
               '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
@@ -1492,29 +1492,29 @@ body {
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
           '</button>' +
           '<div class="nav-user-dropdown" id="navUserDropdown" role="menu">' +
-            '<a href="dashboard.html">' +
+            '<a href="/dashboard">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
               'Minha Área' +
             '</a>' +
             buscaImoveisHtml +
-            '<a href="dashboard.html#mensagens">' +
+            '<a href="/dashboard#mensagens">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
               'Mensagens' +
             '</a>' +
-            '<a href="dashboard.html#favoritos">' +
+            '<a href="/dashboard#favoritos">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
               'Favoritos' +
             '</a>' +
             '<hr>' +
-            '<a href="dashboard.html#notificacoes">' +
+            '<a href="/dashboard#notificacoes">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
               'Notificações' +
             '</a>' +
-            '<a href="dashboard.html#configuracoes">' +
+            '<a href="/dashboard#configuracoes">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
               'Configurações da conta' +
             '</a>' +
-            '<a href="dashboard.html#ajuda">' +
+            '<a href="/dashboard#ajuda">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
               'Central de Ajuda' +
             '</a>' +

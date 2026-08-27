@@ -137,6 +137,7 @@ app.use('/api/admin',      adminRouter);
 app.use('/api/favoritos',  favoritosRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 app.use('/api/avaliacoes',   require('./routes/avaliacoes'));
+app.use('/api/atendimentos', require('./routes/atendimentos'));
 // Público de propósito: quem chama é a Meta. A autenticidade vem do
 // verify token no handshake e da assinatura do corpo, não de JWT.
 app.use('/webhooks/whatsapp', require('./routes/webhook-whatsapp'));
@@ -382,6 +383,18 @@ app.get(['/detalhes', '/detalhes.html'], async (req, res, next) => {
   } catch (err) {
     return next();
   }
+});
+
+// ---- URL limpa: /busca.html responde 301 para /busca
+// O express.static com extensions:['html'] já servia as duas formas, e as duas
+// devolviam 200. Para o buscador isso é conteúdo duplicado, e para a pessoa é
+// uma URL com extensão de arquivo à mostra. Uma existe, a outra aponta para ela.
+app.get(/^\/(.+)\.html$/i, (req, res, next) => {
+  const semExtensao = '/' + req.params[0];
+  // index.html é a raiz, não /index
+  const destino = (semExtensao === '/index') ? '/' : semExtensao;
+  const consulta = req.originalUrl.indexOf('?');
+  return res.redirect(301, destino + (consulta === -1 ? '' : req.originalUrl.slice(consulta)));
 });
 
 // ---- Foto do grupo, servida do banco (ou do repositório, se não houver)

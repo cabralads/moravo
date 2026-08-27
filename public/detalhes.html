@@ -876,7 +876,7 @@
 
 <main class="wrap">
   <div class="back-nav">
-    <a href="busca.html" class="back-link">
+    <a href="/busca" class="back-link">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Voltar para as buscas
     </a>
@@ -1082,7 +1082,7 @@
         }
         var buscaImoveisHtml = '';
         if (userNav && userNav.perfil === 'corretor') {
-          buscaImoveisHtml = '<a href="busca.html">' +
+          buscaImoveisHtml = '<a href="/busca">' +
             '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
             'Buscar imóveis' +
             '</a>';
@@ -1090,7 +1090,7 @@
 
         navArea.innerHTML =
           '<div class="nav-user">' +
-            '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
+            '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'/dashboard#notificacoes-app\'" style="margin-right: 0;">' +
               '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                 '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
                 '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
@@ -1103,29 +1103,29 @@
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
             '</button>' +
             '<div class="nav-user-dropdown" id="navUserDropdown" role="menu">' +
-              '<a href="dashboard.html">' +
+              '<a href="/dashboard">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
                 'Minha Área' +
               '</a>' +
               buscaImoveisHtml +
-              '<a href="dashboard.html#mensagens">' +
+              '<a href="/dashboard#mensagens">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
                 'Mensagens' +
               '</a>' +
-              '<a href="dashboard.html#favoritos">' +
+              '<a href="/dashboard#favoritos">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
                 'Favoritos' +
               '</a>' +
               '<hr>' +
-              '<a href="dashboard.html#notificacoes">' +
+              '<a href="/dashboard#notificacoes">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
                 'Notificações' +
               '</a>' +
-              '<a href="dashboard.html#configuracoes">' +
+              '<a href="/dashboard#configuracoes">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
                 'Configurações da conta' +
               '</a>' +
-              '<a href="dashboard.html#ajuda">' +
+              '<a href="/dashboard#ajuda">' +
                 '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
                 'Central de Ajuda' +
               '</a>' +
@@ -1186,8 +1186,8 @@
         }
       } else {
         navArea.innerHTML =
-          '<a href="cadastro.html" class="btn btn-ghost nav-register-btn" style="border:none;">Criar conta</a>' +
-          '<a href="login.html" class="btn btn-primary">Entrar</a>';
+          '<a href="/cadastro" class="btn btn-ghost nav-register-btn" style="border:none;">Criar conta</a>' +
+          '<a href="/login" class="btn btn-primary">Entrar</a>';
       }
     }
   })();
@@ -1198,7 +1198,7 @@
 
   if (!imovelId) {
     toast('ID do imóvel não especificado.', 'error');
-    window.location.href = 'busca.html';
+    window.location.href = '/busca';
   }
 
   var favoriteIds = {};
@@ -1325,7 +1325,7 @@
     })
     .catch(function (err) {
       toast(err.message, 'error');
-      window.location.href = 'busca.html';
+      window.location.href = '/busca';
     });
 
   function formatMoney(value) {
@@ -1425,7 +1425,7 @@
           // Salva o ID do imóvel de interesse pendente e a URL atual de retorno
           sessionStorage.setItem('moravo_pending_interest_imovel_id', im.id);
           sessionStorage.setItem('moravo_redirect_back', window.location.href);
-          window.location.href = 'login.html';
+          window.location.href = '/login';
         };
       } else if (loggedUser.perfil === 'corretor') {
         // Se estiver logado e for Corretor, mas o imóvel já possui corretor atribuído → bloqueia
@@ -1481,32 +1481,7 @@
         ctaText.textContent = 'Falar com um Corretor';
         ctaIcon.innerHTML = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
         
-        ctaBtn.onclick = function() {
-          ctaBtn.disabled = true;
-          var originalHtml = ctaBtn.innerHTML;
-          ctaBtn.innerHTML = '<span class="spinner"></span> Enviando…';
-
-          var token = localStorage.getItem('moravo_token') || '';
-          fetch(API_BASE + '/api/imoveis/' + im.id + '/clique-interesse', {
-            method: 'POST',
-            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-          })
-          .then(function(r) {
-            ctaBtn.disabled = false;
-            ctaBtn.innerHTML = originalHtml;
-            if (r.ok) {
-              toast('Interesse enviado com sucesso! Abrindo suas conversas...', 'success');
-              window.location.href = 'dashboard.html#mensagens';
-            } else {
-              toast('Erro ao registrar interesse. Tente novamente mais tarde.', 'error');
-            }
-          })
-          .catch(function() {
-            ctaBtn.disabled = false;
-            ctaBtn.innerHTML = originalHtml;
-            toast('Erro de conexão ao enviar interesse.', 'error');
-          });
-        };
+        ctaBtn.onclick = function() { pedirAtendimento(im.id); };
       }
 
       // Verifica se acabou de voltar do login/cadastro com interesse pendente para este imóvel
@@ -1520,28 +1495,8 @@
           // Se for corretor, abre o modal de intermediação automaticamente!
           abrirModalInteresseCorretor(im.id);
         } else {
-          // Se for comprador, envia o clique de interesse automaticamente!
-          ctaBtn.disabled = true;
-          var originalHtml = ctaBtn.innerHTML;
-          ctaBtn.innerHTML = '<span class="spinner"></span> Enviando…';
-
-          var token = localStorage.getItem('moravo_token') || '';
-          fetch(API_BASE + '/api/imoveis/' + im.id + '/clique-interesse', {
-            method: 'POST',
-            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-          })
-          .then(function(r) {
-            ctaBtn.disabled = false;
-            ctaBtn.innerHTML = originalHtml;
-            if (r.ok) {
-              toast('Seu login foi concluído e seu interesse foi enviado com sucesso! Abrindo suas conversas...', 'success');
-              window.location.href = 'dashboard.html#mensagens';
-            }
-          })
-          .catch(function() {
-            ctaBtn.disabled = false;
-            ctaBtn.innerHTML = originalHtml;
-          });
+          // Voltou do login: segue direto para o mesmo fluxo
+          pedirAtendimento(im.id);
         }
       }
     }
@@ -1637,7 +1592,7 @@
     }).join('');
   }
 
-  // ---- Geocodificação robusta idêntica à de busca.html ----
+  // ---- Geocodificação robusta idêntica à de /busca ----
   var cityCoords = {
     'balneário camboriú': { lat: -26.9918, lng: -48.6343 },
     'balneario camboriu': { lat: -26.9918, lng: -48.6343 },
@@ -1890,7 +1845,7 @@
     if (!frase) return;
     frase.style.opacity = '0';
     setTimeout(function () {
-      frase.textContent = PROG_FRASES[progIndice];
+      frase.textContent = progFrases[progIndice];
       frase.style.opacity = '1';
     }, 220);
     document.querySelectorAll('#prog-etapas i').forEach(function (b, i) {
@@ -1898,7 +1853,20 @@
     });
   }
 
-  function iniciarProgresso() {
+  // O mesmo modal serve aos dois fluxos. As frases mudam porque o que está
+  // acontecendo por trás é diferente: o corretor entra numa carteira, o
+  // comprador espera um corretor ser escolhido.
+  var PROG_FRASES_COMPRADOR = [
+    'Registrando o seu interesse...',
+    'Escolhendo um corretor da região...',
+    'Criando o grupo no WhatsApp...',
+    'Enviando os convites...',
+    'Conferindo os últimos detalhes...'
+  ];
+  var progFrases = PROG_FRASES;
+
+  function iniciarProgresso(frases) {
+    progFrases = frases || PROG_FRASES;
     var modalProg = document.getElementById('progressoModal');
     if (!modalProg) return;
     var interesse = document.getElementById('interesseModal');
@@ -1907,7 +1875,7 @@
     document.getElementById('prog-andamento').style.display = '';
     document.getElementById('prog-pronto').style.display = 'none';
     document.getElementById('prog-etapas').innerHTML =
-      PROG_FRASES.map(function () { return '<i></i>'; }).join('');
+      progFrases.map(function () { return '<i></i>'; }).join('');
 
     progIndice = 0;
     marcarEtapa();
@@ -1916,8 +1884,52 @@
     clearInterval(progTimer);
     progTimer = setInterval(function () {
       // para na penúltima: a última só cai quando a resposta chega
-      if (progIndice < PROG_FRASES.length - 1) { progIndice++; marcarEtapa(); }
+      if (progIndice < progFrases.length - 1) { progIndice++; marcarEtapa(); }
     }, 1700);
+  }
+
+  // O nome do corretor vem do banco, mas entra em innerHTML: escapar é o que
+  // impede um nome com "<" de virar marcação no meio da frase.
+  function escapeHtml(txt) {
+    return String(txt == null ? '' : txt)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  // ---- Comprador pede atendimento
+  // Mesmo desenho do "Trabalhar este imóvel": modal enquanto o servidor escolhe
+  // o corretor e abre o grupo, e no fim o botão de entrar. Se o WhatsApp falhar,
+  // a tela diz o que de fato aconteceu em vez de oferecer um link vazio.
+  function pedirAtendimento(imovelId) {
+    iniciarProgresso(PROG_FRASES_COMPRADOR);
+    var token = localStorage.getItem('moravo_token') || '';
+
+    fetch(API_BASE + '/api/imoveis/' + imovelId + '/clique-interesse', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    })
+    .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+    .then(function (resp) {
+      if (!resp.ok) {
+        pararProgresso();
+        toast((resp.body && resp.body.error) || 'Não foi possível registrar seu interesse.', 'error');
+        return;
+      }
+      var corretor = resp.body.corretor && resp.body.corretor.nome;
+      concluirProgresso(resp.body, {
+        comLink: corretor
+          ? 'Criamos um grupo no WhatsApp com você, o corretor <strong>' +
+            escapeHtml(corretor) + '</strong> e um atendente da Moravo.'
+          : 'Criamos um grupo no WhatsApp com você e um atendente da Moravo.',
+        semLink: 'Seu interesse foi registrado' +
+          (corretor ? ' e o corretor <strong>' + escapeHtml(corretor) + '</strong> foi acionado' : '') +
+          '. O grupo no WhatsApp está sendo aberto e você recebe o link em instantes.'
+      });
+    })
+    .catch(function () {
+      pararProgresso();
+      toast('Erro de conexão. Tente novamente.', 'error');
+    });
   }
 
   function pararProgresso() {
@@ -1926,14 +1938,29 @@
     if (m) m.classList.remove('show');
   }
 
-  function concluirProgresso(corpo) {
+  function concluirProgresso(corpo, textos) {
     clearInterval(progTimer);
-    progIndice = PROG_FRASES.length - 1;
+    progIndice = progFrases.length - 1;
     marcarEtapa();
 
-    var link = corpo && corpo.grupo && corpo.grupo.grupo_link;
+    // Duas rotas, dois formatos: a do corretor devolve { grupo: { grupo_link } }
+    // e a do comprador devolve { grupo_link } direto.
+    var link = (corpo && corpo.grupo && corpo.grupo.grupo_link) || (corpo && corpo.grupo_link);
     var botao = document.getElementById('prog-link');
     var msg = document.getElementById('prog-msg-final');
+
+    if (textos) {
+      botao.style.display = link ? '' : 'none';
+      if (link) botao.href = link;
+      msg.innerHTML = link ? textos.comLink : textos.semLink;
+      var notaT = document.getElementById('prog-nota-whats');
+      if (notaT) notaT.style.display = link ? '' : 'none';
+      setTimeout(function () {
+        document.getElementById('prog-andamento').style.display = 'none';
+        document.getElementById('prog-pronto').style.display = '';
+      }, 500);
+      return;
+    }
 
     if (link) {
       botao.href = link;
@@ -2048,7 +2075,7 @@
         if (!token) {
           pararProgresso();
           toast('Por favor, faça login como corretor para trabalhar este imóvel.', 'error');
-          window.location.href = 'login.html';
+          window.location.href = '/login';
           return;
         }
 

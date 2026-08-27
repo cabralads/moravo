@@ -124,6 +124,7 @@ propostas.js     proposta de compra: cria o grupo e aciona o proprietário
   notificacoes.js  listar, contar não lidas, marcar lidas, apagar
   webhook-whatsapp.js  status de entrega vindo da Meta (rota pública, assinada)
   avaliacoes.js    nota de 1 a 5 do proprietário para o corretor
+  atendimentos.js  compradores que caíram para o corretor, com o prazo
   usuarios.js      listagem pública, editar perfil, foto de perfil
   documentos.js    upload/remoção da escritura (PDF/imagem, 5MB)
   fotos.js         upload/remoção de fotos do imóvel
@@ -237,6 +238,18 @@ palavra com o corretor.
 A média já é lida por `lib/atendimento.js` para ordenar a fila. Quem não tem nota entra
 como 3.5, não 0 (ver "Atendimento do comprador").
 
+## URLs
+
+**Nenhuma página termina em `.html`.** O `express.static` já servia as duas formas, e as
+duas devolviam 200: para o buscador isso é conteúdo duplicado, e para a pessoa é uma
+extensão de arquivo à mostra. Agora `/busca.html` responde **301** para `/busca`, e
+`index.html` responde para a raiz. Os links internos foram reescritos (76 ocorrências).
+
+`/detalhes.html?id=1` encadeia direto para `/imovel/<slug>/?id=<codigo>`.
+
+Exceção: `public/config.js` mantém `.html` quando a página é aberta por `file://`, onde
+não existe servidor para resolver a URL limpa.
+
 ## Perfis
 
 São **3 valores** no banco: `proprietario`, `corretor`, `admin`.
@@ -336,6 +349,11 @@ domingo fechado. O relógio **pausa** fora do expediente: um lead que chega sext
 `Casa mc7GvdX · Marcelo`. O comprador pode ter mais de uma negociação aberta, e dois
 grupos com o mesmo título não dizem qual é qual. No repasse o grupo é **renomeado**,
 o convite de quem perdeu a vez é **revogado** e o novo corretor recebe o dele.
+
+**As telas:** o comprador usa "Falar com um Corretor" na página do imóvel, com o mesmo
+modal de progresso do corretor (frases próprias, porque o que roda por trás é outro). O
+corretor tem a aba **Compradores** no painel, com o prazo em minutos úteis e o botão que
+confirma o atendimento.
 
 **Entrar no grupo é o aceite.** Não existe botão de "aceitar": abrir o convite nominal
 fecha o prazo (`registrarEntrada`). Quem abre o link depois de perder a vez recebe uma
@@ -638,6 +656,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Telas do atendimento: botão do comprador em `/detalhes` com modal de
+  progresso próprio, e aba **Compradores** no painel do corretor mostrando o prazo em
+  minutos úteis e o botão que confirma. Nova rota `GET /api/atendimentos/meus`.
+- **2026-08-27** — Fim do `.html` nas URLs: 301 de `/x.html` para `/x` e 76 links internos
+  reescritos. As duas formas devolviam 200, o que era conteúdo duplicado.
 - **2026-08-27** — Criado o subagente `bugcode` (`.claude/agents/`), só de leitura, com a
   lista de armadilhas reais deste projeto em vez de conselhos genéricos.
 - **2026-08-27** — **Grupo do comprador**: nasce já com o corretor definido e leva o

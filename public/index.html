@@ -580,7 +580,7 @@ section { position: relative; }
   display: block;
 }
 
-/* Search Card (igual index.html) - bloco de busca do hero */
+/* Search Card (igual /) - bloco de busca do hero */
 .search-card {
   background: #ffffff;
   border: 1px solid var(--beige);
@@ -1075,7 +1075,7 @@ section { position: relative; }
             <input type="text" id="h-preco-max" placeholder="R$ Máx" />
           </div>
           <!-- Botão de Busca -->
-          <a href="busca.html" class="btn btn-primary search-btn" id="heroSearchBtn">Buscar Imóveis</a>
+          <a href="/busca" class="btn btn-primary search-btn" id="heroSearchBtn">Buscar Imóveis</a>
         </div>
       </div>
     </div>
@@ -1097,8 +1097,8 @@ section { position: relative; }
       <h2>Seu imóvel merece um anúncio <span class="accent">à altura dele.</span><br /><span class="muted">Não como a imobiliária faz.</span></h2>
       <p class="lead">Cadastre seu imóvel uma vez, com fotos reais e preço único. Corretores do Brasil inteiro disputam para vender para você.</p>
       <div class="actions">
-        <a href="cadastro.html?prefill=proprietario" class="btn btn-anuncio btn-anuncio-primary" data-prefill="proprietario">Sou proprietário, quero anunciar</a>
-        <a href="cadastro.html?prefill=corretor" class="btn btn-anuncio btn-anuncio-ghost" data-prefill="corretor">Sou corretor, quero ficar com 77%</a>
+        <a href="/cadastro?prefill=proprietario" class="btn btn-anuncio btn-anuncio-primary" data-prefill="proprietario">Sou proprietário, quero anunciar</a>
+        <a href="/cadastro?prefill=corretor" class="btn btn-anuncio btn-anuncio-ghost" data-prefill="corretor">Sou corretor, quero ficar com 77%</a>
       </div>
       <div class="trust">
         <span class="pill">
@@ -1271,7 +1271,7 @@ section { position: relative; }
     </div>
 
     <div class="listings-cta reveal">
-      <a href="cadastro.html?prefill=proprietario" class="btn btn-ghost-dark" data-prefill="proprietario">Anunciar meu imóvel →</a>
+      <a href="/cadastro?prefill=proprietario" class="btn btn-ghost-dark" data-prefill="proprietario">Anunciar meu imóvel →</a>
     </div>
   </div>
 </section>
@@ -1283,7 +1283,7 @@ section { position: relative; }
       <p class="kicker emerald" style="color:var(--emerald)">Para corretores</p>
       <h2>Na imobiliária, 50/50. <span class="accent">Aqui, 77/23.</span></h2>
       <p class="lead">Você faz a venda e fica com 77% da comissão. Os 23% pagam a estrutura que você usa, não o direito de pertencer a uma imobiliária.</p>
-      <a href="cadastro.html?prefill=corretor" class="btn btn-primary" data-prefill="corretor">Quero me cadastrar como corretor →</a>
+      <a href="/cadastro?prefill=corretor" class="btn btn-primary" data-prefill="corretor">Quero me cadastrar como corretor →</a>
     </div>
     <div class="benefits">
       <div class="benefit reveal">
@@ -1306,7 +1306,7 @@ section { position: relative; }
   </div>
 </section>
 
-<!-- Form section moved to cadastro.html -->
+<!-- Form section moved to /cadastro -->
 
 <!-- ====================== RODAPÉ ====================== -->
 <footer class="footer" data-screen-label="Rodapé">
@@ -1413,14 +1413,14 @@ section { position: relative; }
     });
   }, 600);
 
-  // Form logic moved to cadastro.html
+  // Form logic moved to /cadastro
 
   /* ---------- Favoritar imóveis (estado local) ---------- */
   document.querySelectorAll('.listing .fav').forEach(function (b) {
     b.addEventListener('click', function () { this.classList.toggle('saved'); });
   });
 
-  /* ---------- Search Button Navigation to busca.html ----------
+  /* ---------- Search Button Navigation to /busca ----------
      Apenas os filtros preenchidos pelo usuário entram na URL.
      Campo vazio = filtro não considerado (não filtra nada). */
   var heroSearchBtn = document.getElementById('heroSearchBtn');
@@ -1442,7 +1442,7 @@ section { position: relative; }
       if (rawMax)     params.push('max='     + encodeURIComponent(rawMax));
       params.push('from=index');
 
-      window.location.href = 'busca.html?' + params.join('&');
+      window.location.href = '/busca?' + params.join('&');
     });
   }
 
@@ -1533,7 +1533,7 @@ section { position: relative; }
   document.querySelectorAll('.listings-grid .listing').forEach(function (card) {
       card.style.cursor = 'pointer';
       card.addEventListener('click', function () {
-        window.location.href = 'busca.html';
+        window.location.href = '/busca';
       });
     });
 
@@ -1568,7 +1568,7 @@ section { position: relative; }
 
       var buscaImoveisHtml = '';
       if (userNav && userNav.perfil === 'corretor') {
-        buscaImoveisHtml = '<a href="busca.html">' +
+        buscaImoveisHtml = '<a href="/busca">' +
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
           'Buscar imóveis' +
           '</a>';
@@ -1576,7 +1576,7 @@ section { position: relative; }
 
       navArea.innerHTML =
         '<div class="nav-user">' +
-          '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'dashboard.html#notificacoes-app\'" style="margin-right: 0;">' +
+          '<button type="button" class="notif-bell" id="navNotifBellBtn" aria-label="Notificações" title="Notificações" onclick="window.location.href=\'/dashboard#notificacoes-app\'" style="margin-right: 0;">' +
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
               '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
               '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>' +
@@ -1589,29 +1589,29 @@ section { position: relative; }
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
           '</button>' +
           '<div class="nav-user-dropdown" id="navUserDropdown" role="menu">' +
-            '<a href="dashboard.html">' +
+            '<a href="/dashboard">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
               'Minha Área' +
             '</a>' +
             buscaImoveisHtml +
-            '<a href="dashboard.html#mensagens">' +
+            '<a href="/dashboard#mensagens">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
               'Mensagens' +
             '</a>' +
-            '<a href="dashboard.html#favoritos">' +
+            '<a href="/dashboard#favoritos">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
               'Favoritos' +
             '</a>' +
             '<hr>' +
-            '<a href="dashboard.html#notificacoes">' +
+            '<a href="/dashboard#notificacoes">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
               'Notificações' +
             '</a>' +
-            '<a href="dashboard.html#configuracoes">' +
+            '<a href="/dashboard#configuracoes">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
               'Configurações da conta' +
             '</a>' +
-            '<a href="dashboard.html#ajuda">' +
+            '<a href="/dashboard#ajuda">' +
               '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
               'Central de Ajuda' +
             '</a>' +
@@ -1667,14 +1667,14 @@ section { position: relative; }
           e.preventDefault();
           localStorage.removeItem('moravo_token');
           localStorage.removeItem('moravo_user');
-          window.location.href = 'index.html';
+          window.location.href = '/';
         });
       }
     } else {
       // ---- Deslogado: botões Entrar / Criar conta
       navArea.innerHTML =
-        '<a href="cadastro.html" class="btn btn-ghost nav-cta nav-register-btn" style="border-color: #ddd; color: var(--ink); font-weight: 600;"><span class="nav-cta-text">Criar conta</span></a>' +
-        '<a href="login.html" class="btn btn-primary nav-cta">Entrar<span aria-hidden="true">→</span></a>';
+        '<a href="/cadastro" class="btn btn-ghost nav-cta nav-register-btn" style="border-color: #ddd; color: var(--ink); font-weight: 600;"><span class="nav-cta-text">Criar conta</span></a>' +
+        '<a href="/login" class="btn btn-primary nav-cta">Entrar<span aria-hidden="true">→</span></a>';
     }
   }
 
@@ -1794,7 +1794,7 @@ section { position: relative; }
 
   function toggleFavorite(imovelId, btn) {
     if (!isLoggedIn) {
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return;
     }
     var isFav = !!favoriteIds[imovelId];
@@ -1816,7 +1816,7 @@ section { position: relative; }
           console.warn('[favorito] token inválido, redirecionando para login');
           localStorage.removeItem('moravo_token');
           localStorage.removeItem('moravo_user');
-          window.location.href = 'login.html';
+          window.location.href = '/login';
           return;
         }
         if (!r.ok) throw new Error('HTTP ' + r.status);

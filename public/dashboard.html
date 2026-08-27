@@ -1810,7 +1810,7 @@
             </svg>
             Minha Área
           </a>
-          <a href="busca.html" class="dropdown-item" id="navBuscarImoveisItem" style="display: none;">
+          <a href="/busca" class="dropdown-item" id="navBuscarImoveisItem" style="display: none;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8" />
@@ -1895,7 +1895,7 @@
         </svg>
         Meus imóveis
       </a>
-      <a class="dash-sidebar-item" id="sidebar-buscar-imoveis" href="busca.html">
+      <a class="dash-sidebar-item" id="sidebar-buscar-imoveis" href="/busca">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8" />
@@ -2672,9 +2672,9 @@
       var geocodeTimeout = null;
 
       // ---- Auth guard
-      if (!token) { window.location.href = 'login.html'; return; }
+      if (!token) { window.location.href = '/login'; return; }
       try { user = JSON.parse(localStorage.getItem('moravo_user') || 'null'); } catch (e) { user = null; }
-      if (!user) { localStorage.removeItem('moravo_token'); window.location.href = 'login.html'; return; }
+      if (!user) { localStorage.removeItem('moravo_token'); window.location.href = '/login'; return; }
       document.body.setAttribute('data-perfil', user.perfil || '');
 
       // Garante que apenas números sejam digitados no campo de WhatsApp do perfil
@@ -3105,6 +3105,7 @@
         ],
         corretor: [
           { id: 'representados', label: 'Minha carteira' },
+          { id: 'compradores', label: 'Compradores' },
         ],
       };
 
@@ -3120,7 +3121,9 @@
         if (user.perfil === 'corretor') {
           if (secH2) secH2.textContent = 'Minha carteira';
           if (secSub) secSub.textContent = 'Imóveis que você escolheu trabalhar. Envie uma proposta quando tiver comprador.';
-          if (tabsBar) tabsBar.style.display = 'none'; // Corretor não precisa de barra de tabs
+          // A barra some quando só há uma aba; com "Compradores" ela volta a
+          // fazer sentido para o corretor.
+          if (tabsBar) tabsBar.style.display = (myTabs.length > 1) ? '' : 'none';
         } else {
           if (secH2) secH2.textContent = 'Meus imóveis';
           if (secSub) secSub.textContent = 'Seus imóveis na Moravo.';
@@ -3151,6 +3154,7 @@
         var c = document.getElementById('tabContent');
         if (tabId === 'meus') return renderMeusImoveis(c);
         if (tabId === 'representados') return renderImoveisRepresentados(c);
+        if (tabId === 'compradores') return renderCompradores(c);
         if (tabId === 'disponiveis') return renderDisponiveis(c);
         if (tabId === 'meus-interesses') return renderMeusInteresses(c);
         if (tabId === 'propostas') return renderPropostas(c);
@@ -3259,7 +3263,7 @@
               card.style.cursor = 'pointer';
               card.addEventListener('click', function () {
                 var id = card.getAttribute('data-imovel-id');
-                window.location.href = 'detalhes.html?id=' + id;
+                window.location.href = '/detalhes?id=' + id;
               });
             });
           });
@@ -3426,7 +3430,7 @@
                 '<div class="empty">' +
                 '<h3>Sua carteira está vazia</h3>' +
                 '<p>Encontre um imóvel e clique em "Trabalhar este imóvel" para adicionar aqui. Você começa na hora, sem esperar aprovação.</p>' +
-                '<a href="busca.html" class="btn btn-primary" style="margin-top:16px; display:inline-flex; align-items:center; gap:8px; text-decoration:none; background:#f97316; border-color:#f97316; font-weight:700; padding:12px 24px; border-radius:10px; font-size:0.95rem;">' +
+                '<a href="/busca" class="btn btn-primary" style="margin-top:16px; display:inline-flex; align-items:center; gap:8px; text-decoration:none; background:#f97316; border-color:#f97316; font-weight:700; padding:12px 24px; border-radius:10px; font-size:0.95rem;">' +
                 '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
                 'Buscar imóvel' +
                 '</a>' +
@@ -3811,6 +3815,76 @@
           linha.addEventListener('mouseleave', function () {
             pintar(linha, parseInt(linha.dataset.notaSalva || linha.dataset.nota || '0', 10));
           });
+        });
+      }
+
+      // ---- TAB: Compradores que caíram para este corretor
+      // O prazo aparece em minutos ÚTEIS, e o texto diz isso: fora do
+      // expediente o relógio está parado, e mostrar contagem regressiva
+      // enquanto ninguém trabalha só assustaria à toa.
+      function renderCompradores(c) {
+        c.innerHTML = '<div class="section-head"><h1>Compradores</h1>' +
+          '<p>Compradores que pediram atendimento nos imóveis da sua região. ' +
+          'Entrar no grupo é o que confirma o atendimento.</p></div><div id="grid"></div>';
+        var grid = c.querySelector('#grid');
+        grid.innerHTML = '<p class="muted">Carregando…</p>';
+
+        api('/api/atendimentos/meus').then(function (r) {
+          if (!r.ok) {
+            grid.innerHTML = '<div class="empty"><h3>Não foi possível carregar</h3><p>' +
+              escapeHtml((r.body && r.body.error) || '') + '</p></div>';
+            return;
+          }
+          var lista = r.body.atendimentos || [];
+          if (!lista.length) {
+            grid.innerHTML = '<div class="empty"><h3>Nenhum comprador no momento</h3>' +
+              '<p>Quando um comprador demonstrar interesse num imóvel da sua região, ele aparece aqui ' +
+              'e você recebe um aviso no WhatsApp.</p></div>';
+            return;
+          }
+
+          grid.className = '';
+          grid.style.display = 'flex';
+          grid.style.flexDirection = 'column';
+          grid.style.gap = '14px';
+
+          grid.innerHTML = lista.map(function (a) {
+            var local = [a.bairro, a.cidade, a.uf].filter(Boolean).join(', ');
+            var confirmado = !a.aguardando;
+
+            var prazo = '';
+            if (a.aguardando) {
+              if (a.minutos_restantes <= 0) {
+                prazo = '<span class="badge badge-recusado">prazo encerrado</span>';
+              } else if (!a.expediente_aberto) {
+                prazo = '<span class="badge badge-pendente">' + a.minutos_restantes +
+                        ' min quando o expediente abrir</span>';
+              } else {
+                prazo = '<span class="badge badge-pendente">faltam ' + a.minutos_restantes + ' min</span>';
+              }
+            } else {
+              prazo = '<span class="badge badge-aceito">atendimento confirmado</span>';
+            }
+
+            var botao = a.link_grupo
+              ? '<a class="btn btn-primary btn-sm" href="' + escapeHtml(a.link_grupo) + '" target="_blank" rel="noopener">' +
+                (confirmado ? 'Abrir o grupo' : 'Entrar no grupo e confirmar') + '</a>'
+              : '<span class="muted" style="font-size:.82rem">Grupo sendo criado…</span>';
+
+            return '<article class="corretor-card">' +
+              '<div class="avatar">' +
+                escapeHtml((a.comprador_nome || 'C').charAt(0).toUpperCase()) + '</div>' +
+              '<div class="info">' +
+                '<h3>' + escapeHtml(a.comprador_nome || 'Comprador') + '</h3>' +
+                '<div class="role">quer comprar · ' + escapeHtml(a.imovel_titulo || 'imóvel') +
+                  (a.imovel_codigo ? ' <strong>' + escapeHtml(a.imovel_codigo) + '</strong>' : '') + '</div>' +
+                '<div class="contato">' + escapeHtml(local || '-') + '</div>' +
+                '<div style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">' +
+                  prazo + botao +
+                '</div>' +
+              '</div>' +
+            '</article>';
+          }).join('');
         });
       }
 
@@ -4537,7 +4611,7 @@
                 '<div style="text-align:center; padding:40px 16px;">' +
                 '<p style="font-size:1.05rem; margin:0 0 8px;">Você ainda não tem imóveis favoritos.</p>' +
                 '<p style="color:var(--ink-soft); margin:0 0 18px;">Toque no ♡ nos imóveis da home ou da busca para favoritar.</p>' +
-                '<a href="busca.html" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Ver imóveis</a>' +
+                '<a href="/busca" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Ver imóveis</a>' +
                 '</div>';
               return;
             }
@@ -4732,7 +4806,7 @@
         });
       }
 
-      // Hash routing (vindo de index.html#favoritos, etc.)
+      // Hash routing (vindo de /#favoritos, etc.)
       function applyHash() {
         var hash = (window.location.hash || '').replace(/^#/, '');
         showSection(hash || 'meus');
@@ -5572,7 +5646,7 @@
               if (verBtn) {
                 verBtn.addEventListener('click', function () {
                   if (window.openImovelPreview) window.openImovelPreview(verBtn.dataset.id);
-                  else window.open('detalhes.html?id=' + (verBtn.dataset.codigo || verBtn.dataset.id), '_blank');
+                  else window.open('/detalhes?id=' + (verBtn.dataset.codigo || verBtn.dataset.id), '_blank');
                 });
               }
               var acompanharBtn = card.querySelector('.btn-acompanhar-solicitacao');
@@ -6573,7 +6647,7 @@
       function logout() {
         localStorage.removeItem('moravo_token');
         localStorage.removeItem('moravo_user');
-        window.location.href = 'login.html';
+        window.location.href = '/login';
       }
 
       // ---- Util
@@ -6950,7 +7024,7 @@
         }
 
         // Link
-        document.getElementById('mpLinkPagina').href = 'detalhes.html?id=' + (im.codigo || im.id);
+        document.getElementById('mpLinkPagina').href = '/detalhes?id=' + (im.codigo || im.id);
 
         document.getElementById('mpLoading').style.display = 'none';
         document.getElementById('mpData').style.display = 'block';
