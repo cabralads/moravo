@@ -18,6 +18,7 @@ const STATUS_VALIDOS = ['ativo', 'vendido', 'pausado'];
 //   disponivel=1     -> exclui 'vendido' (pra feed de corretores)
 //   tipo=casa        -> filtra por tipo
 //   cidade=Joinville -> filtra por cidade (ILIKE)
+//   codigo=mc7GvdX  -> filtra por código público (exato)
 //   limit=50         -> máx 200
 router.get('/', async (req, res) => {
   try {
@@ -25,6 +26,11 @@ router.get('/', async (req, res) => {
     const disponivel = req.query.disponivel === '1' || req.query.disponivel === 'true';
     const tipo     = (req.query.tipo   || '').toLowerCase();
     const cidade   = (req.query.cidade || '').trim();
+    // Busca pelo código é busca por UM imóvel. Filtrar no servidor importa
+    // porque a lista do front vem limitada: com o catálogo maior que o limite,
+    // o imóvel procurado poderia simplesmente não estar na página trazida.
+    const codigo   = pareceCodigo((req.query.codigo || '').trim())
+                     ? req.query.codigo.trim() : '';
     const limit    = Math.min(parseInt(req.query.limit, 10) || 50, 200);
 
     // Opcionalmente extrai o usuário logado para ocultar seus próprios imóveis na busca pública
@@ -72,6 +78,10 @@ router.get('/', async (req, res) => {
     if (TIPOS_IMOVEL.indexOf(tipo) !== -1) {
       conditions.push(`im.tipo = $${i++}`);
       params.push(tipo);
+    }
+    if (codigo) {
+      conditions.push(`im.codigo = $${i++}`);
+      params.push(codigo);
     }
     if (cidade) {
       conditions.push(`im.cidade ILIKE $${i++}`);

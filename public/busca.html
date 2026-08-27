@@ -715,6 +715,17 @@ body {
   var parser = new URLSearchParams(window.location.search);
 
   var city = (parser.get('cidade') || '').trim();
+
+  // O campo "ONDE" também aceita o código do imóvel. É o número que a pessoa
+  // tem em mãos quando veio de uma mensagem no WhatsApp ou do atendimento, e
+  // tratá-lo como nome de cidade devolvia "nenhum imóvel encontrado em
+  // PifDBgM", que não ajuda ninguém. O alfabeto é o mesmo do lib/codigo-imovel.
+  var RE_CODIGO = /^[23456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{7}$/;
+  var codigoBuscado = RE_CODIGO.test(city) ? city : '';
+  // Guarda o que a pessoa digitou: o campo tem que continuar mostrando o
+  // código depois da busca, senão parece que a consulta se perdeu.
+  var termoDigitado = city;
+  if (codigoBuscado) city = '';
   var type = parser.get('tipo') || '';
   var quartos = parser.get('quartos') || '';
   var minPrice = parser.get('min') || '';
@@ -1097,7 +1108,7 @@ body {
   var typeField = document.getElementById('sb-tipo');
   var priceField = document.getElementById('sb-preco');
 
-  if (cityField) cityField.value = city;
+  if (cityField) cityField.value = termoDigitado;
   if (typeField) typeField.value = type || '';
 
   if (priceField) {
@@ -1208,6 +1219,15 @@ body {
         var im = allListings.find(function (item) { return String(item.id) === String(id); });
         if (!im) return;
 
+        // Código bate exato: buscar por código é procurar UM imóvel, não uma lista
+        if (codigoBuscado) {
+          var achou = im.codigo === codigoBuscado;
+          var marcador0 = markersByListing[id];
+          if (achou) { card.style.display=''; if (marcador0) marcador0.addTo(map); countVisible++; visibleIds.push(id); }
+          else { card.style.display='none'; if (marcador0) map.removeLayer(marcador0); }
+          return;
+        }
+
         var cityMatch = !city || normalizeString(im.cidade).indexOf(normalizeString(city)) !== -1;
 
         var typeMatch = true;
@@ -1246,7 +1266,8 @@ body {
 
       var titleEl = document.getElementById('overlayResultsTitle');
       if (titleEl) {
-        var locSuffix = city ? (' em ' + city) : '';
+        var locSuffix = codigoBuscado ? (' com o código ' + codigoBuscado)
+                                       : (city ? (' em ' + city) : '');
         if (countVisible === 0) {
           titleEl.textContent = 'Nenhum imóvel encontrado' + locSuffix;
         } else if (countVisible === 1) {
@@ -1293,7 +1314,11 @@ body {
   function fetchRealListings() {
     var token = localStorage.getItem('moravo_token') || '';
     loadFavoriteIds().then(function () {
-      return fetch(API_BASE + '/api/imoveis?disponivel=1&limit=200', {
+      // Quando é busca por código, o servidor já devolve só aquele imóvel:
+      // com o catálogo maior que o limite, filtrar só no cliente deixaria de
+      // encontrar imóvel que nem veio na lista.
+      var filtroCodigo = codigoBuscado ? '&codigo=' + encodeURIComponent(codigoBuscado) : '';
+      return fetch(API_BASE + '/api/imoveis?disponivel=1&limit=200' + filtroCodigo, {
         headers: token ? { 'Authorization': 'Bearer ' + token } : {}
       });
     })

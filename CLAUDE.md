@@ -196,6 +196,11 @@ a pessoa erra ao ditar o código por telefone.
 O código aparece em **toda tela interna**: card do painel, card do admin, cabeçalho da
 edição em `/anunciar`, selo na página do imóvel, nome do grupo e mensagens do WhatsApp.
 
+**O campo "ONDE" da busca também aceita o código.** É o que a pessoa tem em mãos quando
+chega por uma mensagem do WhatsApp, e tratá-lo como nome de cidade devolvia "nenhum
+imóvel encontrado em PifDBgM". O filtro vai junto para a API (`?codigo=`), porque a lista
+do front vem limitada e o imóvel procurado pode nem estar na página trazida.
+
 **URL pública:** `/imovel/<tipo>-<preço>-<cidade>/?id=<codigo>`
 
 O slug é enfeite para leitura e para busca; quem identifica é o código na query.
