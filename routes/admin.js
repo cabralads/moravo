@@ -259,13 +259,27 @@ router.get('/whatsapp/config', async (req, res) => {
 router.put('/whatsapp/config', async (req, res) => {
   try {
     const b = req.body || {};
-    const phone   = (b.phone_number_id || '').trim();
-    const waba    = (b.waba_id || '').trim();
-    const versao  = (b.api_version || 'v23.0').trim();
-    const tmpl    = (b.template_nome || 'convite_grupo_proprietario').trim();
-    const tmplCor = (b.template_corretor || '').trim();
-    const idioma  = (b.template_idioma || 'pt_BR').trim();
-    const ativo   = !!b.ativo;
+
+    // O painel tem dois formulários (Meta e Waha) que salvam pelo MESMO
+    // endpoint. Cada um manda só os campos do seu bloco, então o que não vier
+    // no corpo precisa ficar como está: antes o UPDATE gravava NULL em tudo
+    // que faltasse, e salvar a configuração da Meta apagava a conexão do Waha.
+    const veio = (k) => Object.prototype.hasOwnProperty.call(b, k);
+    const atualR = await query(
+      `SELECT phone_number_id, waba_id, api_version, template_nome, template_corretor,
+              template_idioma, ativo, waha_url, waha_sessao, waha_atendente, waha_extras
+         FROM moravo.config_whatsapp WHERE id = 1`
+    );
+    const atual = atualR.rows[0] || {};
+    const manter = (k, novo) => (veio(k) ? novo : (atual[k] || ''));
+
+    const phone   = manter('phone_number_id', (b.phone_number_id || '').trim());
+    const waba    = manter('waba_id', (b.waba_id || '').trim());
+    const versao  = manter('api_version', (b.api_version || 'v23.0').trim()) || 'v23.0';
+    const tmpl    = manter('template_nome', (b.template_nome || 'convite_grupo_proprietario').trim());
+    const tmplCor = manter('template_corretor', (b.template_corretor || '').trim());
+    const idioma  = manter('template_idioma', (b.template_idioma || 'pt_BR').trim()) || 'pt_BR';
+    const ativo   = veio('ativo') ? !!b.ativo : !!atual.ativo;
     const token   = (b.token || '').trim();
 
     if (!/^v\d+\.\d+$/.test(versao)) {
@@ -284,10 +298,10 @@ router.put('/whatsapp/config', async (req, res) => {
       }
     }
 
-    const wahaUrl    = (b.waha_url || '').trim();
-    const wahaSessao = (b.waha_sessao || '').trim();
-    const wahaAtend  = (b.waha_atendente || '').replace(/\D/g, '');
-    const wahaExtras = (b.waha_extras || '').trim();
+    const wahaUrl    = manter('waha_url', (b.waha_url || '').trim());
+    const wahaSessao = manter('waha_sessao', (b.waha_sessao || '').trim());
+    const wahaAtend  = manter('waha_atendente', (b.waha_atendente || '').replace(/\D/g, ''));
+    const wahaExtras = manter('waha_extras', (b.waha_extras || '').trim());
     const wahaChave  = (b.waha_api_key || '').trim();
 
     // A chave só é regravada quando vem preenchida: em branco mantém a atual,

@@ -479,6 +479,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
 
 ### Histórico
 
+- **2026-08-27** — Os dois formulários de `/admin` → Config. WhatsApp salvam pelo mesmo
+  `PUT /whatsapp/config`, e cada um manda só os campos do seu bloco. O UPDATE gravava NULL
+  no que faltasse, então **salvar a configuração da Meta apagava a conexão do Waha** (foi o
+  que zerou sessão e atendente às 12:48). Agora campo ausente no corpo não é tocado.
 - **2026-08-27** — `getConfig` (`lib/whatsapp.js`) não trazia `template_corretor` no SELECT,
   então o campo era sempre vazio: o painel mostrava em branco mesmo depois de salvo e o
   corretor nunca recebia convite. Registrado também que **`status = 'enviado'` significa
