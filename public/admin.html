@@ -1308,9 +1308,10 @@ body {
               '<input id="wappWaba" value="' + escapeHtml(c.waba_id || '') + '" placeholder="123456789012345" /></div>' +
             '<div class="field"><label for="wappVersao">Versão da Graph API</label>' +
               '<input id="wappVersao" value="' + escapeHtml(c.api_version || 'v23.0') + '" placeholder="v23.0" /></div>' +
-            '<div class="field"><label for="wappToken">Token de acesso permanente</label>' +
+            '<div class="field"><label for="wappToken">Token de acesso permanente' +
+              (c.token_definido ? ' <span class="opt">(definido: ' + escapeHtml(c.token_mascarado) + ')</span>' : '') + '</label>' +
               '<input id="wappToken" type="password" autocomplete="new-password" placeholder="' +
-              (c.token_definido ? 'definido (' + escapeHtml(c.token_mascarado) + ')' : 'ainda não configurado') + '" /></div>' +
+              (c.token_definido ? 'digite para trocar' : 'cole o token aqui') + '" /></div>' +
             '<div class="field"><label for="wappTemplate">Template do proprietário</label>' +
               '<input id="wappTemplate" value="' + escapeHtml(c.template_nome || '') + '" placeholder="convite_grupo_proprietario" /></div>' +
             '<div class="field"><label for="wappTemplateCor">Template do corretor</label>' +
@@ -1363,9 +1364,10 @@ body {
               '<input id="wahaAtendente" value="' + escapeHtml(w.atendente || '') + '" placeholder="5515981829650" /></div>' +
             '<div class="field full"><label for="wahaUrl">URL do Waha</label>' +
               '<input id="wahaUrl" value="' + escapeHtml(w.url || '') + '" placeholder="https://wpp.atendentex.com.br" /></div>' +
-            '<div class="field"><label for="wahaChave">Chave de API do Waha</label>' +
+            '<div class="field"><label for="wahaChave">Chave de API do Waha' +
+              (w.api_key_definida ? ' <span class="opt">(definida: ' + escapeHtml(w.api_key_final) + ')</span>' : '') + '</label>' +
               '<input id="wahaChave" type="password" autocomplete="new-password" placeholder="' +
-              (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ')' : 'ainda não configurada') + '" /></div>' +
+              (w.api_key_definida ? 'digite para trocar' : 'cole a chave aqui') + '" /></div>' +
             '<div class="field"><label for="wahaExtras">Números internos extras <span class="opt">(opcional)</span></label>' +
               '<input id="wahaExtras" value="' + escapeHtml(w.extras || '') + '" placeholder="5515999999999" /></div>' +
           '</div>' +
@@ -1464,7 +1466,8 @@ body {
             alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
               '✕ Chave de API do Waha não informada. Sem ela nenhum grupo é criado.</div>';
           }
-          if (w.erro) {
+          // o erro do Waha sobre chave ausente repetiria o alerta acima
+          if (w.erro && !(w.origem_api_key === 'não definida' && /chave de api/i.test(w.erro))) {
             alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">✕ ' + escapeHtml(w.erro) + '</div>';
           }
           if (!alerta && ok) {
