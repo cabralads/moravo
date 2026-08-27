@@ -12,7 +12,9 @@ window.MORAVO_API = (window.location.protocol === 'file:')
 // do servidor local (como npx serve) limpem a query string (ex: ?id=9).
 window.verDetalhes = function(id) {
   var ext = (window.location.protocol === 'file:') ? '.html' : '';
-  var url = 'detalhes' + ext + '?id=' + id;
+  // Com barra na frente: a partir de /imovel/<slug>/ um caminho relativo
+  // viraria /imovel/<slug>/detalhes, que não existe.
+  var url = (ext ? 'detalhes' + ext : '/detalhes') + '?id=' + id;
   // Abre a página do imóvel em uma nova aba
   var win = window.open(url, '_blank');
   // Fallback: se o navegador bloqueou o popup, navega na mesma aba
@@ -32,10 +34,11 @@ window.fotoUrl = function(f) {
   if (f.indexOf('/uploads/') === 0) {
     return window.MORAVO_API + f;
   }
-  // Se for imagem estática local do frontend, retorna relativo
-  if (f.indexOf('/') === 0 || f.indexOf('img/') === 0) {
-    return f;
-  }
+  // Imagem estática do front. A barra na frente é obrigatória: a página do
+  // imóvel vive em /imovel/<slug>/, e um caminho relativo procuraria o arquivo
+  // dentro dessa pasta, que não existe.
+  if (f.indexOf('/') === 0) return f;
+  if (f.indexOf('img/') === 0) return '/' + f;
   return window.MORAVO_API + '/' + f;
 };
 

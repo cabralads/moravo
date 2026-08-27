@@ -277,6 +277,13 @@ extensão de arquivo à mostra. Agora `/busca.html` responde **301** para `/busc
 Exceção: `public/config.js` mantém `.html` quando a página é aberta por `file://`, onde
 não existe servidor para resolver a URL limpa.
 
+⚠️ **Todo caminho de arquivo no front começa com barra.** A página do imóvel vive em
+`/imovel/<slug>/`, que é um nível a mais: um `src="config.js"` relativo vira
+`/imovel/<slug>/config.js` e dá 404. Foi o que quebrou a página inteira quando a URL
+amigável entrou no ar — sem o `config.js`, `MORAVO_API` fica indefinida, a busca do
+imóvel falha e o `catch` manda o usuário para `/busca`. Vale para `src`, `href`,
+`url()` do CSS e para o que o `fotoUrl` devolve.
+
 ## Perfis
 
 São **3 valores** no banco: `proprietario`, `corretor`, `admin`.
