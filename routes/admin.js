@@ -11,6 +11,7 @@ const wa = require('../lib/whatsapp');
 const siteConfig = require('../lib/site-config');
 const waha = require('../lib/waha');
 const cripto = require('../lib/cripto');
+const { garantirGrupo } = require('../lib/grupo');
 
 const router = express.Router();
 
@@ -397,6 +398,53 @@ router.get('/whatsapp/templates', async (req, res) => {
     });
   } catch (err) {
     return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ---- GET /api/admin/grupos/falhas — o que travou na criação dos grupos
+router.get('/grupos/falhas', async (req, res) => {
+  try {
+    const status = (req.query.status || 'erro').toLowerCase();
+    const filtro = ['erro', 'ok'].indexOf(status) !== -1 ? 'WHERE t.status = $1' : '';
+    const params = filtro ? [status] : [];
+    const r = await query(
+      `SELECT t.id, t.interesse_id, t.etapa, t.status, t.erro, t.tentativas,
+              t.created_at, t.atualizado_em,
+              im.id AS imovel_id, im.titulo AS imovel_titulo,
+              c.nome AS corretor_nome, d.nome AS dono_nome,
+              i.grupo_whatsapp_link
+         FROM moravo.grupo_tentativas t
+         JOIN moravo.interesses i ON i.id = t.interesse_id
+         JOIN moravo.imoveis   im ON im.id = i.imovel_id
+         JOIN moravo.usuarios   c ON c.id = i.corretor_id
+         JOIN moravo.usuarios   d ON d.id = im.dono_id
+         ${filtro}
+         ORDER BY t.atualizado_em DESC
+         LIMIT 100`,
+      params
+    );
+    const cnt = await query(
+      `SELECT count(*) FILTER (WHERE status = 'erro')::int AS erros,
+              count(*) FILTER (WHERE status = 'ok')::int   AS ok
+         FROM moravo.grupo_tentativas`
+    );
+    return res.json({ ok: true, tentativas: r.rows, contadores: cnt.rows[0] });
+  } catch (err) {
+    console.error('[admin/grupos/falhas] erro:', err);
+    return res.status(500).json({ ok: false, error: 'Erro interno do servidor.' });
+  }
+});
+
+// ---- POST /api/admin/grupos/:interesseId/repetir — tenta de novo do começo
+router.post('/grupos/:interesseId/repetir', async (req, res) => {
+  const id = parseInt(req.params.interesseId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'ID inválido.' });
+  try {
+    const grupo = await garantirGrupo(id);
+    return res.json({ ok: true, grupo: grupo });
+  } catch (err) {
+    // a falha já foi registrada com a etapa dentro do garantirGrupo
+    return res.status(502).json({ ok: false, error: err.message });
   }
 });
 

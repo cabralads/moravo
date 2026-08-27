@@ -410,6 +410,27 @@ app.listen(PORT, '0.0.0.0', async () => {
         ON moravo.admin_login_logs (created_at DESC);
     `);
 
+    // Tentativas de criação do grupo, com a etapa em que parou. Sem isso o erro
+    // só existia no log do servidor: invisível no painel e impossível de repetir.
+    await migrar('tabela grupo_tentativas', `
+      CREATE TABLE IF NOT EXISTS moravo.grupo_tentativas (
+        id            BIGSERIAL PRIMARY KEY,
+        interesse_id  BIGINT NOT NULL REFERENCES moravo.interesses(id) ON DELETE CASCADE,
+        etapa         TEXT NOT NULL,
+        status        TEXT NOT NULL CHECK (status IN ('erro', 'ok')),
+        erro          TEXT,
+        detalhe       JSONB NOT NULL DEFAULT '{}'::jsonb,
+        tentativas    INT NOT NULL DEFAULT 1,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uk_tentativa_por_interesse UNIQUE (interesse_id)
+      );
+    `);
+    await migrar('grupo_tentativas.indice', `
+      CREATE INDEX IF NOT EXISTS idx_grupo_tentativas_status
+        ON moravo.grupo_tentativas (status, atualizado_em DESC);
+    `);
+
     // Convites nominais para o grupo. Cada destinatário recebe um token
     // aleatório e próprio, em vez do código do convite do WhatsApp. Assim o
     // link não é adivinhável, sabemos quem abriu e dá para revogar um sem

@@ -359,6 +359,11 @@ simplesmente não nascia. O `.env` do servidor continua valendo como reserva par
 mostra só os 4 últimos caracteres. Com `ativo` desligado, o grupo é criado e o link aparece,
 mas nenhuma mensagem é disparada.
 
+**Toda tentativa de criar grupo vira uma linha em `moravo.grupo_tentativas`**, com a **etapa**
+em que parou (`criando o grupo no Waha`, `obtendo o link do convite`, `enviando os convites`),
+o erro e o número de tentativas. Aparece em `/admin` → Envios WhatsApp, com botão de
+**Repetir**, que chama `garantirGrupo` de novo. Sem isso o erro só existia no log do servidor.
+
 **Toda tentativa de envio vira uma linha em `moravo.whatsapp_envios`.** Falha gera notificação
 para todos os admins (`tipo = 'envio_whatsapp_falhou'`) e aparece em `/admin` → Envios
 WhatsApp, com botão de reenviar. Envio por SMS como alternativa fica para um segundo momento.
@@ -476,6 +481,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   alternando enquanto o grupo é criado e as mensagens saem, terminando no botão de entrar no
   grupo. Quando o grupo falha, a tela diz que o imóvel entrou na carteira e omite o botão, em
   vez de oferecer um link vazio.
+- **2026-08-27** — Falhas na criação do grupo passam a ser registradas em `grupo_tentativas`
+  com a etapa em que pararam, visíveis no painel e com botão de repetir. O teste dessa
+  instrumentação revelou um bug que travava **toda** criação de grupo: `criarGrupo` exigia 2
+  participantes, regra herdada de quando proprietário e corretor eram adicionados à força. No
+  modelo atual o grupo nasce só com o atendente, ou seja, 1 participante.
 - **2026-08-27** — Corrigido o bug que anulava a configuração do painel: `lib/grupo.js` e a
   rota `/criar-grupo-whatsapp` liam `process.env.WAHA_ATENDENTE_PRINCIPAL` direto, ignorando o
   que o admin tinha preenchido. A rota antiga (213 linhas com a criação do grupo duplicada)
