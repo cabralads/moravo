@@ -464,6 +464,14 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   Hostinger, não na Hostoo. Seção "Deploy" reescrita.
 - **2026-08-17** — Documentada a infraestrutura real: stack Docker `moravo` na VPS Hostinger
   + banco Supabase `slebpxrifihecanljzak`.
+- **2026-08-27** — Template com mais de uma variável no corpo: `enviarTemplateConvite` passa a
+  receber uma lista, e cada destinatário tem a sua ordem. A configuração ganhou um segundo
+  campo (template do proprietário e do corretor), e o envio de teste pergunta à Meta quantas
+  variáveis o template espera em vez de adivinhar.
+- **2026-08-27** — Modal de progresso ao clicar em "Trabalhar este imóvel", com frases
+  alternando enquanto o grupo é criado e as mensagens saem, terminando no botão de entrar no
+  grupo. Quando o grupo falha, a tela diz que o imóvel entrou na carteira e omite o botão, em
+  vez de oferecer um link vazio.
 - **2026-08-27** — Conexão do Waha (sessão, atendente, URL e extras) passa a ser editável em
   `/admin` → Config. WhatsApp, gravada em `config_whatsapp`, com o `.env` como reserva. Novo
   diagnóstico mostra a sessão realmente em uso, de onde ela veio e o status das sessões no

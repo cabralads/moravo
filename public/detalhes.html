@@ -272,6 +272,24 @@
   }
   
   /* ---- Estilos para Modais ---- */
+  .prog-anel {
+    width: 54px; height: 54px; margin: 0 auto;
+    border: 4px solid var(--beige); border-top-color: var(--emerald);
+    border-radius: 50%; animation: prog-gira .9s linear infinite;
+  }
+  @keyframes prog-gira { to { transform: rotate(360deg); } }
+  .prog-ok {
+    width: 62px; height: 62px; margin: 0 auto; border-radius: 50%;
+    background: #e8f6ef; color: #12855A; display: flex; align-items: center; justify-content: center;
+    animation: prog-pop .35s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes prog-pop { from { transform: scale(.7); opacity: 0 } to { transform: none; opacity: 1 } }
+  .prog-etapas { display: flex; justify-content: center; gap: 7px; margin-top: 18px; }
+  .prog-etapas i { width: 7px; height: 7px; border-radius: 50%; background: var(--beige); display: block; transition: background .3s; }
+  .prog-etapas i.on { background: var(--emerald); }
+  @media (prefers-reduced-motion: reduce) {
+    .prog-anel { animation: none; } .prog-ok { animation: none; }
+  }
   .modal-bg {
     position: fixed;
     inset: 0;
@@ -939,6 +957,39 @@
         </button>
 
         <!-- Modal de Interesse do Corretor (Intermediação) -->
+        <!-- ====== Modal de progresso: criação do grupo ====== -->
+        <div class="modal-bg" id="progressoModal">
+          <div class="modal" style="max-width:440px; text-align:center; padding:34px 30px">
+            <div id="prog-andamento">
+              <div class="prog-anel"></div>
+              <h2 style="font-size:1.25rem; margin:22px 0 8px">Aguarde um instante</h2>
+              <p id="prog-frase" style="color:var(--ink-soft); min-height:48px; transition:opacity .25s">
+                Reservando o imóvel na sua carteira...
+              </p>
+              <div class="prog-etapas" id="prog-etapas"></div>
+            </div>
+
+            <div id="prog-pronto" style="display:none">
+              <div class="prog-ok">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <h2 style="font-size:1.3rem; margin:20px 0 10px">Tudo pronto</h2>
+              <p id="prog-msg-final" style="color:var(--ink-soft); margin-bottom:24px">
+                O imóvel está na sua carteira e o grupo com o proprietário foi criado.
+              </p>
+              <a id="prog-link" href="#" target="_blank" rel="noopener" class="btn btn-primary"
+                 style="width:100%; background:#25d366; border-color:#25d366; display:inline-flex; align-items:center; justify-content:center; gap:9px; text-decoration:none">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
+                Entrar no grupo do WhatsApp
+              </a>
+              <p id="prog-nota-whats" style="font-size:.85rem; color:var(--ink-soft); margin-top:14px">
+                Você também recebeu este link no seu WhatsApp.
+              </p>
+              <button type="button" id="prog-fechar" class="btn btn-ghost" style="width:100%; margin-top:10px">Fechar</button>
+            </div>
+          </div>
+        </div>
+
         <div class="modal-bg" id="interesseModal">
           <div class="modal" style="max-width: 480px; position: relative;">
             <h2>Trabalhar este imóvel</h2>
@@ -1784,6 +1835,98 @@
   }
 
   // ---- Lógica do Modal de Intermediação de Corretor ----
+  // ---- Modal de progresso enquanto o grupo é criado
+  // A chamada leva alguns segundos: cria o grupo no Waha e dispara duas
+  // mensagens pela API oficial. Sem isso o corretor fica olhando um botão
+  // travado, sem saber se deu certo.
+  var progTimer = null, progIndice = 0;
+
+  var PROG_FRASES = [
+    'Reservando o imóvel na sua carteira...',
+    'Criando o grupo no WhatsApp...',
+    'Convidando o proprietário...',
+    'Enviando o seu convite...',
+    'Conferindo os últimos detalhes...'
+  ];
+
+  function marcarEtapa() {
+    var frase = document.getElementById('prog-frase');
+    if (!frase) return;
+    frase.style.opacity = '0';
+    setTimeout(function () {
+      frase.textContent = PROG_FRASES[progIndice];
+      frase.style.opacity = '1';
+    }, 220);
+    document.querySelectorAll('#prog-etapas i').forEach(function (b, i) {
+      b.classList.toggle('on', i <= progIndice);
+    });
+  }
+
+  function iniciarProgresso() {
+    var modalProg = document.getElementById('progressoModal');
+    if (!modalProg) return;
+    var interesse = document.getElementById('interesseModal');
+    if (interesse) interesse.classList.remove('show');
+
+    document.getElementById('prog-andamento').style.display = '';
+    document.getElementById('prog-pronto').style.display = 'none';
+    document.getElementById('prog-etapas').innerHTML =
+      PROG_FRASES.map(function () { return '<i></i>'; }).join('');
+
+    progIndice = 0;
+    marcarEtapa();
+    modalProg.classList.add('show');
+
+    clearInterval(progTimer);
+    progTimer = setInterval(function () {
+      // para na penúltima: a última só cai quando a resposta chega
+      if (progIndice < PROG_FRASES.length - 1) { progIndice++; marcarEtapa(); }
+    }, 1700);
+  }
+
+  function pararProgresso() {
+    clearInterval(progTimer);
+    var m = document.getElementById('progressoModal');
+    if (m) m.classList.remove('show');
+  }
+
+  function concluirProgresso(corpo) {
+    clearInterval(progTimer);
+    progIndice = PROG_FRASES.length - 1;
+    marcarEtapa();
+
+    var link = corpo && corpo.grupo && corpo.grupo.grupo_link;
+    var botao = document.getElementById('prog-link');
+    var msg = document.getElementById('prog-msg-final');
+
+    if (link) {
+      botao.href = link;
+      botao.style.display = '';
+      msg.textContent = 'O imóvel está na sua carteira e o grupo com o proprietário foi criado.';
+    } else {
+      // O grupo pode falhar sem que a carteira se perca. Nesse caso a mensagem
+      // diz a verdade em vez de mandar a pessoa para um link vazio.
+      botao.style.display = 'none';
+      msg.innerHTML = 'O imóvel já está na <strong>sua carteira</strong>. ' +
+        'O grupo com o proprietário está sendo aberto e você recebe o link no seu WhatsApp em instantes.';
+    }
+    // sem link não faz sentido dizer que ele chegou no WhatsApp
+    var nota = document.getElementById('prog-nota-whats');
+    if (nota) nota.style.display = link ? '' : 'none';
+
+    setTimeout(function () {
+      document.getElementById('prog-andamento').style.display = 'none';
+      document.getElementById('prog-pronto').style.display = '';
+    }, 500);
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'prog-fechar') {
+      pararProgresso();
+      window.location.reload();
+    }
+  });
+
   function abrirModalInteresseCorretor(imovelId) {
     var modal = document.getElementById('interesseModal');
     var inputId = document.getElementById('interesseImovelId');
@@ -1863,9 +2006,11 @@
         submitBtn.disabled = true;
         var originalText = submitBtn.textContent;
         submitBtn.innerHTML = '<span class="spinner"></span> Enviando…';
+        iniciarProgresso();
 
         var token = localStorage.getItem('moravo_token');
         if (!token) {
+          pararProgresso();
           toast('Por favor, faça login como corretor para trabalhar este imóvel.', 'error');
           window.location.href = 'login.html';
           return;
@@ -1883,17 +2028,18 @@
         .then(function(r) {
           submitBtn.disabled = false;
           submitBtn.textContent = originalText;
-          if (r.ok) {
-            modal.classList.remove('show');
-            toast('Imóvel adicionado à sua carteira. Envie a proposta pelo painel quando tiver comprador.', 'success');
-          } else {
-            toast(r.body.error || 'Erro ao solicitar intermediação.', 'error');
+          if (!r.ok) {
+            pararProgresso();
+            toast(r.body.error || 'Não foi possível adicionar o imóvel à sua carteira.', 'error');
+            return;
           }
+          concluirProgresso(r.body);
         })
         .catch(function() {
           submitBtn.disabled = false;
           submitBtn.textContent = originalText;
-          toast('Erro de conexão ao enviar solicitação.', 'error');
+          pararProgresso();
+          toast('Erro de conexão. Tente de novo em instantes.', 'error');
         });
       };
     }
