@@ -512,7 +512,8 @@ app.listen(PORT, '0.0.0.0', async () => {
         ADD COLUMN IF NOT EXISTS waha_sessao    TEXT,
         ADD COLUMN IF NOT EXISTS waha_atendente TEXT,
         ADD COLUMN IF NOT EXISTS waha_extras    TEXT,
-        ADD COLUMN IF NOT EXISTS template_corretor TEXT;
+        ADD COLUMN IF NOT EXISTS template_corretor TEXT,
+        ADD COLUMN IF NOT EXISTS waha_api_key_cifrada TEXT;
     `);
 
     // Log de envios do convite pelo WhatsApp (alimenta a tela de erros do admin)

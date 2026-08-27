@@ -345,9 +345,13 @@ sessão, número do atendente principal, URL e números internos extras ficam em
 `moravo.config_whatsapp`. O `.env` continua valendo como reserva, e o painel mostra a origem
 de cada valor (painel, `.env` ou padrão do código).
 
+A **chave de API do Waha também fica no painel**, cifrada com AES-256-GCM (`lib/cripto.js`,
+compartilhado com o token da Meta) e nunca devolvida ao front-end: a tela mostra só os 4
+últimos caracteres. Campo em branco mantém a chave atual.
+
 ⚠️ O padrão embutido no código é `AtendenteX_Waha`. Antes disso, quem esquecesse
 `WAHA_SESSION` no `.env` ficava usando essa sessão sem nunca ser avisado, e o grupo
-simplesmente não nascia. A **chave de API segue no `.env`**, por ser secreta.
+simplesmente não nascia. O `.env` do servidor continua valendo como reserva para todos esses valores.
 
 **A configuração da Meta fica no painel do admin** (`/admin` → Config. WhatsApp), gravada em
 `moravo.config_whatsapp` (linha única). O **token é cifrado com AES-256-GCM** usando
@@ -472,6 +476,10 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   alternando enquanto o grupo é criado e as mensagens saem, terminando no botão de entrar no
   grupo. Quando o grupo falha, a tela diz que o imóvel entrou na carteira e omite o botão, em
   vez de oferecer um link vazio.
+- **2026-08-27** — Chave de API do Waha passa a ser configurável no painel, cifrada como o
+  token da Meta. Cifra extraída para `lib/cripto.js`, usada pelos dois. Motivo: o diagnóstico
+  mostrou que o `.env` da VPS não tinha nenhuma variável do Waha, e sem a chave a criação do
+  grupo falha na primeira linha, sem deixar registro de envio.
 - **2026-08-27** — Conexão do Waha (sessão, atendente, URL e extras) passa a ser editável em
   `/admin` → Config. WhatsApp, gravada em `config_whatsapp`, com o `.env` como reserva. Novo
   diagnóstico mostra a sessão realmente em uso, de onde ela veio e o status das sessões no

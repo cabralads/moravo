@@ -10,6 +10,7 @@ const { criarNotificacao } = require('../lib/notifications');
 const wa = require('../lib/whatsapp');
 const siteConfig = require('../lib/site-config');
 const waha = require('../lib/waha');
+const cripto = require('../lib/cripto');
 
 const router = express.Router();
 
@@ -230,6 +231,8 @@ router.get('/whatsapp/config', async (req, res) => {
       waha: {
         url: w.url, sessao: w.sessao, atendente: w.atendente,
         extras: w.extras.join(', '), origem: w.origem,
+        api_key_definida: !!w.apiKey,
+        api_key_final: w.apiKey ? '...' + w.apiKey.slice(-4) : '',
       },
       config: {
         phone_number_id: c.phone_number_id,
@@ -284,6 +287,18 @@ router.put('/whatsapp/config', async (req, res) => {
     const wahaSessao = (b.waha_sessao || '').trim();
     const wahaAtend  = (b.waha_atendente || '').replace(/\D/g, '');
     const wahaExtras = (b.waha_extras || '').trim();
+    const wahaChave  = (b.waha_api_key || '').trim();
+
+    // A chave só é regravada quando vem preenchida: em branco mantém a atual,
+    // igual ao token da Meta. Guardada cifrada, nunca em texto puro.
+    let wahaChaveCifrada = null;
+    if (wahaChave) {
+      try {
+        wahaChaveCifrada = cripto.cifrar(wahaChave);
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
 
     if (wahaUrl && !/^https?:\/\//i.test(wahaUrl)) {
       return res.status(400).json({ ok: false, error: 'A URL do Waha precisa começar com http:// ou https://' });
@@ -295,6 +310,7 @@ router.put('/whatsapp/config', async (req, res) => {
     await query(
       `UPDATE moravo.config_whatsapp
           SET waha_url = $9, waha_sessao = $10, waha_atendente = $11, waha_extras = $12,
+              waha_api_key_cifrada = COALESCE($14, waha_api_key_cifrada),
               phone_number_id = $1,
               waba_id         = $2,
               api_version     = $3,
@@ -308,7 +324,7 @@ router.put('/whatsapp/config', async (req, res) => {
         WHERE id = 1`,
       [phone || null, waba || null, versao, tmpl, idioma, ativo, tokenCifrado, req.user.id,
        wahaUrl || null, wahaSessao || null, wahaAtend || null, wahaExtras || null,
-       tmplCor || null]
+       tmplCor || null, wahaChaveCifrada]
     );
 
     wa.limparCache();

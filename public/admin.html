@@ -1363,11 +1363,14 @@ body {
               '<input id="wahaAtendente" value="' + escapeHtml(w.atendente || '') + '" placeholder="5515981829650" /></div>' +
             '<div class="field full"><label for="wahaUrl">URL do Waha</label>' +
               '<input id="wahaUrl" value="' + escapeHtml(w.url || '') + '" placeholder="https://wpp.atendentex.com.br" /></div>' +
-            '<div class="field full"><label for="wahaExtras">Números internos extras <span class="opt">(opcional, separados por vírgula)</span></label>' +
+            '<div class="field"><label for="wahaChave">Chave de API do Waha</label>' +
+              '<input id="wahaChave" type="password" autocomplete="new-password" placeholder="' +
+              (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ')' : 'ainda não configurada') + '" /></div>' +
+            '<div class="field"><label for="wahaExtras">Números internos extras <span class="opt">(opcional)</span></label>' +
               '<input id="wahaExtras" value="' + escapeHtml(w.extras || '') + '" placeholder="5515999999999" /></div>' +
           '</div>' +
           '<p class="painel-dica" style="margin-top:-6px">O atendente é obrigatório: sem ele o grupo nunca é criado. ' +
-          'A chave de API continua no .env do servidor, por ser secreta.</p>' +
+          'A chave é gravada cifrada e não volta para esta tela: para trocá-la, digite a nova; em branco, a atual é mantida.</p>' +
           '<div class="acoes">' +
             '<button class="btn btn-primary" id="wahaSalvar">Salvar conexão</button>' +
             '<button class="btn btn-ghost" id="wahaCheck">Verificar conexão</button>' +
@@ -1423,7 +1426,8 @@ body {
             waha_url:        $('wahaUrl').value,
             waha_sessao:     $('wahaSessao').value,
             waha_atendente:  $('wahaAtendente').value,
-            waha_extras:     $('wahaExtras').value
+            waha_extras:     $('wahaExtras').value,
+            waha_api_key:    $('wahaChave').value
           }
         }).then(function (resp) {
           btn.disabled = false; btn.textContent = 'Salvar conexão';
@@ -1456,6 +1460,10 @@ body {
             alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
               '✕ WAHA_ATENDENTE_PRINCIPAL não configurado. Sem ele o grupo nunca é criado.</div>';
           }
+          if (w.origem_api_key === 'não definida') {
+            alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">' +
+              '✕ Chave de API do Waha não informada. Sem ela nenhum grupo é criado.</div>';
+          }
           if (w.erro) {
             alerta += '<div class="painel-status off" style="background:#fdecea;color:#c0392b">✕ ' + escapeHtml(w.erro) + '</div>';
           }
@@ -1477,7 +1485,7 @@ body {
             '<table class="admin-logs" style="width:100%"><tbody>' +
             '<tr><td style="color:var(--ink-soft)">Servidor</td><td>' + escapeHtml(w.url) + '</td></tr>' +
             '<tr><td style="color:var(--ink-soft)">Sessão em uso</td><td><strong>' + escapeHtml(w.sessao_em_uso) + '</strong> <span class="muted" style="font-size:.82rem">(' + escapeHtml(w.origem_sessao || '') + ')</span></td></tr>' +
-            '<tr><td style="color:var(--ink-soft)">Chave de API</td><td>' + (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ')' : 'NÃO definida') + '</td></tr>' +
+            '<tr><td style="color:var(--ink-soft)">Chave de API</td><td>' + (w.api_key_definida ? 'definida (' + escapeHtml(w.api_key_final) + ') <span class="muted" style="font-size:.82rem">(' + escapeHtml(w.origem_api_key || '') + ')</span>' : 'NÃO definida') + '</td></tr>' +
             '<tr><td style="color:var(--ink-soft)">Atendente principal</td><td>' + escapeHtml(w.atendente_principal || 'NÃO definido') + '</td></tr>' +
             '</tbody></table>' +
             (linhas ? '<p class="muted" style="margin:14px 0 6px;font-weight:700">Sessões no Waha</p>' +
