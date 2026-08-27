@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moravo | Anunciar imóvel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Quicksand:wght@600&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+:root{
+  --laranja:#FF6A00; --laranja-dk:#E05300; --laranja-luz:#FFF4EC;
+  --ink:#1c1c1c; --ink-soft:#6b6b6b; --beige:#e4e0dc; --neve:#F7F5F3;
+  --verde:#12855A; --erro:#c0392b;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);color:var(--ink);background:var(--neve);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px}
+a{color:inherit}
+
+.topo{background:#fff;border-bottom:1px solid var(--beige);position:sticky;top:0;z-index:30}
+.topo-in{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.marca{display:flex;align-items:center;gap:9px;text-decoration:none}
+.marca span{font-family:'Quicksand',sans-serif;font-weight:600;font-size:1.35rem;line-height:1;text-transform:lowercase}
+.voltar{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:.92rem;color:var(--ink-soft);text-decoration:none}
+.voltar:hover{color:var(--ink)}
+
+.cabecalho{padding:32px 0 22px}
+h1{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2rem);font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.cabecalho p{color:var(--ink-soft)}
+
+/* passos */
+.passos{display:flex;gap:8px;margin-bottom:26px}
+.passo{flex:1;display:flex;flex-direction:column;gap:7px}
+.passo .barra{height:4px;border-radius:4px;background:var(--beige)}
+.passo.on .barra,.passo.feito .barra{background:var(--laranja)}
+.passo span{font-size:.82rem;font-weight:700;color:var(--ink-soft)}
+.passo.on span{color:var(--laranja)}
+.passo.feito span{color:var(--verde)}
+
+.cartao{background:#fff;border:1px solid var(--beige);border-radius:16px;padding:clamp(20px,3.5vw,30px);margin-bottom:18px}
+.cartao h2{font-family:var(--display);font-size:1.12rem;font-weight:800;margin-bottom:4px}
+.cartao .dica{color:var(--ink-soft);font-size:.9rem;margin-bottom:20px}
+
+.linha{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.campo{margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
+.campo.full{grid-column:1/-1}
+label{font-size:.87rem;font-weight:700}
+label .opt{font-weight:500;color:var(--ink-soft)}
+input,select,textarea{
+  font-family:var(--body);font-size:.97rem;color:var(--ink);
+  padding:11px 13px;border:1.5px solid var(--beige);border-radius:9px;background:#fff;width:100%;
+  transition:border-color .15s ease;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--laranja)}
+input:disabled,select:disabled{background:#f5f4f2;color:#a5a5a5}
+textarea{min-height:96px;resize:vertical}
+.erro-campo{display:none;font-size:.82rem;color:var(--erro);font-weight:600}
+.campo.erro input,.campo.erro select{border-color:var(--erro)}
+.campo.erro .erro-campo{display:block}
+
+/* fotos */
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.foto{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#f0eeec;border:1px solid var(--beige)}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto button{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:none;
+  background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:.85rem;line-height:1}
+.solta{border:2px dashed var(--beige);border-radius:10px;aspect-ratio:4/3;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--ink-soft);font-size:.82rem;text-align:center;padding:8px}
+.solta:hover{border-color:var(--laranja);color:var(--laranja-dk)}
+
+/* condomínio */
+.opcoes{display:flex;gap:8px}
+.opcoes button{flex:0 0 auto;padding:9px 22px;border:1.5px solid var(--beige);background:#fff;border-radius:9px;
+  font-weight:700;font-size:.92rem;cursor:pointer;color:var(--ink-soft)}
+.opcoes button[aria-checked="true"]{border-color:var(--laranja);background:var(--laranja-luz);color:var(--laranja-dk)}
+
+.doc{border:2px dashed var(--beige);border-radius:10px;padding:22px;text-align:center;cursor:pointer;color:var(--ink-soft)}
+.doc:hover{border-color:var(--laranja);color:var(--laranja-dk)}
+.doc-nome{display:none;align-items:center;gap:10px;background:#faf8f6;border:1px solid var(--beige);
+  border-radius:9px;padding:11px 14px;font-size:.9rem;margin-top:8px}
+.doc-nome b{font-weight:600}
+.doc-nome button{margin-left:auto;background:none;border:none;color:var(--laranja-dk);cursor:pointer;font-weight:700}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:.98rem;
+  padding:13px 26px;border-radius:10px;border:2px solid transparent;cursor:pointer;text-decoration:none;font-family:var(--body)}
+.btn-p{background:var(--laranja);color:#fff}
+.btn-p:hover{background:var(--laranja-dk)}
+.btn-p:disabled{opacity:.6;cursor:wait}
+.btn-g{background:#fff;color:var(--ink);border-color:var(--beige)}
+.btn-g:hover{border-color:var(--ink)}
+.acoes{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;padding:4px 0 40px}
+
+.aviso{background:var(--laranja-luz);border:1px solid #ffd9c2;border-radius:10px;padding:13px 16px;
+  font-size:.9rem;margin-bottom:18px}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:gira .7s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+.aviso-topo{position:fixed;left:50%;transform:translateX(-50%);top:78px;z-index:70;background:var(--ink);color:#fff;
+  padding:13px 22px;border-radius:10px;font-weight:600;font-size:.93rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.aviso-topo.on{opacity:1}
+.aviso-topo.erro{background:var(--erro)}
+
+.oculto{display:none !important}
+@media(max-width:640px){
+  .linha{grid-template-columns:1fr}
+  .acoes{flex-direction:column-reverse}
+  .acoes .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <a href="/" class="marca">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#F4793C" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;display:block" aria-label="moravo">
+        <path d="M22 85 L22 50 Q22 43 27.5 39 L47 22.5 Q50 20 53 22.5 L72.5 39 Q78 43 78 50 L78 85"/>
+      </svg>
+      <span>moravo</span>
+    </a>
+    <a href="/dashboard" class="voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Voltar para o painel
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="cabecalho">
+    <h1 id="titulo">Anunciar imóvel</h1>
+    <p id="subtitulo">Leva alguns minutos. Você pode editar tudo depois.</p>
+  </div>
+
+  <div class="passos">
+    <div class="passo on" id="p1"><div class="barra"></div><span>1. Sobre o imóvel</span></div>
+    <div class="passo" id="p2"><div class="barra"></div><span>2. Documentação</span></div>
+  </div>
+
+  <!-- ============ PASSO 1 ============ -->
+  <section id="etapa1">
+    <div class="cartao">
+      <h2>O anúncio</h2>
+      <p class="dica">É o que o comprador vê primeiro.</p>
+      <div class="linha">
+        <div class="campo full">
+          <label for="i-titulo">Título do anúncio</label>
+          <input type="text" id="i-titulo" placeholder="Ex.: Casa 3 dorm em Joinville" maxlength="200" />
+          <span class="erro-campo">Informe um título com pelo menos 3 caracteres.</span>
+        </div>
+        <div class="campo">
+          <label for="i-tipo">Tipo</label>
+          <select id="i-tipo">
+            <option value="">Selecione...</option>
+            <option value="casa">Casa</option>
+            <option value="apartamento">Apartamento</option>
+            <option value="terreno">Terreno</option>
+            <option value="comercial">Comercial</option>
+            <option value="chacara">Chácara</option>
+            <option value="sitio">Sítio</option>
+          </select>
+          <span class="erro-campo">Escolha o tipo do imóvel.</span>
+        </div>
+        <div class="campo">
+          <label for="i-preco">Preço (R$)</label>
+          <input type="text" id="i-preco" inputmode="numeric" placeholder="480.000" />
+          <span class="erro-campo">Informe o preço.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <h2>Onde fica</h2>
+      <p class="dica">O CEP preenche o endereço sozinho. Cada endereço só pode ter um anúncio.</p>
+      <div class="linha">
+        <div class="campo">
+          <label for="i-cep">CEP</label>
+          <input type="text" id="i-cep" inputmode="numeric" placeholder="89200-000" maxlength="9" autocomplete="off" />
+          <span class="erro-campo">CEP inválido.</span>
+        </div>
+        <div class="campo">
+          <label for="i-uf">Estado</label>
+          <select id="i-uf"><option value="">Selecione...</option></select>
+          <span class="erro-campo">Escolha o estado.</span>
+        </div>
+        <div class="campo">
+          <label for="i-cidade">Cidade</label>
+          <select id="i-cidade" disabled><option value="">Selecione o estado primeiro</option></select>
+          <span class="erro-campo">Escolha a cidade.</span>
+        </div>
+        <div class="campo">
+          <label for="i-bairro">Bairro</label>
+          <input type="text" id="i-bairro" placeholder="América" maxlength="100" />
+          <span class="erro-campo">Informe o bairro.</span>
+        </div>
+        <div class="campo full">
+          <label for="i-rua">Rua</label>
+          <input type="text" id="i-rua" placeholder="Rua das Flores" maxlength="200" />
+          <span class="erro-campo">Informe a rua.</span>
+        </div>
+        <div class="campo">
+          <label for="i-numero">Número</label>
+          <input type="text" id="i-numero" placeholder="123" maxlength="20" />
+          <span class="erro-campo">Informe o número.</span>
+        </div>
+        <div class="campo">
+          <label for="i-complemento">Complemento <span class="opt">(opcional)</span></label>
+          <input type="text" id="i-complemento" placeholder="Apto 42" maxlength="100" />
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <h2>Características</h2>
+      <p class="dica">Tudo opcional, mas ajuda quem procura a se decidir.</p>
+      <div class="linha">
+        <div class="campo"><label for="i-area">Área (m²)</label><input type="number" id="i-area" min="0" step="1" placeholder="110" /></div>
+        <div class="campo"><label for="i-quartos">Quartos</label><input type="number" id="i-quartos" min="0" step="1" placeholder="3" /></div>
+        <div class="campo"><label for="i-banheiros">Banheiros</label><input type="number" id="i-banheiros" min="0" step="1" placeholder="2" /></div>
+        <div class="campo"><label for="i-vagas">Vagas na garagem</label><input type="number" id="i-vagas" min="0" step="1" placeholder="2" /></div>
+        <div class="campo full">
+          <label for="i-descricao">Descrição <span class="opt">(opcional)</span></label>
+          <textarea id="i-descricao" placeholder="O que faz esse imóvel valer a visita"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <h2>Fotos</h2>
+      <p class="dica">Até 5, direto do celular. Cada uma até 5MB.</p>
+      <div class="fotos" id="grade-fotos">
+        <div class="solta" id="add-foto">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Adicionar foto
+        </div>
+      </div>
+      <input type="file" id="i-fotos" accept="image/jpeg,image/png,image/webp" multiple class="oculto" />
+    </div>
+
+    <div class="acoes">
+      <a href="/dashboard" class="btn btn-g">Cancelar</a>
+      <button type="button" class="btn btn-p" id="irPasso2">Continuar</button>
+    </div>
+  </section>
+
+  <!-- ============ PASSO 2 ============ -->
+  <section id="etapa2" class="oculto">
+    <div class="cartao">
+      <h2>Documentação</h2>
+      <p class="dica">É o que libera o selo Verificado e dá segurança a quem vai comprar.</p>
+
+      <div class="campo">
+        <label for="s2-matricula">Matrícula do imóvel</label>
+        <input type="text" id="s2-matricula" placeholder="Ex.: 12.345 / 01.234.567" maxlength="100" />
+        <span class="erro-campo">A matrícula é obrigatória.</span>
+      </div>
+
+      <div class="campo">
+        <label>Documento da matrícula <span class="opt">(PDF ou imagem, até 5MB, opcional)</span></label>
+        <div class="doc" id="area-doc">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="margin-top:5px;font-size:.88rem">Clique para escolher o arquivo</div>
+        </div>
+        <div class="doc-nome" id="doc-escolhido">
+          <b id="doc-nome"></b><span id="doc-tam" style="color:var(--ink-soft)"></span>
+          <button type="button" id="doc-remover">Remover</button>
+        </div>
+        <input type="file" id="s2-arquivo" accept=".pdf,image/jpeg,image/png,image/webp" class="oculto" />
+      </div>
+
+      <div class="campo">
+        <label>O imóvel está em um condomínio?</label>
+        <div class="opcoes" role="radiogroup">
+          <button type="button" data-cond="false" role="radio" aria-checked="true">Não</button>
+          <button type="button" data-cond="true" role="radio" aria-checked="false">Sim</button>
+        </div>
+      </div>
+
+      <div class="campo oculto" id="campo-cond-valor">
+        <label for="s2-valor-cond">Valor do condomínio (R$)</label>
+        <input type="text" id="s2-valor-cond" inputmode="numeric" placeholder="350,00" />
+      </div>
+    </div>
+
+    <div class="acoes">
+      <button type="button" class="btn btn-g" id="voltarPasso1">Voltar</button>
+      <button type="button" class="btn btn-p" id="salvar">Publicar anúncio</button>
+    </div>
+  </section>
+</main>
+
+<div class="aviso-topo" id="aviso"></div>
+
+<script>
+(function () {
+  'use strict';
+  var API = (window.MORAVO_API || '').replace(/\/+$/, '');
+  var token = localStorage.getItem('moravo_token');
+  if (!token) { window.location.href = '/login'; return; }
+
+  var params = new URLSearchParams(window.location.search);
+  var imovelId = params.get('id');
+  var editando = !!imovelId;
+
+  var fotosNovas = [];   // File[] escolhidos agora
+  var fotosAtuais = [];  // URLs já salvas (no modo edição)
+  var arquivoDoc = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function aviso(msg, tipo) {
+    var el = $('aviso');
+    el.textContent = msg;
+    el.className = 'aviso-topo on' + (tipo === 'erro' ? ' erro' : '');
+    setTimeout(function () { el.className = 'aviso-topo'; }, 3600);
+  }
+
+  function api(caminho, opcoes) {
+    opcoes = opcoes || {};
+    var cab = Object.assign({ 'Authorization': 'Bearer ' + token }, opcoes.headers || {});
+    if (opcoes.body && typeof opcoes.body === 'string') cab['Content-Type'] = 'application/json';
+    return fetch(API + caminho, Object.assign({}, opcoes, { headers: cab }))
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); });
+  }
+
+  function marcarErro(id, tem) {
+    var campo = $(id).closest('.campo');
+    if (campo) campo.classList.toggle('erro', !!tem);
+  }
+  function limparErros() {
+    document.querySelectorAll('.campo.erro').forEach(function (c) { c.classList.remove('erro'); });
+  }
+
+  // ---- moeda: guarda dígitos, mostra formatado
+  function ligarMoeda(id) {
+    var el = $(id);
+    el.addEventListener('input', function () {
+      var d = this.value.replace(/\D/g, '');
+      this.value = d ? Number(d).toLocaleString('pt-BR') : '';
+    });
+  }
+  function valorDe(id) {
+    var d = ($(id).value || '').replace(/\D/g, '');
+    return d ? Number(d) : null;
+  }
+  ligarMoeda('i-preco');
+  ligarMoeda('s2-valor-cond');
+
+  // ---- estados e cidades
+  function carregarEstados() {
+    return fetch(API + '/api/cidades/estados').then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) return;
+        $('i-uf').innerHTML = '<option value="">Selecione...</option>' +
+          d.ufs.map(function (uf) { return '<option value="' + uf + '">' + uf + '</option>'; }).join('');
+      });
+  }
+  function carregarCidades(uf, selecionada) {
+    var sel = $('i-cidade');
+    if (!uf) { sel.innerHTML = '<option value="">Selecione o estado primeiro</option>'; sel.disabled = true; return Promise.resolve(); }
+    sel.disabled = true;
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    // limit alto de propósito: sem ele a API devolve só 20 cidades por estado
+    return fetch(API + '/api/cidades?limit=1000&uf=' + encodeURIComponent(uf)).then(function (r) { return r.json(); })
+      .then(function (d) {
+        var lista = (d.cidades || []).map(function (c) { return c.nome; });
+        sel.innerHTML = '<option value="">Selecione...</option>' +
+          lista.map(function (n) {
+            return '<option value="' + n + '"' + (n === selecionada ? ' selected' : '') + '>' + n + '</option>';
+          }).join('');
+        sel.disabled = false;
+      });
+  }
+  $('i-uf').addEventListener('change', function () { carregarCidades(this.value); });
+
+  // ---- CEP preenche o endereço
+  $('i-cep').addEventListener('input', function () {
+    var d = this.value.replace(/\D/g, '').slice(0, 8);
+    this.value = d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d;
+    if (d.length === 8) buscarCep(d);
+  });
+
+  function buscarCep(cep) {
+    fetch('https://viacep.com.br/ws/' + cep + '/json/')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.erro) return;
+        if (d.logradouro) $('i-rua').value = d.logradouro;
+        if (d.bairro) $('i-bairro').value = d.bairro;
+        if (d.uf) {
+          $('i-uf').value = d.uf;
+          carregarCidades(d.uf, d.localidade);
+        }
+        aviso('Endereço preenchido pelo CEP.');
+      })
+      .catch(function () { /* silencioso: a pessoa preenche na mão */ });
+  }
+
+  // ---- fotos
+  function desenharFotos() {
+    var grade = $('grade-fotos');
+    var total = fotosAtuais.length + fotosNovas.length;
+    grade.querySelectorAll('.foto').forEach(function (f) { f.remove(); });
+    var botao = $('add-foto');
+
+    fotosAtuais.forEach(function (url, i) {
+      var d = document.createElement('div');
+      d.className = 'foto';
+      d.innerHTML = '<img src="' + url + '" alt="" /><button type="button" title="Remover">&times;</button>';
+      d.querySelector('button').onclick = function () { fotosAtuais.splice(i, 1); desenharFotos(); };
+      grade.insertBefore(d, botao);
+    });
+    fotosNovas.forEach(function (arq, i) {
+      var d = document.createElement('div');
+      d.className = 'foto';
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(arq);
+      d.appendChild(img);
+      var b = document.createElement('button');
+      b.type = 'button'; b.innerHTML = '&times;';
+      b.onclick = function () { fotosNovas.splice(i, 1); desenharFotos(); };
+      d.appendChild(b);
+      grade.insertBefore(d, botao);
+    });
+    botao.style.display = total >= 5 ? 'none' : 'flex';
+  }
+
+  $('add-foto').onclick = function () { $('i-fotos').click(); };
+  $('i-fotos').addEventListener('change', function () {
+    var espaco = 5 - (fotosAtuais.length + fotosNovas.length);
+    var escolhidas = Array.prototype.slice.call(this.files, 0, espaco);
+    var grandes = escolhidas.filter(function (f) { return f.size > 5 * 1024 * 1024; });
+    if (grandes.length) aviso('Foto acima de 5MB foi ignorada.', 'erro');
+    fotosNovas = fotosNovas.concat(escolhidas.filter(function (f) { return f.size <= 5 * 1024 * 1024; }));
+    this.value = '';
+    desenharFotos();
+  });
+
+  // ---- documento
+  $('area-doc').onclick = function () { $('s2-arquivo').click(); };
+  $('s2-arquivo').addEventListener('change', function () {
+    var f = this.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { aviso('O arquivo passa de 5MB.', 'erro'); this.value = ''; return; }
+    arquivoDoc = f;
+    $('doc-nome').textContent = f.name;
+    $('doc-tam').textContent = '· ' + (f.size / 1024 / 1024).toFixed(1) + ' MB';
+    $('doc-escolhido').style.display = 'flex';
+    $('area-doc').style.display = 'none';
+  });
+  $('doc-remover').onclick = function () {
+    arquivoDoc = null; $('s2-arquivo').value = '';
+    $('doc-escolhido').style.display = 'none';
+    $('area-doc').style.display = '';
+  };
+
+  // ---- condomínio
+  var temCondominio = false;
+  document.querySelectorAll('[data-cond]').forEach(function (b) {
+    b.onclick = function () {
+      temCondominio = this.dataset.cond === 'true';
+      document.querySelectorAll('[data-cond]').forEach(function (o) {
+        o.setAttribute('aria-checked', String(o.dataset.cond === String(temCondominio)));
+      });
+      $('campo-cond-valor').classList.toggle('oculto', !temCondominio);
+    };
+  });
+
+  // ---- navegação entre os passos
+  function validarPasso1() {
+    limparErros();
+    var falhas = [];
+    if ($('i-titulo').value.trim().length < 3) falhas.push('i-titulo');
+    if (!$('i-tipo').value) falhas.push('i-tipo');
+    if (!valorDe('i-preco')) falhas.push('i-preco');
+    if (!/^\d{5}-?\d{3}$/.test($('i-cep').value.trim())) falhas.push('i-cep');
+    if (!$('i-uf').value) falhas.push('i-uf');
+    if (!$('i-cidade').value) falhas.push('i-cidade');
+    if ($('i-bairro').value.trim().length < 2) falhas.push('i-bairro');
+    if ($('i-rua').value.trim().length < 3) falhas.push('i-rua');
+    if (!$('i-numero').value.trim()) falhas.push('i-numero');
+    falhas.forEach(function (id) { marcarErro(id, true); });
+    if (falhas.length) {
+      $(falhas[0]).scrollIntoView({ block: 'center', behavior: 'smooth' });
+      $(falhas[0]).focus({ preventScroll: true });
+      aviso('Confira os campos destacados.', 'erro');
+      return false;
+    }
+    return true;
+  }
+
+  function mostrarPasso(n) {
+    $('etapa1').classList.toggle('oculto', n !== 1);
+    $('etapa2').classList.toggle('oculto', n !== 2);
+    $('p1').className = 'passo ' + (n === 1 ? 'on' : 'feito');
+    $('p2').className = 'passo ' + (n === 2 ? 'on' : '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  $('irPasso2').onclick = function () { if (validarPasso1()) mostrarPasso(2); };
+  $('voltarPasso1').onclick = function () { mostrarPasso(1); };
+
+  // ---- salvar
+  $('salvar').onclick = function () {
+    limparErros();
+    if (!$('s2-matricula').value.trim()) {
+      marcarErro('s2-matricula', true);
+      aviso('A matrícula é obrigatória.', 'erro');
+      return;
+    }
+
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Salvando…';
+
+    var dados = {
+      titulo: $('i-titulo').value.trim(),
+      tipo: $('i-tipo').value,
+      preco: valorDe('i-preco'),
+      cep: $('i-cep').value.trim(),
+      uf: $('i-uf').value,
+      cidade: $('i-cidade').value,
+      bairro: $('i-bairro').value.trim(),
+      rua: $('i-rua').value.trim(),
+      numero: $('i-numero').value.trim(),
+      complemento: $('i-complemento').value.trim() || null,
+      area_m2: $('i-area').value || null,
+      quartos: $('i-quartos').value || null,
+      banheiros: $('i-banheiros').value || null,
+      vagas: $('i-vagas').value || null,
+      descricao: $('i-descricao').value.trim() || null,
+      matricula: $('s2-matricula').value.trim(),
+      condominio: temCondominio,
+      valor_condominio: temCondominio ? valorDe('s2-valor-cond') : null
+    };
+    if (editando) dados.fotos = fotosAtuais;
+
+    api('/api/imoveis' + (editando ? '/' + imovelId : ''), {
+      method: editando ? 'PUT' : 'POST',
+      body: JSON.stringify(dados)
+    }).then(function (r) {
+      if (!r.ok) {
+        btn.disabled = false;
+        btn.textContent = editando ? 'Salvar alterações' : 'Publicar anúncio';
+        var msg = (r.body.errors && r.body.errors[0] && r.body.errors[0].message) || r.body.error || 'Não foi possível salvar.';
+        aviso(msg, 'erro');
+        return;
+      }
+      var id = editando ? imovelId : r.body.id;
+      return enviarAnexos(id).then(function () {
+        aviso(editando ? 'Anúncio atualizado.' : 'Anúncio publicado.');
+        setTimeout(function () { window.location.href = '/dashboard'; }, 900);
+      });
+    });
+  };
+
+  function enviarAnexos(id) {
+    var tarefas = [];
+    if (fotosNovas.length) {
+      var fd = new FormData();
+      fotosNovas.forEach(function (f) { fd.append('fotos', f); });
+      tarefas.push(fetch(API + '/api/imoveis/' + id + '/fotos', {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
+      }).catch(function () { aviso('O anúncio foi salvo, mas as fotos falharam.', 'erro'); }));
+    }
+    if (arquivoDoc) {
+      var fd2 = new FormData();
+      fd2.append('escritura', arquivoDoc);
+      tarefas.push(fetch(API + '/api/imoveis/' + id + '/documentos', {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd2
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.ok && d.url) {
+          return api('/api/imoveis/' + id, { method: 'PUT', body: JSON.stringify({ escritura_arquivo_url: d.url }) });
+        }
+      }).catch(function () { aviso('O anúncio foi salvo, mas o documento falhou.', 'erro'); }));
+    }
+    return Promise.all(tarefas);
+  }
+
+  // ---- modo edição: carrega o imóvel
+  function carregarImovel() {
+    return api('/api/imoveis/' + imovelId).then(function (r) {
+      if (!r.ok || !r.body.imovel) { aviso('Imóvel não encontrado.', 'erro'); return; }
+      var im = r.body.imovel;
+      $('titulo').textContent = 'Editar anúncio';
+      $('subtitulo').textContent = 'As alterações aparecem no site assim que você salvar.';
+      $('salvar').textContent = 'Salvar alterações';
+      document.title = 'Moravo | Editar anúncio';
+
+      $('i-titulo').value = im.titulo || '';
+      $('i-tipo').value = im.tipo || '';
+      $('i-preco').value = im.preco ? Number(im.preco).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '';
+      $('i-cep').value = im.cep || '';
+      $('i-bairro').value = im.bairro || '';
+      $('i-rua').value = im.rua || '';
+      $('i-numero').value = im.numero || '';
+      $('i-complemento').value = im.complemento || '';
+      $('i-area').value = im.area_m2 != null ? Math.round(im.area_m2) : '';
+      $('i-quartos').value = im.quartos != null ? im.quartos : '';
+      $('i-banheiros').value = im.banheiros != null ? im.banheiros : '';
+      $('i-vagas').value = im.vagas != null ? im.vagas : '';
+      $('i-descricao').value = im.descricao || '';
+      $('s2-matricula').value = im.matricula || '';
+
+      if (im.condominio) {
+        document.querySelector('[data-cond="true"]').click();
+        if (im.valor_condominio) {
+          $('s2-valor-cond').value = Number(im.valor_condominio).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+        }
+      }
+
+      var fotos = im.fotos;
+      if (typeof fotos === 'string') { try { fotos = JSON.parse(fotos); } catch (e) { fotos = []; } }
+      fotosAtuais = Array.isArray(fotos) ? fotos.slice() : [];
+      desenharFotos();
+
+      if (im.uf) { $('i-uf').value = im.uf; return carregarCidades(im.uf, im.cidade); }
+    });
+  }
+
+  // ---- início
+  carregarEstados().then(function () {
+    if (editando) return carregarImovel();
+    desenharFotos();
+  });
+})();
+</script>
+</body>
+</html>

@@ -131,6 +131,7 @@ anuncie.html     landing de conversão do proprietário (URL limpa /anuncie)
 anuncie-2.html   variante da landing para teste A/B (URL limpa /anuncie-2)
 anuncie-3.html   terceira variante, com calculadora do custo de esperar (/anuncie-3)
 anuncie-4.html   quarta variante, ângulo de facilidade de anunciar (/anuncie-4)
+anunciar.html    cadastro e edição de imóvel em página própria (/anunciar[?id=])
   login.html       login normal
   busca.html       busca e filtros
   detalhes.html    página do imóvel + CTA que muda conforme o perfil
@@ -465,6 +466,11 @@ Registrar a mudança no histórico abaixo, uma linha por alteração relevante.
   tem `{{1}}` com o primeiro nome e o botão usa base `https://moravo.com.br/linkgrupo/`.
   Criada a rota `GET /linkgrupo/:codigo` que redireciona para o convite real. Erros da Meta
   passam a trazer código e subcódigo, para diagnóstico.
+- **2026-08-19** — Cadastro e edição de imóvel saíram do modal do `dashboard.html` e viraram
+  página própria em `/anunciar` (`?id=` para editar). O modal antigo continua no arquivo, mas
+  inalcançável: `openImovelModal` e `editarImovel` passaram a redirecionar, e as versões
+  originais viraram `*Antigo`. Atenção: `GET /api/cidades` devolve só **20 cidades** por
+  padrão, então a página pede `limit=1000` (sem isso Joinville não aparecia na lista de SC).
 - **2026-08-18** — Nova aba **Configurações** no painel do admin, com campos de script para
   `<head>` e `<body>` (Tag Manager, pixels). Tabela `config_site`, `lib/site-config.js` e um
   middleware no `server.js` que injeta o código ao servir cada página HTML. O painel do admin

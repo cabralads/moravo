@@ -3791,6 +3791,12 @@
       }
 
       function editarImovel(id, opts) {
+        window.location.href = '/anunciar?id=' + encodeURIComponent(id) +
+          (opts && opts.skipToStep2 ? '#documentacao' : '');
+        return;
+      }
+
+      function editarImovelAntigo(id, opts) {
         opts = opts || {};
         var saveBtn = document.getElementById('saveImovelBtn');
         saveBtn.disabled = false;
@@ -3884,7 +3890,15 @@
         });
       }
 
+      // Cadastrar e editar imóvel viraram páginas próprias (/anunciar).
+      // A função foi mantida com o mesmo nome porque é chamada de vários
+      // pontos, inclusive de onclick inline no HTML.
       window.openImovelModal = function () {
+        window.location.href = '/anunciar';
+        return;
+      };
+
+      window.openImovelModalAntigo = function () {
         document.getElementById('imovelForm').reset();
         document.getElementById('imovelId').value = '';
         document.getElementById('imovelModalTitle').textContent = 'Adicionar imóvel';
